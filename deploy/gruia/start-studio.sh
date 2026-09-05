@@ -4,7 +4,7 @@ set -euo pipefail
 : "${DESIGN_DEPLOY_ROOT:?Set the deployment directory}"
 : "${DESIGN_STUDIO_DATA:?Set the existing private studio volume}"
 : "${DESIGN_STUDIO_ENV:?Set the private studio environment file}"
-studio_image="${DESIGN_STUDIO_IMAGE:-gruia-design:20260905}"
+studio_image="${DESIGN_STUDIO_IMAGE:-gruia-design:20260905-managed}"
 
 # Host networking keeps the actual daemon listener visible to server-manager.
 # The daemon itself binds only to loopback; Caddy reaches the gateway.

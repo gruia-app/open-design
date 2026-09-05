@@ -105,6 +105,7 @@ import {
   RailAccountRecoveryTip,
   RailAccountSyncTip,
 } from './CloudSignInTip';
+import { GRUIA_MANAGED } from '../state/gruia-managed';
 import {
   resolveEntryRailAccountFooterState,
   requiresAmrReauthentication,
@@ -648,7 +649,8 @@ export function EntryShell({
   // to /design-systems lands on that section. We derive the active
   // view from the route rather than keeping it in component state.
   const route = useRoute();
-  const view: EntryViewKind = route.kind === 'home' ? route.view : 'home';
+  const view: EntryViewKind = route.kind === 'home'
+    && !(GRUIA_MANAGED && route.view === 'onboarding') ? route.view : 'home';
   // The one shared workspace context. Any non-null context is a real workspace
   // (personal or team); workspace surfaces gate on B's permission bits, not on
   // workspaceType.
@@ -682,7 +684,9 @@ export function EntryShell({
     navigate({ kind: 'home', view: 'onboarding' }, { replace: true });
   }, [amrAuthRequired, amrLoggedIn, usesOpenDesignCloud, view]);
   let accountFooterNotice: ReactNode = null;
-  if (accountFooterState === 'syncing') {
+  if (GRUIA_MANAGED) {
+    accountFooterNotice = null;
+  } else if (accountFooterState === 'syncing') {
     accountFooterNotice = <RailAccountSyncTip />;
   } else if (accountFooterState === 'recovering') {
     accountFooterNotice = <RailAccountRecoveryTip />;

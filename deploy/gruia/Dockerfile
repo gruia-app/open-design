@@ -25,7 +25,7 @@ RUN corepack enable \
     && pnpm install --frozen-lockfile \
     && pnpm --filter @open-design/daemon exec npm rebuild node-pty \
     && pnpm --filter @open-design/daemon build \
-    && pnpm --filter @open-design/web build \
+    && NEXT_PUBLIC_GRUIA_MANAGED=1 pnpm --filter @open-design/web build \
     && pnpm --filter @open-design/daemon deploy --legacy --prod /opt/open-design/daemon
 
 FROM ${NODE_IMAGE} AS runtime

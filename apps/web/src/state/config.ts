@@ -22,6 +22,7 @@ import {
   DEFAULT_SUCCESS_SOUND_ID,
 } from '../utils/notifications';
 import { randomUUID } from '../utils/uuid';
+import { applyGruiaRuntime } from './gruia-managed';
 
 const STORAGE_KEY = 'open-design:config';
 const CONFIG_MIGRATION_VERSION = 3;
@@ -661,6 +662,10 @@ function migrateRetiredKnownProviderModel(
 }
 
 export function loadConfig(): AppConfig {
+  return applyGruiaRuntime(loadStoredConfig());
+}
+
+function loadStoredConfig(): AppConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -1073,7 +1078,7 @@ export function mergeDaemonConfig(
   daemonConfig: AppConfigPrefs | null,
 ): AppConfig {
   const next = { ...localConfig };
-  if (!daemonConfig) return next;
+  if (!daemonConfig) return applyGruiaRuntime(next);
 
   next.onboardingCompleted = ratchetOnboardingCompleted(
     localConfig.onboardingCompleted,
@@ -1161,7 +1166,7 @@ export function mergeDaemonConfig(
   if (daemonConfig.defaultProjectLocationId !== undefined) {
     next.defaultProjectLocationId = daemonConfig.defaultProjectLocationId ?? 'default';
   }
-  return next;
+  return applyGruiaRuntime(next);
 }
 
 export function mergeDaemonMediaProviders(

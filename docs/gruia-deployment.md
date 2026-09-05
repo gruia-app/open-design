@@ -12,7 +12,7 @@ The source recipes use Node 24 Bookworm, pnpm 10.33.2, the frozen lockfile, and
 Claude Code 2.1.261. Build from the repository root:
 
 ```bash
-docker build --platform linux/amd64 -t gruia-design:20260905 -f deploy/gruia/Dockerfile .
+docker build --platform linux/amd64 -t gruia-design:20260905-managed -f deploy/gruia/Dockerfile .
 docker build --platform linux/amd64 -t gruia-design-gateway:20260905-password -f deploy/gruia/Dockerfile.gateway .
 ```
 
@@ -20,7 +20,7 @@ The studio image includes daemon production dependencies, static web, skills,
 design templates, design systems, craft, prompts, assets, baked data, and
 plugins. Its source build rebuilds native node-pty. The first deployment used
 the prebuilt recipes with validated local outputs. For that path, build the
-daemon and web first, deploy the daemon package with `pnpm deploy --legacy
+daemon and web first (build the web with `NEXT_PUBLIC_GRUIA_MANAGED=1`), deploy the daemon package with `pnpm deploy --legacy
 --prod` into a temporary directory named `daemon`, and provide its parent as
 Docker's named `prebuilt` build context. The regular context must contain
 `apps/web/out` and the same resource directories. The gateway prebuilt recipe
@@ -38,8 +38,11 @@ that root. Gateway sessions have a separate volume.
 The studio environment file must be mode 0600 and contain `OD_API_TOKEN`,
 `CLAUDE_CODE_OAUTH_TOKEN`, `OD_PUBLIC_BASE_URL=https://design.gruia.app` and
 `OD_ALLOWED_ORIGINS=https://design.gruia.app`. The launcher forces the daemon to
-bind to loopback. The entrypoint uses umask 077 and selects Claude on first
-boot. Supply provider credentials through the runtime environment only.
+bind to loopback. The entrypoint uses umask 077 and restores Claude plus completed onboarding on
+every boot, preserving other preferences. The managed web build also repairs
+stale browser setup and hides the upstream cloud sign-in prompt. Upstream
+telemetry is disabled. Supply provider credentials through the runtime
+environment only.
 
 The gateway JSON is owned by UID 1001, mode 0400, and mounted read-only. Follow
 [the authentication contract](gruia-auth.md). Use a dedicated PostgreSQL role
@@ -62,7 +65,7 @@ Create a protected `/opt/design/lifecycle.env` with these non-secret paths:
 DESIGN_DEPLOY_ROOT=/opt/design
 DESIGN_STUDIO_DATA=/opt/design/studios/internal
 DESIGN_STUDIO_ENV=/opt/design/studio.env
-DESIGN_STUDIO_IMAGE=gruia-design:20260905
+DESIGN_STUDIO_IMAGE=gruia-design:20260905-managed
 DESIGN_GATEWAY_CONFIG=/opt/design/gateway.json
 DESIGN_GATEWAY_DATA=/opt/design/gateway-data
 DESIGN_GATEWAY_IMAGE=gruia-design-gateway:20260905-password
@@ -107,8 +110,11 @@ central `apps_registry` record when changing availability.
 Launch verification covers gateway security tests and HTTP session/CSRF
 boundaries, both running containers, HTTPS, and the same-origin password sign-in
 page. A real Claude request completed successfully and created `index.html` in a
-dedicated launch-check project. Successful sign-in with a person's existing
-Gruia credentials still requires that person to complete the login.
+dedicated launch-check project. Managed startup also has regression coverage for
+fresh and stale browser preferences. Browser QA against the production studio
+through a private streaming proxy verified Home, recovery from `/onboarding/`,
+and a Claude generation with a rendered HTML preview. This studio check does not
+substitute for a person's password sign-in at the public gateway.
 
 For upstream updates, fetch `upstream`, review its changes on an integration
 branch, and run `pnpm guard`, `pnpm typecheck`, gateway tests and affected
