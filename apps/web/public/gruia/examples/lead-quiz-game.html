@@ -1,0 +1,409 @@
+<!-- Gruia original example generated with Claude, 2026-09-05. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Qué madurez tiene tu captación B2B?</title>
+<style>
+  :root {
+    --bg:      oklch(99% 0.002 240);
+    --surface: oklch(100% 0 0);
+    --fg:      oklch(18% 0.012 250);
+    --muted:   oklch(54% 0.012 250);
+    --border:  oklch(92% 0.005 250);
+    --accent:  oklch(58% 0.18 255);
+    --accent-hover: oklch(50% 0.18 255);
+    --accent-soft:  oklch(96% 0.03 255);
+    --good: oklch(62% 0.15 155);
+    --good-soft: oklch(95% 0.04 155);
+    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap { width: min(720px, 100% - 40px); margin-inline: auto; }
+
+  header.top { border-bottom: 1px solid var(--border); padding: 22px 0; }
+  header.top .inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; font-size: 15px; }
+  .brand-mark { width: 20px; height: 20px; border-radius: 6px; background: var(--accent); flex: none; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft); border: 1px solid oklch(88% 0.06 255);
+    padding: 5px 10px; border-radius: 999px;
+  }
+
+  main.wrap { padding: 48px 0 80px; }
+
+  .intro { text-align: center; max-width: 52ch; margin: 0 auto 40px; }
+  .intro h1 {
+    font-family: var(--font-display); font-size: clamp(28px, 4.2vw, 38px);
+    letter-spacing: -0.02em; font-weight: 650; line-height: 1.18; margin-bottom: 14px; text-wrap: balance;
+  }
+  .intro p { color: var(--muted); font-size: 16px; text-wrap: pretty; }
+
+  .progress-track {
+    height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; margin-bottom: 10px;
+  }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .35s ease; width: 0%; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .progress-label span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--fg); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 34px;
+  }
+
+  .question h2 {
+    font-family: var(--font-display); font-size: clamp(20px, 3vw, 24px); font-weight: 650;
+    letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 24px; text-wrap: balance;
+  }
+
+  .options { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .option-btn {
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    font: inherit; font-size: 15px; color: var(--fg);
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; min-height: 44px; cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease;
+  }
+  .option-btn:hover:not(:disabled) { border-color: oklch(78% 0.02 250); background: oklch(98.5% 0.002 250); }
+  .option-btn .marker {
+    flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border);
+    display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--muted);
+  }
+  .option-btn[aria-pressed="true"] {
+    border-color: var(--accent); background: var(--accent-soft);
+  }
+  .option-btn[aria-pressed="true"] .marker {
+    border-color: var(--accent); background: var(--accent); color: oklch(100% 0 0);
+  }
+  .option-btn:disabled { cursor: default; }
+  .option-btn:disabled:not([aria-pressed="true"]) { opacity: 0.55; }
+
+  .actions-row { display: flex; justify-content: flex-end; margin-top: 28px; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 46px; padding: 0 22px; border-radius: 10px;
+    background: var(--accent); color: oklch(100% 0 0);
+    font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+    border: 1px solid transparent; cursor: pointer; font-family: inherit;
+    transition: background .15s, transform .15s, opacity .15s;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-primary:active:not(:disabled) { transform: translateY(1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Result screen */
+  .result-head { text-align: center; margin-bottom: 30px; }
+  .result-badge {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+    background: var(--good-soft); color: var(--good); border: 1px solid oklch(90% 0.06 155);
+  }
+  .result-head h2 {
+    font-family: var(--font-display); font-size: clamp(24px, 3.6vw, 30px); font-weight: 650;
+    letter-spacing: -0.02em; margin-bottom: 12px; text-wrap: balance;
+  }
+  .score-line {
+    display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-bottom: 8px;
+  }
+  .score-line .score-value {
+    font-family: var(--font-display); font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+  .score-line .score-max { font-size: 16px; color: var(--muted); }
+  .result-head p { color: var(--muted); font-size: 15px; max-width: 48ch; margin: 0 auto; text-wrap: pretty; }
+
+  .recommendations { list-style: none; display: flex; flex-direction: column; gap: 14px; margin: 28px 0 8px; }
+  .recommendations li {
+    display: flex; gap: 14px; padding: 18px; border: 1px solid var(--border); border-radius: 14px;
+    background: oklch(99% 0.002 250);
+  }
+  .rec-index {
+    flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; font-size: 13px; font-weight: 700;
+  }
+  .recommendations p { font-size: 14.5px; color: var(--fg); line-height: 1.5; }
+
+  .result-actions { display: flex; justify-content: center; margin-top: 8px; }
+
+  footer.foot { border-top: 1px solid var(--border); padding: 22px 0; margin-top: 8px; }
+  footer.foot .wrap { font-size: 13px; color: var(--muted); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 560px) {
+    .card { padding: 24px 20px; }
+    .option-btn { padding: 14px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top" data-od-id="nav">
+  <div class="wrap inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      Gruia · Ejemplos B2B
+    </div>
+    <span class="eyebrow">Juego de diagnóstico</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div id="intro-screen">
+    <div class="intro">
+      <h1 data-od-id="intro-title">¿Qué madurez tiene tu captación de leads B2B?</h1>
+      <p>Responde 5 preguntas rápidas sobre cómo capta y trabaja tu empresa los leads comerciales. Al final recibirás un resultado con 3 recomendaciones. No se recogen datos personales ni se envía nada.</p>
+    </div>
+    <div style="display:flex; justify-content:center;">
+      <button type="button" class="btn-primary" id="start-btn" data-od-id="start-btn">Empezar el juego</button>
+    </div>
+  </div>
+
+  <div id="quiz-screen" class="hidden">
+    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label">
+      <span id="progress-text">Pregunta 1 de 5</span>
+      <span id="progress-score-hint">&nbsp;</span>
+    </div>
+
+    <div class="card">
+      <div class="question">
+        <h2 id="question-text" data-od-id="question-text"></h2>
+        <ul class="options" id="options-list" role="group" aria-labelledby="question-text"></ul>
+      </div>
+      <div class="actions-row">
+        <button type="button" class="btn-primary" id="next-btn" disabled data-od-id="next-btn">Siguiente</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="result-screen" class="hidden">
+    <div class="card">
+      <div class="result-head">
+        <span class="result-badge" id="result-badge">Resultado</span>
+        <h2 id="result-title" data-od-id="result-title"></h2>
+        <div class="score-line">
+          <span class="score-value" id="result-score">0</span>
+          <span class="score-max">/ 20 puntos</span>
+        </div>
+        <p id="result-desc"></p>
+      </div>
+
+      <ul class="recommendations" id="recommendations-list" data-od-id="recommendations-list"></ul>
+
+      <div class="result-actions">
+        <button type="button" class="btn-primary" id="restart-btn" data-od-id="restart-btn">Reiniciar el juego</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="foot" data-od-id="footer">
+  <div class="wrap">Biblioteca interna de ejemplos · Gruia · Sin datos personales, sin envíos, todo ocurre en tu navegador.</div>
+</footer>
+
+<script>
+(function () {
+  var QUESTIONS = [
+    {
+      text: '¿Cómo genera tu empresa leads B2B hoy en día?',
+      options: [
+        { label: 'Sobre todo por recomendaciones y contactos personales', points: 1 },
+        { label: 'Con acciones puntuales de marketing, sin proceso definido', points: 2 },
+        { label: 'Con campañas planificadas en varios canales (SEO, contenido, ads)', points: 3 },
+        { label: 'Con un motor de generación de demanda multicanal y medido', points: 4 }
+      ]
+    },
+    {
+      text: '¿Tenéis definido el perfil de cliente ideal (ICP)?',
+      options: [
+        { label: 'No, atendemos a quien muestre interés', points: 1 },
+        { label: 'Tenemos una idea aproximada, pero no está documentada', points: 2 },
+        { label: 'Sí, está documentado y compartido con el equipo comercial', points: 3 },
+        { label: 'Sí, y lo revisamos y afinamos con datos reales cada trimestre', points: 4 }
+      ]
+    },
+    {
+      text: '¿Cómo se califican y priorizan los leads que entran?',
+      options: [
+        { label: 'No se califican, se atienden por orden de llegada', points: 1 },
+        { label: 'El comercial decide a criterio propio quién merece más atención', points: 2 },
+        { label: 'Usamos criterios básicos, como sector o tamaño, para priorizar', points: 3 },
+        { label: 'Usamos lead scoring automático con datos de comportamiento', points: 4 }
+      ]
+    },
+    {
+      text: '¿Qué seguimiento reciben los leads que no compran de inmediato?',
+      options: [
+        { label: 'Ninguno; si no compran ya, se pierden de vista', points: 1 },
+        { label: 'Un comercial contacta de vez en cuando, sin plan definido', points: 2 },
+        { label: 'Reciben una secuencia de contenido o emails programada', points: 3 },
+        { label: 'Reciben seguimiento personalizado según su comportamiento e interés', points: 4 }
+      ]
+    },
+    {
+      text: '¿Cómo medís el retorno de vuestra captación de leads?',
+      options: [
+        { label: 'No lo medimos', points: 1 },
+        { label: 'Miramos el número de leads generados, sin más', points: 2 },
+        { label: 'Medimos la conversión de lead a oportunidad y a cliente', points: 3 },
+        { label: 'Tenemos un cuadro de mando con CAC, LTV y ROI por canal', points: 4 }
+      ]
+    }
+  ];
+
+  var TIERS = [
+    {
+      max: 9,
+      badge: 'Captación inicial',
+      title: 'Vuestra captación B2B está empezando a tomar forma',
+      desc: 'Hay margen para construir una base sólida antes de invertir en más canales o herramientas.',
+      recommendations: [
+        'Define un perfil de cliente ideal (ICP) sencillo antes de invertir en más canales de captación.',
+        'Centraliza los leads en un único lugar, aunque sea una hoja de cálculo o un CRM básico, para dejar de perderlos.',
+        'Lanza una primera campaña planificada en un solo canal y mide cuántos leads genera.'
+      ]
+    },
+    {
+      max: 15,
+      badge: 'Captación en desarrollo',
+      title: 'Ya tenéis un proceso de captación, pero puede afinarse',
+      desc: 'Las bases están puestas; ahora toca ganar consistencia entre marketing y ventas.',
+      recommendations: [
+        'Documenta y comparte el ICP con todo el equipo comercial para alinear criterios.',
+        'Introduce una calificación básica de leads (sector, tamaño, urgencia) antes de pasarlos a ventas.',
+        'Diseña una secuencia de seguimiento automático para los leads que aún no están listos para comprar.'
+      ]
+    },
+    {
+      max: 20,
+      badge: 'Captación avanzada',
+      title: 'Vuestra captación B2B tiene una madurez alta',
+      desc: 'El reto ahora es optimizar y escalar lo que ya funciona con más precisión de datos.',
+      recommendations: [
+        'Incorpora lead scoring predictivo basado en comportamiento real, no solo en datos demográficos.',
+        'Analiza el ROI por canal para reasignar presupuesto hacia lo que mejor convierte.',
+        'Prueba un seguimiento personalizado por segmento para mejorar el paso de lead a oportunidad.'
+      ]
+    }
+  ];
+
+  var introScreen = document.getElementById('intro-screen');
+  var quizScreen = document.getElementById('quiz-screen');
+  var resultScreen = document.getElementById('result-screen');
+
+  var startBtn = document.getElementById('start-btn');
+  var nextBtn = document.getElementById('next-btn');
+  var restartBtn = document.getElementById('restart-btn');
+
+  var progressFill = document.getElementById('progress-fill');
+  var progressText = document.getElementById('progress-text');
+  var questionText = document.getElementById('question-text');
+  var optionsList = document.getElementById('options-list');
+
+  var resultBadge = document.getElementById('result-badge');
+  var resultTitle = document.getElementById('result-title');
+  var resultScore = document.getElementById('result-score');
+  var resultDesc = document.getElementById('result-desc');
+  var recommendationsList = document.getElementById('recommendations-list');
+
+  var currentIndex = 0;
+  var score = 0;
+  var selectedPoints = null;
+
+  function showScreen(el) {
+    [introScreen, quizScreen, resultScreen].forEach(function (s) { s.classList.add('hidden'); });
+    el.classList.remove('hidden');
+  }
+
+  function renderQuestion() {
+    var q = QUESTIONS[currentIndex];
+    selectedPoints = null;
+    nextBtn.disabled = true;
+    nextBtn.textContent = currentIndex === QUESTIONS.length - 1 ? 'Ver resultado' : 'Siguiente';
+
+    progressFill.style.width = ((currentIndex) / QUESTIONS.length * 100) + '%';
+    progressText.textContent = 'Pregunta ' + (currentIndex + 1) + ' de ' + QUESTIONS.length;
+
+    questionText.textContent = q.text;
+    optionsList.innerHTML = '';
+
+    q.options.forEach(function (opt, i) {
+      var li = document.createElement('li');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option-btn';
+      btn.setAttribute('aria-pressed', 'false');
+      btn.innerHTML = '<span class="marker" aria-hidden="true">' + String.fromCharCode(65 + i) + '</span><span>' + opt.label + '</span>';
+      btn.addEventListener('click', function () {
+        selectedPoints = opt.points;
+        Array.prototype.forEach.call(optionsList.querySelectorAll('.option-btn'), function (b) {
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.setAttribute('aria-pressed', 'true');
+        nextBtn.disabled = false;
+      });
+      li.appendChild(btn);
+      optionsList.appendChild(li);
+    });
+  }
+
+  function renderResult() {
+    var tier = TIERS.find(function (t) { return score <= t.max; }) || TIERS[TIERS.length - 1];
+    resultBadge.textContent = tier.badge;
+    resultTitle.textContent = tier.title;
+    resultScore.textContent = score;
+    resultDesc.textContent = tier.desc;
+    recommendationsList.innerHTML = '';
+    tier.recommendations.forEach(function (rec, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="rec-index" aria-hidden="true">' + (i + 1) + '</span><p>' + rec + '</p>';
+      recommendationsList.appendChild(li);
+    });
+    progressFill.style.width = '100%';
+    showScreen(resultScreen);
+  }
+
+  startBtn.addEventListener('click', function () {
+    currentIndex = 0;
+    score = 0;
+    renderQuestion();
+    showScreen(quizScreen);
+  });
+
+  nextBtn.addEventListener('click', function () {
+    if (selectedPoints === null) { return; }
+    score += selectedPoints;
+    currentIndex += 1;
+    if (currentIndex >= QUESTIONS.length) {
+      renderResult();
+    } else {
+      renderQuestion();
+    }
+  });
+
+  restartBtn.addEventListener('click', function () {
+    currentIndex = 0;
+    score = 0;
+    showScreen(introScreen);
+  });
+})();
+</script>
+
+</body>
+</html>

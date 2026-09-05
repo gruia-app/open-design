@@ -12,7 +12,7 @@ The source recipes use Node 24 Bookworm, pnpm 10.33.2, the frozen lockfile, and
 Claude Code 2.1.261. Build from the repository root:
 
 ```bash
-docker build --platform linux/amd64 -t gruia-design:20260905-managed -f deploy/gruia/Dockerfile .
+docker build --platform linux/amd64 -t gruia-design:20260905-community -f deploy/gruia/Dockerfile .
 docker build --platform linux/amd64 -t gruia-design-gateway:20260905-password -f deploy/gruia/Dockerfile.gateway .
 ```
 
@@ -65,7 +65,7 @@ Create a protected `/opt/design/lifecycle.env` with these non-secret paths:
 DESIGN_DEPLOY_ROOT=/opt/design
 DESIGN_STUDIO_DATA=/opt/design/studios/internal
 DESIGN_STUDIO_ENV=/opt/design/studio.env
-DESIGN_STUDIO_IMAGE=gruia-design:20260905-managed
+DESIGN_STUDIO_IMAGE=gruia-design:20260905-community
 DESIGN_GATEWAY_CONFIG=/opt/design/gateway.json
 DESIGN_GATEWAY_DATA=/opt/design/gateway-data
 DESIGN_GATEWAY_IMAGE=gruia-design-gateway:20260905-password

@@ -20,6 +20,7 @@ import { useWorkspaceContext } from '../collab/useWorkspaceContext';
 import { useAnalytics } from '../analytics/provider';
 import { trackCommunityTemplateClick, trackPageView } from '../analytics/events';
 import { workspaceAnalyticsDimensions } from '../analytics/workspace';
+import { GruiaExamples } from './GruiaExamples';
 
 export interface CommunityTemplateUseTarget {
   templateId: string;
@@ -254,17 +255,26 @@ export function CommunityView({ onRemixTemplate, onUsePrompt, onUsePlugin }: Com
 
   return (
     <section className="community-template-view" aria-labelledby="community-template-title">
+
       {/* Header (title + search + filter rows) scrolls away with the grid. */}
       <div className="community-template-view__header">
       <header className="community-template-view__hero">
         <div>
           <h1 id="community-template-title" className="entry-section__title">{t('community.title')}</h1>
         </div>
-        <div className="community-template-view__search" role="search">
+        {process.env.NEXT_PUBLIC_GRUIA_MANAGED !== '1' ? <div className="community-template-view__search" role="search">
           <Icon name="search" size={16} />
           <input type="search" placeholder={t('community.searchPlaceholder')} aria-label={t('community.searchAria')} readOnly />
-        </div>
+        </div> : null}
       </header>
+      <GruiaExamples
+        onUsePrompt={({ id, prompt }) => onUsePrompt?.({
+          templateId: `gruia-${id}`,
+          prompt,
+          chipId: 'prototype',
+          projectKind: 'prototype',
+        })}
+      />
 
       <div className="community-template-view__filters" aria-label={t('community.filtersAria')}>
         <div className="community-template-view__filter-main">
@@ -381,6 +391,7 @@ export function CommunityView({ onRemixTemplate, onUsePrompt, onUsePlugin }: Com
           </article>
         ))}
       </div>
+
       {detailsRecord ? (
         <PluginDetailsModal
           record={detailsRecord}

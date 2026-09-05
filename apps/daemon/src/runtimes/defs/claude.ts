@@ -9,6 +9,7 @@ const CLAUDE_FALLBACK_MODELS = [
   { id: 'opus', label: 'Opus (alias)' },
   { id: 'haiku', label: 'Haiku (alias)' },
   { id: 'fable', label: 'Fable (alias)' },
+  { id: 'claude-fable-5-1', label: 'Claude Fable 5.1' },
   { id: 'claude-opus-5', label: 'claude-opus-5' },
   { id: 'claude-sonnet-5', label: 'claude-sonnet-5' },
   { id: 'claude-fable-5', label: 'claude-fable-5' },

@@ -1,0 +1,230 @@
+<!-- Gruia original example generated with Claude, 2026-09-05. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convierte visitas en reuniones</title>
+<style>
+  :root {
+    --bg:      oklch(99% 0.002 240);
+    --surface: oklch(100% 0 0);
+    --fg:      oklch(18% 0.012 250);
+    --muted:   oklch(54% 0.012 250);
+    --border:  oklch(92% 0.005 250);
+    --accent:  oklch(58% 0.18 255);
+    --accent-hover: oklch(50% 0.18 255);
+    --accent-soft:  oklch(96% 0.03 255);
+    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    --font-body:    -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap { width: min(1080px, 100% - 48px); margin-inline: auto; }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 10;
+    background: oklch(99% 0.002 240 / 0.8);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; }
+  .brand-mark { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); position: relative; }
+  .brand-mark::after {
+    content: ""; position: absolute; inset: 6px; border-radius: 2px;
+    background: var(--surface); clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; color: var(--muted); }
+  .nav-links a { padding: 6px 0; transition: color .15s; }
+  .nav-links a:hover { color: var(--fg); }
+  .nav-cta {
+    font-size: 14px; font-weight: 500; padding: 8px 14px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+    transition: border-color .15s, background .15s;
+  }
+  .nav-cta:hover { border-color: var(--fg); }
+
+  /* Hero */
+  .hero { padding: 104px 0 88px; text-align: center; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 500; color: var(--accent);
+    background: var(--accent-soft); border: 1px solid oklch(88% 0.06 255);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 28px;
+  }
+  .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 6.4vw, 72px);
+    line-height: 1.02; letter-spacing: -0.03em; font-weight: 650;
+    max-width: 14ch; margin: 0 auto 24px; text-wrap: balance;
+  }
+  .lede {
+    font-size: 19px; color: var(--muted); max-width: 46ch;
+    margin: 0 auto 40px; text-wrap: pretty;
+  }
+  .actions { display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    height: 48px; padding: 0 22px; border-radius: 10px;
+    background: var(--accent); color: oklch(100% 0 0);
+    font-size: 15px; font-weight: 600; letter-spacing: -0.01em;
+    border: 1px solid transparent; cursor: pointer; font-family: inherit;
+    transition: background .15s, transform .15s;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-primary svg { width: 16px; height: 16px; transition: transform .15s; }
+  .btn-primary:hover svg { transform: translateX(2px); }
+  .hint { font-size: 14px; color: var(--muted); }
+  .hint strong { color: var(--fg); font-weight: 500; }
+
+  /* Proof strip */
+  .proof {
+    margin: 0 auto; padding: 22px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    display: flex; justify-content: center; gap: 56px; flex-wrap: wrap;
+    font-size: 14px; color: var(--muted);
+  }
+  .proof span b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Benefits */
+  .benefits { padding: 88px 0 112px; }
+  .section-head { max-width: 52ch; margin-bottom: 44px; }
+  .section-head h2 {
+    font-family: var(--font-display); font-size: 32px; letter-spacing: -0.02em;
+    line-height: 1.15; font-weight: 600; margin-bottom: 12px; text-wrap: balance;
+  }
+  .section-head p { color: var(--muted); font-size: 17px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 28px; display: flex; flex-direction: column; gap: 14px;
+    transition: border-color .15s;
+  }
+  .card:hover { border-color: oklch(80% 0.01 250); }
+  .icon {
+    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .icon svg { width: 20px; height: 20px; }
+  .card h3 { font-size: 18px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.3; }
+  .card p { color: var(--muted); font-size: 15px; text-wrap: pretty; }
+  .card .stat {
+    margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border);
+    font-size: 13px; color: var(--muted);
+  }
+  .card .stat b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Footer */
+  footer { border-top: 1px solid var(--border); padding: 28px 0; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  footer a:hover { color: var(--fg); }
+
+  @media (max-width: 820px) {
+    .grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .hero { padding: 72px 0 60px; }
+    .proof { gap: 24px 36px; }
+    .benefits { padding: 64px 0 80px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav" data-od-id="nav">
+  <div class="wrap">
+    <a href="#" class="brand" data-od-id="brand" aria-label="Inicio">
+      <span class="brand-mark" aria-hidden="true"></span>
+      Reunio
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a href="#beneficios">Producto</a>
+      <a href="#beneficios">Casos de uso</a>
+      <a href="#beneficios">Precios</a>
+    </nav>
+    <a href="#" class="nav-cta" data-od-id="nav-login">Iniciar sesión</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap" data-od-id="hero">
+    <span class="eyebrow">Para equipos de ventas B2B</span>
+    <h1 data-od-id="hero-title">Convierte visitas en reuniones</h1>
+    <p class="lede" data-od-id="hero-lede">
+      Identifica qué empresas visitan tu web, califícalas al instante y ofréceles un hueco en la agenda de tu equipo comercial sin formularios interminables.
+    </p>
+    <div class="actions">
+      <button type="button" class="btn-primary" data-od-id="cta-demo">
+        Solicitar demo
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </button>
+      <span class="hint"><strong>30 minutos</strong> · sin compromiso</span>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="proof" data-od-id="proof-strip">
+      <span>Integración con <b>Google Calendar</b> y <b>Outlook</b></span>
+      <span>Sincronización con <b>HubSpot</b> y <b>Salesforce</b></span>
+      <span>Datos alojados en la <b>UE</b></span>
+    </div>
+  </div>
+
+  <section class="benefits wrap" id="beneficios" data-od-id="benefits">
+    <div class="section-head">
+      <h2 data-od-id="benefits-title">Menos fricción entre el interés y la primera conversación</h2>
+      <p>Tres cosas que cambian desde el primer día.</p>
+    </div>
+    <div class="grid">
+      <article class="card" data-od-id="benefit-card-identificacion">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+        </div>
+        <h3>Identifica a la empresa detrás de cada visita</h3>
+        <p>Resuelve el dominio, el sector y el tamaño de quien navega por tu web, sin cookies de terceros ni que rellene nada.</p>
+        <div class="stat">Cobertura habitual: <b>60–70 %</b> del tráfico empresarial</div>
+      </article>
+
+      <article class="card" data-od-id="benefit-card-calificacion">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg>
+        </div>
+        <h3>Califica en tiempo real según tu ICP</h3>
+        <p>Define tu cliente ideal una vez y prioriza automáticamente las cuentas que encajan, para que ventas solo hable con quien importa.</p>
+        <div class="stat">Reglas por <b>sector, tamaño y país</b></div>
+      </article>
+
+      <article class="card" data-od-id="benefit-card-agenda">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9.5 15.5l2 2 3.5-4"/></svg>
+        </div>
+        <h3>Reserva la reunión sin salir de la página</h3>
+        <p>Las cuentas cualificadas ven la agenda real de tu equipo y eligen hora al momento. La reunión aparece en el CRM con todo el contexto.</p>
+        <div class="stat">Enrutado automático al <b>comercial asignado</b></div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer data-od-id="footer">
+  <div class="wrap">
+    <span>© 2026 Reunio. Todos los derechos reservados.</span>
+    <span><a href="#">Privacidad</a> · <a href="#">Condiciones</a> · <a href="#">Contacto</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
