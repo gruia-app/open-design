@@ -1761,7 +1761,7 @@ export function EntryShell({
           <div
             className={[
               'entry-main__inner',
-              view === 'home' ? '' : 'entry-main__inner--wide',
+              view === 'home' && !GRUIA_MANAGED ? '' : 'entry-main__inner--wide',
             ].filter(Boolean).join(' ')}
           >
             <div className="entry-main__view-home" data-testid="entry-view-home" data-active={view === 'home' ? 'true' : 'false'} {...inactiveViewProps(view === 'home')}>

@@ -1,3 +1,4 @@
+import { GRUIA_MANAGED } from '../state/gruia-managed';
 // Lovart-style centered hero for the entry Home view.
 //
 // The prompt textarea is the canonical creation surface: the user
@@ -1543,7 +1544,7 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
           lands the ink on the card's own centre line. Keyed off the string, not
           the locale: any translation that ends in ？！。 gets it, and Latin
           headlines (a narrow "?") are left alone. */}
-      {isDock ? null : (
+      {isDock || GRUIA_MANAGED ? null : (
         <>
           <h1
             className={

@@ -1,3 +1,5 @@
+import { GRUIA_MANAGED } from '../state/gruia-managed';
+import { GruiaDesignWorkflow, type GruiaDesignStage } from './GruiaDesignWorkflow';
 // Composed Home view — the top-down layout the entry view renders
 // when the left nav rail's "Home" tab is active.
 //
@@ -703,6 +705,8 @@ export function HomeView({
       : { prompt: '', designSystemId: null, designSystemCatalogScope: null };
   }
   const restoredDraft = restoredDraftRef.current;
+  const gruiaPage = GRUIA_MANAGED && variant === 'page';
+  const [gruiaStage, setGruiaStage] = useState<GruiaDesignStage>(restoredDraft.prompt ? 'prototype' : 'style');
   const [designSystemId, setDesignSystemId] = useState<string | null>(() =>
     restoredDraft.designSystemId ??
     homeDefaultDesignSystemId(designSystems, defaultDesignSystemId),
@@ -804,6 +808,7 @@ export function HomeView({
       // Home's, an unaddressed seed would land the same text in both.
       if ((detail?.target ?? 'page') !== variant) return;
       if (typeof detail?.prompt !== 'string') return;
+      if (GRUIA_MANAGED && variant === 'page') setGruiaStage('prototype');
       setPrompt(detail.prompt);
       setPromptEditedByUser(detail.prompt.trim().length > 0);
     }
@@ -1142,6 +1147,7 @@ export function HomeView({
   useEffect(() => {
     if (!promptHandoff || consumedHandoffIdRef.current === promptHandoff.id) return;
     consumedHandoffIdRef.current = promptHandoff.id;
+    if (GRUIA_MANAGED) setGruiaStage('prototype');
     setError(null);
     if (promptHandoff.source === 'plugin-use') {
       setPendingPluginUseHandoff({
@@ -3085,7 +3091,7 @@ export function HomeView({
 
   return (
     <div
-      className={`home-view${recentProjectsEmpty ? ' home-view--centered' : ''}${
+      className={`home-view${recentProjectsEmpty && !gruiaPage ? ' home-view--centered' : ''}${
         variant === 'dock' ? ' home-view--dock' : ''
       }`}
       data-testid="home-view"
@@ -3106,7 +3112,20 @@ export function HomeView({
           installationId={deepSeekV4FlashCampaignInstallationId}
         />
       )}
-      <HomeHero
+      {gruiaPage && !workspaceContextState.identityChangePending && <GruiaDesignWorkflow
+        key={pluginAccountGeneration}
+        stage={gruiaStage} onStageChange={setGruiaStage}
+        systems={designSystemPickerSystems} loading={designSystemsLoading ?? false}
+        selectedId={designSystemId} onSelect={handleDesignSystemChange}
+        projects={projects} workspaceContext={workspaceContext} onOpenProject={onOpenProject}
+        onPreparePrompt={(nextPrompt) => {
+          clearActiveChipSelection();
+          setActiveSkill(null);
+          setFallbackProjectKind('prototype');
+          handlePromptChange(nextPrompt);
+        }}
+      />}
+      {(!gruiaPage || gruiaStage === 'prototype') && <HomeHero
         variant={variant}
         collapseSignal={collapseSignal}
         workspaceContext={workspaceContext}
@@ -3224,7 +3243,7 @@ export function HomeView({
         // recommendation engine and `RecommendedStartRegion` are left intact;
         // only this mount point is gone.
         recommendationSlot={artifactUpgradeSlot}
-      />
+      />}
 
       {recentProjectsEmpty ? null : (
       <RecentProjectsStrip

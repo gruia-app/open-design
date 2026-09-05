@@ -1,0 +1,35 @@
+.workflow { width: 100%; min-width: 0; color: var(--text); }
+.workflow header { margin-bottom: 24px; }
+.workflow h1 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.025em; color: var(--text-strong); }
+.workflow h2 { font-size: 20px; line-height: 1.3; color: var(--text-strong); margin: 0 0 12px; }
+.workflow p { max-width: 70ch; line-height: 1.55; }
+.eyebrow { color: var(--brand-ink); font-weight: 600; font-size: 12px; }
+.stages { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+.workflow button { font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-strong); border-radius: 8px; min-height: 40px; padding: 8px 12px; }
+.workflow button:hover { background: var(--bg-subtle); }
+.workflow button:disabled { opacity: .5; cursor: not-allowed; }
+.workflow button:focus-visible, .workflow input:focus-visible, .workflow select:focus-visible, .workflow textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.stages button { display: flex; align-items: center; gap: 8px; border-color: transparent; }
+.stages button span { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.stages button[aria-current], .workflow .primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+.stages button[aria-current] span { color: inherit; }
+.panel { padding: 4px 0 20px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+.actions button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.field { display: flex; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 600; margin: 14px 0; flex: 1; min-width: 0; }
+.field input, .field select, .field textarea { min-width: 0; width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; font: inherit; box-sizing: border-box; }
+.form { padding: 20px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; }
+.form legend { font-weight: 600; padding: 0 6px; }
+.formRow { display: flex; gap: 20px; }
+.colors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
+.color { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.color input { width: 100%; min-height: 40px; padding: 2px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+.color span { color: var(--text-muted); font-family: monospace; }
+.confirm { display: flex; align-items: center; gap: 10px; line-height: 1.5; font-size: 14px; margin-top: 20px; }
+.confirm input { flex: 0 0 16px; width: 16px; min-width: 16px; height: 16px; padding: 0; margin: 3px 0 0; }
+.confirm span { min-width: 0; flex: 1; }
+.note { color: var(--text-muted); font-size: 13px; }
+.previewGround { padding: 12px; border: 1px solid var(--border); background: var(--bg-subtle); overflow: auto; border-radius: 10px; }
+.preview, .mobilePreview { display: block; height: 560px; width: 100%; border: 0; background: var(--bg); margin: 0 auto; }
+.mobilePreview { max-width: 390px; }
+@media (max-width: 640px) { .workflow h1 { font-size: 24px; } .stages { flex-direction: column; } .form { padding: 12px; } .formRow { flex-direction: column; gap: 0; } .colors { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -12,7 +12,7 @@ The source recipes use Node 24 Bookworm, pnpm 10.33.2, the frozen lockfile, and
 Claude Code 2.1.261. Build from the repository root:
 
 ```bash
-docker build --platform linux/amd64 -t gruia-design:20260905-community -f deploy/gruia/Dockerfile .
+docker build --platform linux/amd64 -t gruia-design:20260905-identity -f deploy/gruia/Dockerfile .
 docker build --platform linux/amd64 -t gruia-design-gateway:20260905-password -f deploy/gruia/Dockerfile.gateway .
 ```
 
@@ -65,7 +65,7 @@ Create a protected `/opt/design/lifecycle.env` with these non-secret paths:
 DESIGN_DEPLOY_ROOT=/opt/design
 DESIGN_STUDIO_DATA=/opt/design/studios/internal
 DESIGN_STUDIO_ENV=/opt/design/studio.env
-DESIGN_STUDIO_IMAGE=gruia-design:20260905-community
+DESIGN_STUDIO_IMAGE=gruia-design:20260905-identity
 DESIGN_GATEWAY_CONFIG=/opt/design/gateway.json
 DESIGN_GATEWAY_DATA=/opt/design/gateway-data
 DESIGN_GATEWAY_IMAGE=gruia-design-gateway:20260905-password
@@ -119,3 +119,25 @@ substitute for a person's password sign-in at the public gateway.
 For upstream updates, fetch `upstream`, review its changes on an integration
 branch, and run `pnpm guard`, `pnpm typecheck`, gateway tests and affected
 package builds before replacing either production image.
+
+## Gruia design workflow
+
+The managed Home presents three stages: choose and compare up to three catalog
+styles, prepare a B2B/landing/game prototype brief for Claude, and review an HTML
+prototype before saving an identity. Community briefs remain available from the
+prototype stage and preserve the selected style.
+
+Identity versions are immutable project JSON files written through the existing
+project-file API. An approval records the project, HTML filename, exact source,
+SHA-256 digest, reference style and design guide, visual tokens, implementation
+notes and approval time. Saving and downloading re-read the prototype; a changed
+file requires review again. Saving a later identity creates another version.
+
+`b2bweb-identity.json` matches B2BWeb's `StyleVersionCreate` request body
+(`name`, `description`, `branding`). Its `branding.gruiaDesign.prototypeHtml`
+contains the approved example code for implementation review. The same HTML
+and a Markdown implementation guide can also be downloaded separately.
+The destination API is `POST /api/v1/websites/{website_id}/styles`, requiring a
+member session for that website's organization; it creates an inactive version.
+There is no automatic upload or activation from Design. Activation is an
+explicit B2BWeb action after implementation review.
