@@ -137,7 +137,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   const raw = request.url;
   if (!isSafeProxyPath(raw)) { json(response, 400, { error: "invalid_request" }); return; }
   const url = new URL(raw, core.config.publicOrigin); const method = request.method ?? "GET";
-  if (url.pathname === "/healthz") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } noStore(response); response.writeHead(200, { "content-type": "text/plain; charset=utf-8" }); response.end("ok\n"); return; }
+  if (url.pathname === "/healthz" || url.pathname === "/health") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } noStore(response); response.writeHead(200, { "content-type": "text/plain; charset=utf-8" }); response.end("ok\n"); return; }
   if (url.pathname === "/auth") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } html(response, 200, "Gruia Design", "<a href=\"/auth/login\">Entrar con mi cuenta de Gruia</a>"); return; }
   if (url.pathname === "/auth/login") {
     if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; }
