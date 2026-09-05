@@ -1,0 +1,29 @@
+{
+  "name": "@open-design/gruia-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Authenticated Gruia gateway for isolated OpenDesign daemons.",
+  "bin": {
+    "gruia-gateway": "./dist/index.mjs"
+  },
+  "scripts": {
+    "build": "node ./esbuild.config.mjs && tsc -p tsconfig.json --emitDeclarationOnly",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
+    "test": "vitest run -c vitest.config.ts"
+  },
+  "dependencies": {
+    "jose": "6.2.10",
+    "pg": "8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.12.2",
+    "@types/pg": "8.15.6",
+    "esbuild": "0.28.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.6"
+  },
+  "engines": {
+    "node": "~24"
+  }
+}

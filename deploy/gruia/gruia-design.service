@@ -1,0 +1,19 @@
+[Unit]
+Description=Gruia Design services managed by server-manager
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=/opt/design/lifecycle.env
+WorkingDirectory=/opt/design
+ExecStart=/bin/bash /opt/design/deploy/gruia/start-all.sh
+ExecStop=/bin/bash /opt/design/deploy/gruia/stop-all.sh
+TimeoutStartSec=180
+TimeoutStopSec=90
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

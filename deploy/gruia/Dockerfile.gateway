@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:1.7
+# Authenticated gateway; private configuration is mounted at runtime.
+ARG NODE_IMAGE=node:24-bookworm-slim
+FROM ${NODE_IMAGE} AS build
+ENV CI=true COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+WORKDIR /workspace
+COPY . ./
+RUN corepack enable \
+    && corepack prepare pnpm@10.33.2 --activate \
+    && pnpm install --frozen-lockfile \
+    && pnpm --filter ./tools/gruia-gateway... run build \
+    && pnpm --filter ./tools/gruia-gateway deploy --legacy --prod /opt/gruia-gateway
+
+FROM ${NODE_IMAGE}
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init ca-certificates \
+    && groupadd --gid 1001 gruia-gateway \
+    && useradd --uid 1001 --gid 1001 --create-home --home-dir /var/lib/gruia-gateway --shell /usr/sbin/nologin gruia-gateway \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=build --chown=1001:1001 /opt/gruia-gateway ./
+ENV NODE_ENV=production HOME=/var/lib/gruia-gateway
+USER 1001:1001
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/index.mjs"]

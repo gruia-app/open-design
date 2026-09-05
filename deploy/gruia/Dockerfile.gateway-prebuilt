@@ -1,0 +1,7 @@
+FROM node:24-bookworm-slim
+WORKDIR /app
+COPY --chown=1001:1001 . ./
+ENV NODE_ENV=production HOME=/var/lib/gruia-gateway
+USER 1001:1001
+EXPOSE 3006
+CMD ["node", "dist/index.mjs"]

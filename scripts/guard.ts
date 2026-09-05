@@ -126,6 +126,7 @@ const residualAllowedExactPaths = new Set([
   "apps/daemon/tests/fixtures/fake-kimi-acp-cli.mjs",
   "tools/dev/bin/tools-dev.mjs",
   "tools/dev/esbuild.config.mjs",
+  "tools/gruia-gateway/esbuild.config.mjs",
   "tools/pack/bin/tools-pack.mjs",
   "tools/pack/esbuild.config.mjs",
   // Checked-in bin shim so pnpm can link `tools-release` before dist output exists.
@@ -1034,6 +1035,7 @@ const toolsRootAllowlist = new Map<string, "directory" | "file">([
   // Windows shim experiment from PR #683 and is not an active repo boundary.
   ["AGENTS.md", "file"],
   ["dev", "directory"],
+  ["gruia-gateway", "directory"],
   ["pack", "directory"],
   ["release", "directory"],
   ["serve", "directory"],
@@ -1050,7 +1052,7 @@ async function checkToolsLayout(): Promise<boolean> {
     const repositoryPath = `tools/${entry.name}${entry.isDirectory() ? "/" : ""}`;
 
     if (expected == null) {
-      violations.push(`${repositoryPath} -> tools/ top-level entries are allowlisted; expected only AGENTS.md, dev/, pack/, release/, and serve/`);
+      violations.push(`${repositoryPath} -> tools/ top-level entries are allowlisted; expected only AGENTS.md, dev/, gruia-gateway/, pack/, release/, and serve/`);
       continue;
     }
 

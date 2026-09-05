@@ -4,6 +4,7 @@ Follow the root `AGENTS.md` first. This file only records module-level boundarie
 
 ## Active tools
 
+- `tools/gruia-gateway` provides `@open-design/gruia-gateway`. It owns Gruia WorkOS authentication, organization admission, sessions, and the private proxy to each organization's daemon. Server lifecycle stays in `server-manager`; use this package's `typecheck`, `test`, and `build` commands to validate changes.
 - `tools/dev` provides `@open-design/tools-dev` and the `tools-dev` bin. It is the only currently active local development lifecycle control plane.
 - `pnpm tools-dev` manages daemon -> web -> desktop.
 - `pnpm tools-dev run web` runs foreground daemon + web for the Playwright webServer flow.

@@ -1,0 +1,35 @@
+{
+  "app_key": "design",
+  "repository": "gruia-app/design",
+  "purpose": "Advanced experience-design application",
+  "upstream": {
+    "repository": "nexu-io/open-design",
+    "license": "Apache-2.0"
+  },
+  "browser": {
+    "host": "127.0.0.1",
+    "web": {
+      "port": 3006,
+      "url": "http://127.0.0.1:3006",
+      "health": "http://127.0.0.1:3006/"
+    },
+    "daemon": {
+      "port": 9007,
+      "health": "http://127.0.0.1:9007/api/health"
+    }
+  },
+  "data": {
+    "required_environment": "OD_DATA_DIR",
+    "requirement": "Caller supplies an existing writable absolute persistent directory."
+  },
+  "commands": {
+    "prepare": "scripts/ecosystem/prepare-browser.sh",
+    "start": "scripts/ecosystem/start-browser.sh",
+    "status": "scripts/ecosystem/status-browser.sh",
+    "stop": "scripts/ecosystem/stop-browser.sh"
+  },
+  "design_engine": "claude",
+  "maintenance_provider": "codex",
+  "production_url": "https://design.gruia.app",
+  "customer_access": "closed"
+}
