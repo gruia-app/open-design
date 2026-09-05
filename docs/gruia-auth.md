@@ -1,74 +1,57 @@
-# Gruia authentication gateway
+# Gruia Design authentication
 
-`@open-design/gruia-gateway` is the only public-facing gateway for `https://design.gruia.app`. It binds to loopback (`127.0.0.1:3006` by default); a parent-managed TLS reverse proxy owns the public hostname. It does not start, stop, configure, or discover OpenDesign daemons.
+`@open-design/gruia-gateway` authenticates Gruia Design directly against the canonical `public.users` record. It does not use WorkOS, OAuth callbacks, provider tokens, or a Contenido API. It only reads the shared Postgres database; it never creates users, resets passwords, or writes identity data.
 
-The gateway does not select a design engine. The deployment owner configures each mapped daemon for Claude. Codex remains a maintenance tool outside this process.
+## Runtime configuration migration
 
-Client access is closed by default. With `clientAccessOpen: false`, only organizations explicitly marked `audience: "internal"` are admitted. Other configured organizations are treated as clients and rejected, including existing sessions. Each organization needs a separate daemon and volume.
+Remove the complete `workos` object from the protected gateway JSON configuration, including the former client secret and callback URL. Remove any `sessionTtlSeconds` override: sessions are fixed at four hours. Keep `publicOrigin`, `postgresUrl`, `sessionSecret`, `databasePath`, `organizations`, and the existing daemon targets. `publicOrigin` must be the exact public HTTPS origin.
 
-## Required protected configuration
+The gateway issues a new `__Host-gruia_design_session` cookie in production. It is opaque, HttpOnly, Secure, host-only (no `Domain` attribute), `SameSite=Lax`, and has a fixed four-hour default lifetime. It is stored only as a hash in the local SQLite `password_sessions` table. Old WorkOS cookies and the old `sessions` table are not read.
 
-Set `GRUIA_GATEWAY_CONFIG` to an absolute JSON file readable only by the gateway account (for example mode `0600`). This is the complete configuration shape; do not put these credentials in an OpenDesign/daemon configuration file.
+## Required read-only database access
 
-```json
-{
-  "publicOrigin": "https://design.gruia.app",
-  "bindHost": "127.0.0.1",
-  "port": 3006,
-  "databasePath": "/protected/gruia/gateway.sqlite",
-  "sessionSecret": "base64-encoded-32-random-bytes",
-  "postgresUrl": "postgresql://gateway_role:password@db.example/gruia?sslmode=require",
-  "clientAccessOpen": false,
-  "sessionTtlSeconds": 14400,
-  "requestBodyLimitBytes": 10485760,
-  "upstreamTimeoutMs": 30000,
-  "workos": {
-    "clientId": "client_…",
-    "clientSecret": "sk_…",
-    "issuer": "https://api.workos.com/user_management/client_…",
-    "redirectUri": "https://design.gruia.app/auth/callback"
-  },
-  "organizations": {
-    "organization-uuid-or-canonical-id": {
-      "audience": "internal",
-      "upstream": "http://127.0.0.1:9007",
-      "daemonApiToken": "per-org-private-daemon-token"
-    }
-  }
-}
-```
-
-Every organization entry must use an explicit loopback HTTP upstream, and each needs a distinct daemon/API token. No arbitrary upstream URL, WorkOS key, Postgres URL, cookie, incoming bearer token, or caller identity header is forwarded to a daemon. The gateway injects only that organization’s configured daemon token.
-
-Pin `workos.issuer` to the issuer returned by the Gruia client’s WorkOS OpenID discovery document (`https://api.workos.com/user_management/{clientId}/.well-known/openid-configuration`). Do not substitute the generic API origin. See the [WorkOS session-token contract](https://workos.com/docs/reference/authkit/session-tokens).
-
-The WorkOS redirect URI must be registered by the deployment owner and exactly equal `publicOrigin + /auth/callback`. The gateway uses AuthKit authorization-code PKCE S256 at `https://api.workos.com/user_management/authorize`, exchanges code at `/user_management/authenticate`, verifies RS256 access JWTs against `https://api.workos.com/sso/jwks/{clientId}`, and requires issuer, `client_id`, `sid`, `exp`, and `sub`.
-
-## Authorization and sessions
-
-There is no email fallback, JIT user creation, caller-selected organization, or ecosystem-auth broker. On sign-in and every protected HTTP/SSE/WebSocket request, authorization comes only from this canonical Postgres join:
+The readonly gateway role needs `SELECT` on the fields used for authentication and admission:
 
 ```sql
-public.user_identities(provider = 'workos', provider_subject)
-JOIN public.users(id, is_active)
-JOIN public.organization_members(organization_id, user_id, role)
+GRANT SELECT (id, email, hashed_password, is_active, account_status)
+  ON public.users TO <gruia_gateway_readonly_role>;
+GRANT SELECT (user_id, organization_id, role)
+  ON public.organization_members TO <gruia_gateway_readonly_role>;
 ```
 
-The resulting organization must be explicitly configured. A subject matched to zero or more than one permitted organization is denied; organization selection is intentionally not implemented yet. Members of an admitted organization knowingly share that organization’s isolated design studio.
+The login query uses `lower(email)`, requires `is_active = TRUE` and `lower(account_status::text) = 'active'` (the shared database contains both upper- and lowercase values), then admits exactly one configured organization membership. Protected requests repeat the active-status and membership lookup using the canonical `public.users.id`; a deactivated user or removed membership loses access immediately.
 
-Opaque login state is single-use, durable, and bound to an HttpOnly cookie in the browser that started login. Opaque session IDs, state verifiers, CSRF values, provider access/refresh tokens, and provider session IDs are protected in local SQLite; provider tokens use AES-256-GCM with `sessionSecret`. Browser cookies are host-only, `HttpOnly`, `SameSite=Lax`, `Secure` in production, and never expose provider credentials. Access tokens are refreshed near expiry; failed refresh removes the local session. Logout deletes the session first and then best-effort revokes its WorkOS session.
+Canonical `hashed_password` records may be bcrypt (`$2b$`, with compatible bcrypt variants) or `pbkdf2_sha256$iterations$base64url(salt)$base64url(digest)`. PBKDF2-SHA256 verification is asynchronous and refuses iteration counts over 2,000,000. Bcrypt verification uses async `bcryptjs` 3.0.3 and therefore preserves bcrypt's 72 UTF-8-byte input behavior.
 
-Public routes are only `GET /healthz` (also `/health` for server-manager), `GET /auth`, `GET /auth/login`, and `GET /auth/callback`. `/auth/session` returns only local user ID, organization ID, role, and a CSRF token. `POST /auth/logout` requires exact public `Origin` plus `X-Gruia-CSRF`. All mutation and WebSocket requests require the exact public Origin. Authentication mutations additionally require `X-Gruia-CSRF`; ordinary studio requests use the existing browser client. VIEWER memberships cannot mutate or open a terminal WebSocket. Private responses are `no-store`; upstream redirects and upstream `Set-Cookie` are rejected/stripped.
+## Browser behavior
 
-## Build and launch
+`GET /auth` and `GET /auth/login` render the same Spanish email/password form at the Gruia Design origin. There is no external navigation, registration, or reset flow. Login requires an exact `Origin` match and single-use durable CSRF state. Logout requires the same Origin and the session’s CSRF token; failed or disallowed login attempts return the same Spanish generic error. Login attempts have per-process global and normalized-email caps with bounded-memory pruning. These limits are intentionally a local defense layer, not a replacement for edge rate limiting.
 
-Runtime: Node 24, installed package dependencies, a writable protected directory for SQLite, network reachability to WorkOS/JWKS and Postgres, and already-running per-org private daemons. Build and validate without root aliases:
+## Admission and transport
 
-```bash
-pnpm --filter @open-design/gruia-gateway typecheck
-pnpm --filter @open-design/gruia-gateway test
-pnpm --filter @open-design/gruia-gateway build
-# Use deploy/gruia/start-gateway.sh through server-manager.
-```
+Keep `clientAccessOpen: false`. Only an explicitly configured organization with
+`audience: "internal"` can enter. Other organizations default to `"client"` and
+are denied while client access is closed, including existing sessions. Each
+organization has its own loopback daemon, private API token and storage volume.
+Ambiguous membership across admitted studios is denied until organization
+selection is implemented.
 
-`testMode: true` is allowed only with an HTTP localhost public origin and changes the cookie name/security solely for explicit local tests. It must never be used for `design.gruia.app`.
+Every protected HTTP, SSE and WebSocket request revalidates canonical membership.
+Mutations and WebSockets require the exact public Origin. VIEWER members cannot
+mutate or use WebSockets. The proxy strips caller cookies and identity headers,
+injects only the selected daemon token, and marks private responses no-store.
+
+## PostgreSQL TLS
+
+Production verifies both the database certificate and its hostname. Mount the
+operator-provisioned public certificate at `/etc/gruia/postgres-ca.pem` and use
+`sslmode=verify-full&sslrootcert=/etc/gruia/postgres-ca.pem` in the private DSN.
+The DSN hostname is `acv2-pg-primary`, matching the certificate. The container
+maps that name to `DESIGN_POSTGRES_HOST_IP`; `DESIGN_POSTGRES_CA` supplies the
+read-only certificate mount. Never disable certificate verification to work
+around the database's self-signed certificate.
+
+The gateway and the TLS proxy must both send `Referrer-Policy: same-origin`.
+With `no-referrer`, browsers can send `Origin: null` for a form POST, which the
+login correctly rejects. Keep the exact-origin check and use the Caddy fragment
+in `deploy/gruia/Caddyfile`.

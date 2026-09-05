@@ -1,0 +1,12 @@
+design.gruia.app {
+    encode zstd gzip
+    header X-Robots-Tag "noindex, nofollow"
+    header Referrer-Policy "same-origin"
+    header X-Content-Type-Options "nosniff"
+    reverse_proxy localhost:3006 {
+        header_up -Forwarded
+        header_up -X-Proxy-Authenticated
+        header_up -X-Proxy-Auth-Token
+        flush_interval -1
+    }
+}

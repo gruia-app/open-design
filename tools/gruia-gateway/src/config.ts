@@ -27,14 +27,6 @@ function publicOrigin(value: unknown, testMode: boolean): string {
   return url.origin;
 }
 
-function issuer(value: unknown): string {
-  const raw = text(value, "workos.issuer");
-  let url: URL;
-  try { url = new URL(raw); } catch { throw new Error("Invalid workos.issuer"); }
-  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) throw new Error("Invalid workos.issuer");
-  return raw;
-}
-
 function loopbackUpstream(value: unknown, organizationId: string): string {
   const raw = text(value, `organizations.${organizationId}.upstream`);
   let url: URL;
@@ -65,15 +57,11 @@ export function loadConfig(path: string): GatewayConfig {
   try { raw = JSON.parse(readFileSync(resolve(path), "utf8")); } catch { throw new Error("Unable to read Gruia gateway configuration"); }
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("Gateway configuration must be an object");
   const value = raw as Record<string, unknown>;
+  if (value.workos !== undefined) throw new Error("Remove deprecated workos configuration");
   const testMode = value.testMode === true;
   const bindHost = value.bindHost === undefined ? "127.0.0.1" : text(value.bindHost, "bindHost", 255);
   if (!(bindHost === "127.0.0.1" || bindHost === "::1" || bindHost === "localhost" || isIP(bindHost) === 4 && bindHost === "127.0.0.1")) throw new Error("Gateway only binds to loopback");
-  const workos = value.workos;
-  if (!workos || typeof workos !== "object" || Array.isArray(workos)) throw new Error("Invalid workos configuration");
-  const workosValue = workos as Record<string, unknown>;
   const origin = publicOrigin(value.publicOrigin, testMode);
-  const redirectUri = text(workosValue.redirectUri, "workos.redirectUri");
-  if (redirectUri !== `${origin}/auth/callback`) throw new Error("workos.redirectUri must equal publicOrigin/auth/callback");
   const sessionSecret = text(value.sessionSecret, "sessionSecret", 512);
   const decodedSecret = Buffer.from(sessionSecret, "base64");
   if (decodedSecret.length !== 32) throw new Error("sessionSecret must be 32 random bytes encoded as base64");
@@ -83,13 +71,12 @@ export function loadConfig(path: string): GatewayConfig {
     bindHost,
     port: integer(value.port, "port", 3006, 1, 65535),
     publicOrigin: origin,
-    cookieName: testMode ? "gruia_session" : "__Host-gruia_session",
+    cookieName: testMode ? "gruia_design_session" : "__Host-gruia_design_session",
     databasePath: resolve(text(value.databasePath, "databasePath")),
     sessionSecret,
     postgresUrl: text(value.postgresUrl, "postgresUrl"),
-    workos: Object.freeze({ clientId: text(workosValue.clientId, "workos.clientId", 255), clientSecret: text(workosValue.clientSecret, "workos.clientSecret"), issuer: workosValue.issuer === undefined ? "https://api.workos.com/" : issuer(workosValue.issuer), redirectUri }),
     organizations: parseOrganizations(value.organizations),
-    sessionTtlSeconds: integer(value.sessionTtlSeconds, "sessionTtlSeconds", 14_400, 300, 28_800),
+    sessionTtlSeconds: 14_400,
     requestBodyLimitBytes: integer(value.requestBodyLimitBytes, "requestBodyLimitBytes", 10 * 1024 * 1024, 1, 50 * 1024 * 1024),
     upstreamTimeoutMs: integer(value.upstreamTimeoutMs, "upstreamTimeoutMs", 30_000, 1000, 120_000),
     clientAccessOpen: value.clientAccessOpen === true,

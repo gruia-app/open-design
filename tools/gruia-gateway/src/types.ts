@@ -12,7 +12,6 @@ export type GatewayConfig = Readonly<{
   databasePath: string;
   sessionSecret: string;
   postgresUrl: string;
-  workos: Readonly<{ clientId: string; clientSecret: string; issuer: string; redirectUri: string }>;
   organizations: ReadonlyMap<string, OrganizationTarget>;
   sessionTtlSeconds: number;
   requestBodyLimitBytes: number;
@@ -21,53 +20,39 @@ export type GatewayConfig = Readonly<{
   testMode: boolean;
 }>;
 
-export type VerifiedProviderToken = Readonly<{
-  subject: string;
-  sessionId: string;
-  expiresAt: number;
-  accessToken: string;
-  refreshToken?: string;
-}>;
-
 export type GatewayIdentity = Readonly<{
   userId: string;
-  subject: string;
   organizationId: string;
   role: string;
+}>;
+
+export type GatewayLoginUser = Readonly<{
+  userId: string;
+  hashedPassword: string;
+  identities: readonly GatewayIdentity[];
 }>;
 
 export type StoredSession = Readonly<{
   id: string;
   userId: string;
-  subject: string;
   organizationId: string;
   role: string;
   csrfToken: string;
-  accessToken: string;
-  refreshToken?: string;
-  providerSessionId: string;
-  providerExpiresAt: number;
   expiresAt: number;
 }>;
 
 export interface SessionStore {
-  createPendingLogin(state: string, verifier: string, expiresAt: number): void;
-  consumePendingLogin(state: string, now: number): string | null;
+  createLoginCsrf(token: string, expiresAt: number): void;
+  consumeLoginCsrf(cookieToken: string, formToken: string, now: number): boolean;
   createSession(session: StoredSession): void;
   readSession(id: string, now: number): StoredSession | null;
   verifyCsrf(id: string, csrf: string, now: number): boolean;
-  updateProviderTokens(id: string, token: VerifiedProviderToken): void;
   deleteSession(id: string): void;
   close(): void;
 }
 
 export interface AuthorizationRepository {
-  resolve(subject: string, allowedOrganizations: readonly string[]): Promise<readonly GatewayIdentity[]>;
+  findLoginUser(email: string, allowedOrganizations: readonly string[]): Promise<GatewayLoginUser | null>;
+  resolveUser(userId: string, allowedOrganizations: readonly string[]): Promise<readonly GatewayIdentity[]>;
   close(): Promise<void>;
-}
-
-export interface WorkOSClient {
-  exchangeCode(code: string, verifier: string): Promise<VerifiedProviderToken | null>;
-  refresh(refreshToken: string): Promise<VerifiedProviderToken | null>;
-  revoke(providerSessionId: string): Promise<void>;
 }

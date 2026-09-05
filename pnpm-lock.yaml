@@ -852,9 +852,9 @@ importers:
 
   tools/gruia-gateway:
     dependencies:
-      jose:
-        specifier: 6.2.10
-        version: 6.2.10
+      bcryptjs:
+        specifier: 3.0.3
+        version: 3.0.3
       pg:
         specifier: 8.16.3
         version: 8.16.3
@@ -4962,8 +4962,8 @@ packages:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
-  jose@6.2.10:
-    resolution: {integrity: sha512-iiW7J9qRFlGxvCOIBDBDxFePQSn7ZMAnrYGhrrOo6siO/MIqwfyilLR27pkfDgUk+raLuzADS8A3S/KLBisc0g==}
+  bcryptjs@3.0.3:
+    resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
 
   jose@6.2.3:
     resolution: {integrity: sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw==}
@@ -10985,7 +10985,7 @@ snapshots:
 
   jiti@2.6.1: {}
 
-  jose@6.2.10: {}
+  bcryptjs@3.0.3: {}
 
   jose@6.2.3: {}
 

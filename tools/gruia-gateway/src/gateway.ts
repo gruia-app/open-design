@@ -1,22 +1,34 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
+import bcrypt from "bcryptjs";
+import { pbkdf2, randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, request as httpRequest, type IncomingHttpHeaders, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { Transform, pipeline } from "node:stream";
 import type { Duplex } from "node:stream";
-import { authorizationUrl } from "./workos.js";
-import type { AuthorizationRepository, GatewayConfig, GatewayIdentity, SessionStore, StoredSession, WorkOSClient } from "./types.js";
+import type { AuthorizationRepository, GatewayConfig, GatewayIdentity, SessionStore, StoredSession } from "./types.js";
 
 type Authorized = Readonly<{ session: StoredSession; identity: GatewayIdentity }>;
+type Form = ReadonlyMap<string, string>;
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const strippedRequestHeaders = new Set(["authorization", "proxy-authorization", "cookie", "host", "od-api-token", "x-identity", "x-real-ip", "forwarded", "x-gruia-csrf"]);
 const identityHeader = /^(x-(identity|user|org|organization)(-|$)|x-forwarded-)/;
+const MAX_AUTH_FORM_BYTES = 8 * 1024;
+const LOGIN_CSRF_TTL_MS = 10 * 60_000;
+const LOGIN_GLOBAL_LIMIT = 60;
+const LOGIN_EMAIL_LIMIT = 8;
+const LOGIN_WINDOW_MS = 60_000;
+const MAX_TRACKED_EMAILS = 5_000;
+const MAX_PBKDF2_ITERATIONS = 2_000_000;
+const DUMMY_BCRYPT_HASH = "$2b$10$7EqJtq98hPqEX7fNZaFWoO.eD9bjVg4mbhAFt0zHehsFd6rC0AY1i";
 
 function random(): string { return randomBytes(32).toString("base64url"); }
 function nowMs(): number { return Date.now(); }
 function noStore(response: ServerResponse): void { response.setHeader("cache-control", "no-store, private, max-age=0"); response.setHeader("pragma", "no-cache"); response.setHeader("x-content-type-options", "nosniff"); }
-function html(response: ServerResponse, status: number, title: string, message: string): void { noStore(response); response.writeHead(status, { "content-type": "text/html; charset=utf-8", "referrer-policy": "no-referrer" }); response.end(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><main><h1>${title}</h1><p>${message}</p></main></html>`); }
 function json(response: ServerResponse, status: number, value: unknown): void { noStore(response); response.writeHead(status, { "content-type": "application/json; charset=utf-8" }); response.end(JSON.stringify(value)); }
 function parseCookies(header: string | undefined): ReadonlyMap<string, string> { const result = new Map<string, string>(); for (const part of (header ?? "").split(";")) { const index = part.indexOf("="); if (index > 0) { try { result.set(part.slice(0, index).trim(), decodeURIComponent(part.slice(index + 1).trim())); } catch { /* malformed cookies are absent */ } } } return result; }
 function equal(left: string, right: string): boolean { const a = Buffer.from(left); const b = Buffer.from(right); return a.length === b.length && timingSafeEqual(a, b); }
+function loginCsrfCookieName(config: GatewayConfig): string { return config.testMode ? "gruia_design_login_csrf" : "__Host-gruia_design_login_csrf"; }
+function cookie(config: GatewayConfig, name: string, value: string, expiresAt: number): string { const secure = config.testMode ? "" : "; Secure"; return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${Math.max(0, Math.floor((expiresAt - Date.now()) / 1000))}`; }
+function expiredCookie(config: GatewayConfig, name: string): string { return `${name}=; Path=/; HttpOnly; SameSite=Lax${config.testMode ? "" : "; Secure"}; Max-Age=0`; }
+function normalizeEmail(value: string | undefined): string | null { if (!value) return null; const email = value.trim().toLowerCase(); return email.length <= 320 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null; }
 
 export function isExpectedOrigin(origin: string | undefined, config: GatewayConfig): boolean { return typeof origin === "string" && origin === config.publicOrigin; }
 export function isAuthorizedWebSocketHandshake(headers: IncomingHttpHeaders, config: GatewayConfig): boolean {
@@ -47,85 +59,92 @@ export function daemonUpstreamHeaders(headers: IncomingHttpHeaders, target: URL,
   return output;
 }
 
-export class GatewayCore {
-  private readonly refreshes = new Map<string, Promise<void>>();
-  constructor(
-    readonly config: GatewayConfig,
-    private readonly store: SessionStore,
-    private readonly identities: AuthorizationRepository,
-    private readonly workos: WorkOSClient,
-    private readonly clock: () => number = nowMs,
-  ) {}
-
-  startLogin(): string {
-    const state = random(); const verifier = random();
-    this.store.createPendingLogin(state, verifier, this.clock() + 10 * 60_000);
-    return authorizationUrl(this.config.workos, state, verifier);
+/** Verifies the two formats already stored for canonical Gruia users. */
+export async function verifyCanonicalPassword(password: string, hash: string): Promise<boolean> {
+  if (password.length > 4096 || hash.length > 1024) return false;
+  if (/^\$2[aby]\$\d\d\$/.test(hash)) {
+    try { return await bcrypt.compare(password, hash); } catch { return false; }
   }
+  const match = /^pbkdf2_sha256\$([0-9]+)\$([A-Za-z0-9_-]+)\$([A-Za-z0-9_-]+)$/.exec(hash);
+  if (!match) return false;
+  const iterations = Number(match[1]);
+  if (!Number.isSafeInteger(iterations) || iterations < 1 || iterations > MAX_PBKDF2_ITERATIONS) return false;
+  let salt: Buffer; let expected: Buffer;
+  try { salt = Buffer.from(match[2], "base64url"); expected = Buffer.from(match[3], "base64url"); } catch { return false; }
+  if (salt.length < 8 || salt.length > 1024 || expected.length < 16 || expected.length > 64) return false;
+  try {
+    const actual = await new Promise<Buffer>((resolve, reject) => pbkdf2(password, salt, iterations, expected.length, "sha256", (error, derived) => error ? reject(error) : resolve(derived)));
+    return actual.length === expected.length && timingSafeEqual(actual, expected);
+  } catch { return false; }
+}
 
-  async finishLogin(state: string, code: string, browserState: string | undefined): Promise<{ id: string; expiresAt: number } | null> {
-    if (!browserState || !equal(state, browserState)) return null;
-    if (state.length > 1024 || code.length > 16_384) return null;
-    const verifier = this.store.consumePendingLogin(state, this.clock());
-    if (!verifier) return null;
-    const token = await this.workos.exchangeCode(code, verifier);
-    if (!token) return null;
-    const identity = await this.singleMappedIdentity(token.subject);
-    if (!identity) return null; // Multi-org selection is intentionally unavailable; fail closed.
-    const id = random(); const expiresAt = this.clock() + this.config.sessionTtlSeconds * 1000;
-    this.store.createSession(Object.freeze({ id, userId: identity.userId, subject: token.subject, organizationId: identity.organizationId, role: identity.role, csrfToken: random(), accessToken: token.accessToken, refreshToken: token.refreshToken, providerSessionId: token.sessionId, providerExpiresAt: token.expiresAt, expiresAt }));
-    return { id, expiresAt };
-  }
-
-  async authorize(sessionId: string | undefined): Promise<Authorized | null> {
-    if (!sessionId || sessionId.length > 1024) return null;
-    let session = this.store.readSession(sessionId, this.clock());
-    if (!session || !this.admittedOrganizationIds().includes(session.organizationId)) return null;
-    if (session.providerExpiresAt <= this.clock() + 60_000) {
-      await this.refreshSession(session);
-      session = this.store.readSession(session.id, this.clock());
-      if (!session) return null;
-    }
-    const resolved = await this.identities.resolve(session.subject, [session.organizationId]);
-    const identity = resolved.length === 1 ? resolved[0] : null;
-    if (!identity || !equal(identity.userId, session.userId) || !equal(identity.organizationId, session.organizationId)) { this.store.deleteSession(session.id); return null; }
-    return Object.freeze({ session, identity });
-  }
-
-  csrf(sessionId: string, value: string | undefined): boolean { return !!value && value.length <= 1024 && this.store.verifyCsrf(sessionId, value, this.clock()); }
-  async logout(sessionId: string | undefined): Promise<void> { if (!sessionId) return; const session = this.store.readSession(sessionId, this.clock()); this.store.deleteSession(sessionId); if (session) await this.workos.revoke(session.providerSessionId); }
-  async close(): Promise<void> { this.store.close(); await this.identities.close(); }
-
-  private async refreshSession(session: StoredSession): Promise<void> {
-    // WorkOS refresh tokens are single-use. Concurrent browser requests share
-    // one refresh, including its persisted result, within this gateway process.
-    const pending = this.refreshes.get(session.id);
-    if (pending) return pending;
-    const operation = (async () => {
-      if (!session.refreshToken) { this.store.deleteSession(session.id); return; }
-      try {
-        const refreshed = await this.workos.refresh(session.refreshToken);
-        if (!refreshed || !equal(refreshed.subject, session.subject)) { this.store.deleteSession(session.id); return; }
-        this.store.updateProviderTokens(session.id, Object.freeze({ ...refreshed, refreshToken: refreshed.refreshToken ?? session.refreshToken }));
-      } catch { this.store.deleteSession(session.id); }
-    })();
-    this.refreshes.set(session.id, operation);
-    try { await operation; } finally { this.refreshes.delete(session.id); }
-  }
-
-  private admittedOrganizationIds(): string[] {
-    return [...this.config.organizations].filter(([, target]) => target.audience === "internal" || this.config.clientAccessOpen).map(([id]) => id);
-  }
-
-  private async singleMappedIdentity(subject: string): Promise<GatewayIdentity | null> {
-    const resolved = await this.identities.resolve(subject, this.admittedOrganizationIds());
-    return resolved.length === 1 && this.config.organizations.has(resolved[0].organizationId) ? resolved[0] : null;
+class LoginRateLimiter {
+  private global: number[] = [];
+  private readonly emails = new Map<string, number[]>();
+  constructor(private readonly clock: () => number) {}
+  allow(email: string): boolean {
+    const now = this.clock(); const cutoff = now - LOGIN_WINDOW_MS;
+    this.global = this.global.filter((time) => time >= cutoff);
+    for (const [key, values] of this.emails) { const active = values.filter((time) => time >= cutoff); if (active.length) this.emails.set(key, active); else this.emails.delete(key); }
+    const attempts = this.emails.get(email) ?? [];
+    if (this.global.length >= LOGIN_GLOBAL_LIMIT || attempts.length >= LOGIN_EMAIL_LIMIT) return false;
+    if (!this.emails.has(email) && this.emails.size >= MAX_TRACKED_EMAILS) this.emails.delete(this.emails.keys().next().value!);
+    attempts.push(now); this.emails.set(email, attempts); this.global.push(now);
+    return true;
   }
 }
 
-function cookie(config: GatewayConfig, value: string, expiresAt: number): string { const secure = config.testMode ? "" : "; Secure"; return `${config.cookieName}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${Math.max(0, Math.floor((expiresAt - Date.now()) / 1000))}`; }
-function expiredCookie(config: GatewayConfig): string { return `${config.cookieName}=; Path=/; HttpOnly; SameSite=Lax${config.testMode ? "" : "; Secure"}; Max-Age=0`; }
-function csrfProtected(request: IncomingMessage, core: GatewayCore, sessionId: string): boolean { return isExpectedOrigin(request.headers.origin, core.config) && core.csrf(sessionId, typeof request.headers["x-gruia-csrf"] === "string" ? request.headers["x-gruia-csrf"] : undefined); }
+export class GatewayCore {
+  private readonly limiter: LoginRateLimiter;
+  constructor(readonly config: GatewayConfig, private readonly store: SessionStore, private readonly identities: AuthorizationRepository, private readonly clock: () => number = nowMs) { this.limiter = new LoginRateLimiter(clock); }
+  startLoginCsrf(): { token: string; expiresAt: number } { const token = random(); const expiresAt = this.clock() + LOGIN_CSRF_TTL_MS; this.store.createLoginCsrf(token, expiresAt); return { token, expiresAt }; }
+  consumeLoginCsrf(cookieToken: string | undefined, formToken: string | undefined): boolean { return !!cookieToken && !!formToken && cookieToken.length <= 1024 && formToken.length <= 1024 && this.store.consumeLoginCsrf(cookieToken, formToken, this.clock()); }
+  async login(email: string, password: string): Promise<{ id: string; expiresAt: number } | null> {
+    if (!this.limiter.allow(email)) return null;
+    const user = await this.identities.findLoginUser(email, this.admittedOrganizationIds());
+    const validPassword = await verifyCanonicalPassword(password, user?.hashedPassword ?? DUMMY_BCRYPT_HASH);
+    if (!user || !validPassword) return null;
+    const identity = this.singleAdmittedIdentity(user.identities);
+    if (!identity) return null;
+    const id = random(); const expiresAt = this.clock() + this.config.sessionTtlSeconds * 1000;
+    this.store.createSession(Object.freeze({ id, userId: identity.userId, organizationId: identity.organizationId, role: identity.role, csrfToken: random(), expiresAt }));
+    return { id, expiresAt };
+  }
+  async authorize(sessionId: string | undefined): Promise<Authorized | null> {
+    if (!sessionId || sessionId.length > 1024) return null;
+    const session = this.store.readSession(sessionId, this.clock());
+    if (!session || !this.admittedOrganizationIds().includes(session.organizationId)) return null;
+    const identity = this.singleAdmittedIdentity(await this.identities.resolveUser(session.userId, [session.organizationId]));
+    if (!identity || !equal(identity.userId, session.userId) || !equal(identity.organizationId, session.organizationId)) { this.store.deleteSession(session.id); return null; }
+    return Object.freeze({ session, identity });
+  }
+  csrf(sessionId: string, value: string | undefined): boolean { return !!value && value.length <= 1024 && this.store.verifyCsrf(sessionId, value, this.clock()); }
+  async logout(sessionId: string | undefined): Promise<void> { if (sessionId) this.store.deleteSession(sessionId); }
+  async close(): Promise<void> { this.store.close(); await this.identities.close(); }
+  private admittedOrganizationIds(): string[] { return [...this.config.organizations].filter(([, target]) => target.audience === "internal" || this.config.clientAccessOpen).map(([id]) => id); }
+  private singleAdmittedIdentity(identities: readonly GatewayIdentity[]): GatewayIdentity | null { return identities.length === 1 && this.config.organizations.has(identities[0].organizationId) && this.admittedOrganizationIds().includes(identities[0].organizationId) ? identities[0] : null; }
+}
+
+function loginPage(response: ServerResponse, core: GatewayCore, status = 200, error?: string): void {
+  const login = core.startLoginCsrf(); const csrfName = loginCsrfCookieName(core.config);
+  noStore(response); response.setHeader("set-cookie", cookie(core.config, csrfName, login.token, login.expiresAt));
+  response.writeHead(status, { "content-type": "text/html; charset=utf-8", "referrer-policy": "same-origin" });
+  response.end(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar · Gruia Design</title><style>body{margin:0;background:#f6f4ef;color:#24231f;font:16px system-ui,sans-serif}main{max-width:25rem;margin:10vh auto;padding:2rem;background:#fff;border:1px solid #dedbd2;border-radius:12px;box-shadow:0 8px 30px #0001}label{display:block;margin-top:1rem;font-weight:600}input,button{box-sizing:border-box;width:100%;padding:.7rem;margin-top:.35rem;border-radius:7px;border:1px solid #aaa;font:inherit}button{background:#24231f;color:white;cursor:pointer}.error{color:#9b1c1c}</style><main><h1>Gruia Design</h1><p>Inicia sesión con tu cuenta de Gruia.</p>${error ? `<p class="error" role="alert">${error}</p>` : ""}<form method="post" action="/auth/login"><input type="hidden" name="csrf" value="${login.token}"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="320"><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="4096"><button type="submit">Entrar</button></form></main></html>`);
+}
+function signedInPage(response: ServerResponse, core: GatewayCore, session: StoredSession): void {
+  noStore(response); response.writeHead(200, { "content-type": "text/html; charset=utf-8", "referrer-policy": "same-origin" });
+  response.end(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gruia Design</title><main><h1>Gruia Design</h1><p>Sesión iniciada.</p><p><a href="/">Abrir el estudio</a></p><form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="${session.csrfToken}"><button type="submit">Cerrar sesión</button></form></main></html>`);
+}
+async function readForm(request: IncomingMessage): Promise<Form | null> {
+  const contentType = request.headers["content-type"];
+  const length = Number(request.headers["content-length"] ?? 0);
+  if (typeof contentType !== "string" || !contentType.toLowerCase().startsWith("application/x-www-form-urlencoded") || !Number.isSafeInteger(length) || length < 0 || length > MAX_AUTH_FORM_BYTES) return null;
+  const chunks: Buffer[] = []; let received = 0;
+  try { for await (const chunk of request) { const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk); received += bytes.length; if (received > MAX_AUTH_FORM_BYTES) return null; chunks.push(bytes); } } catch { return null; }
+  const params = new URLSearchParams(Buffer.concat(chunks).toString("utf8")); const form = new Map<string, string>();
+  for (const [key, value] of params) { if (key.length > 32 || value.length > 4096 || form.has(key)) return null; form.set(key, value); }
+  return form;
+}
 
 export function createGatewayServer(core: GatewayCore): Server {
   const server = createServer((request, response) => { void handleRequest(request, response, core).catch(() => json(response, 503, { error: "service_unavailable" })); });
@@ -138,34 +157,34 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   if (!isSafeProxyPath(raw)) { json(response, 400, { error: "invalid_request" }); return; }
   const url = new URL(raw, core.config.publicOrigin); const method = request.method ?? "GET";
   if (url.pathname === "/healthz" || url.pathname === "/health") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } noStore(response); response.writeHead(200, { "content-type": "text/plain; charset=utf-8" }); response.end("ok\n"); return; }
-  if (url.pathname === "/auth") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } html(response, 200, "Gruia Design", "<a href=\"/auth/login\">Entrar con mi cuenta de Gruia</a>"); return; }
-  if (url.pathname === "/auth/login") {
-    if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; }
-    const location = core.startLogin();
-    const state = new URL(location).searchParams.get("state")!;
-    response.setHeader("set-cookie", cookie({ ...core.config, cookieName: `${core.config.cookieName}_login` }, state, Date.now() + 600_000));
-    response.writeHead(302, { location, "cache-control": "no-store" }); response.end(); return;
+  if (url.pathname === "/auth" || url.pathname === "/auth/login") {
+    if (method === "GET") { const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId); if (authorized) signedInPage(response, core, authorized.session); else loginPage(response, core); return; }
+    if (url.pathname === "/auth/login" && method === "POST") { await handleLogin(request, response, core); return; }
+    json(response, 405, { error: "method_not_allowed" }); return;
   }
-  if (url.pathname === "/auth/callback") { await handleCallback(url, method, request, response, core); return; }
+  if (url.pathname === "/auth/logout") { if (method !== "POST") { json(response, 405, { error: "method_not_allowed" }); return; } await handleLogout(request, response, core); return; }
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName);
   const authorized = await core.authorize(sessionId);
   if (!authorized || !sessionId) { if ((request.headers.accept ?? "").includes("text/html")) { response.writeHead(302, { location: "/auth", "cache-control": "no-store" }); response.end(); } else json(response, 401, { error: "authentication_required" }); return; }
-  if (unsafeMethods.has(method) && (!isExpectedOrigin(request.headers.origin, core.config) || authorized.identity.role.toUpperCase() === "VIEWER" || (url.pathname.startsWith("/auth/") && !csrfProtected(request, core, sessionId)))) { json(response, 403, { error: "forbidden" }); return; }
+  if (unsafeMethods.has(method) && (!isExpectedOrigin(request.headers.origin, core.config) || authorized.identity.role.toUpperCase() === "VIEWER")) { json(response, 403, { error: "forbidden" }); return; }
   if (url.pathname === "/auth/session") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } json(response, 200, { userId: authorized.identity.userId, organizationId: authorized.identity.organizationId, role: authorized.identity.role, csrfToken: authorized.session.csrfToken }); return; }
-  if (url.pathname === "/auth/logout") { if (method !== "POST") { json(response, 405, { error: "method_not_allowed" }); return; } await core.logout(sessionId); noStore(response); response.setHeader("set-cookie", expiredCookie(core.config)); response.writeHead(204); response.end(); return; }
   await proxy(request, response, core, authorized.identity.organizationId);
 }
 
-async function handleCallback(url: URL, method: string, request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
-  if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; }
-  const state = url.searchParams.get("state") ?? ""; const code = url.searchParams.get("code") ?? "";
-  const pendingName = `${core.config.cookieName}_login`;
-  const browserState = parseCookies(request.headers.cookie).get(pendingName);
-  const clearPending = expiredCookie({ ...core.config, cookieName: pendingName });
-  response.setHeader("set-cookie", clearPending);
-  const result = state && code ? await core.finishLogin(state, code, browserState) : null;
-  if (!result) { html(response, 403, "Acceso denegado", "No fue posible iniciar sesión o no tienes acceso a este estudio."); return; }
-  noStore(response); response.setHeader("set-cookie", [clearPending, cookie(core.config, result.id, result.expiresAt)]); response.writeHead(303, { location: "/" }); response.end();
+async function handleLogin(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
+  const csrfName = loginCsrfCookieName(core.config); const form = await readForm(request);
+  const csrfCookie = parseCookies(request.headers.cookie).get(csrfName);
+  const validCsrf = isExpectedOrigin(request.headers.origin, core.config) && !!form && core.consumeLoginCsrf(csrfCookie, form.get("csrf"));
+  if (!validCsrf) { loginPage(response, core, 403, "No fue posible iniciar sesión."); return; }
+  const email = normalizeEmail(form.get("email")); const password = form.get("password");
+  const result = email && typeof password === "string" ? await core.login(email, password) : null;
+  if (!result) { loginPage(response, core, 401, "Credenciales inválidas o acceso no autorizado."); return; }
+  noStore(response); response.setHeader("set-cookie", [expiredCookie(core.config, csrfName), cookie(core.config, core.config.cookieName, result.id, result.expiresAt)]); response.writeHead(303, { location: "/" }); response.end();
+}
+async function handleLogout(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
+  const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const form = await readForm(request);
+  if (!sessionId || !form || !isExpectedOrigin(request.headers.origin, core.config) || !core.csrf(sessionId, form.get("csrf"))) { loginPage(response, core, 403, "No fue posible cerrar la sesión."); return; }
+  await core.logout(sessionId); noStore(response); response.setHeader("set-cookie", expiredCookie(core.config, core.config.cookieName)); response.writeHead(303, { location: "/auth" }); response.end();
 }
 
 async function proxy(request: IncomingMessage, response: ServerResponse, core: GatewayCore, organizationId: string): Promise<void> {
