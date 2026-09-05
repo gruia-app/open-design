@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh the existing Vercel connection for Gruia Design
+After=network-online.target
+[Service]
+Type=oneshot
+Environment=GRUIA_B2B50_STATE=/home/roberto/.local/state/gruia-design-b2b50
+Environment=GRUIA_VERCEL_BIN=/home/roberto/.local/bin/vercel
+ExecStart=/home/roberto/.local/bin/node --experimental-strip-types /home/roberto/.local/state/gruia-design-b2b50/vercel-sync.ts
+UMask=0077
+NoNewPrivileges=true
+StandardOutput=append:/home/roberto/.local/state/gruia-design-b2b50/vercel-sync.log
+StandardError=append:/home/roberto/.local/state/gruia-design-b2b50/vercel-sync.log

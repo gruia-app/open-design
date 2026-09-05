@@ -1,0 +1,9 @@
+[Unit]
+Description=Maintain Gruia Design Vercel sharing access
+[Timer]
+OnCalendar=*-*-* *:05,35:00
+Persistent=true
+AccuracySec=30
+Unit=gruia-design-vercel-sync.service
+[Install]
+WantedBy=timers.target

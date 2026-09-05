@@ -1,0 +1,12 @@
+[Unit]
+Description=Review Gruia B2B campaign progress and resume when Claude quota returns
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/roberto/.local/state/gruia-design-b2b50
+ExecStart=/home/roberto/.local/bin/node --experimental-strip-types /home/roberto/.local/state/gruia-design-b2b50/review.ts
+UMask=0077
+NoNewPrivileges=true
+StandardOutput=append:/home/roberto/.local/state/gruia-design-b2b50/reviews.log
+StandardError=append:/home/roberto/.local/state/gruia-design-b2b50/reviews.log

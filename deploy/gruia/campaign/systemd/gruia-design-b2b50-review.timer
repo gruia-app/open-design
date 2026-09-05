@@ -1,0 +1,11 @@
+[Unit]
+Description=Review and resume the Gruia B2B50 campaign every thirty minutes
+
+[Timer]
+OnCalendar=*-*-* *:00,30:00
+Persistent=true
+AccuracySec=30s
+Unit=gruia-design-b2b50-review.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,23 @@
+[Unit]
+Description=Generate the Gruia B2B example collection with resumable Claude runs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/roberto/.local/state/gruia-design-b2b50
+Environment=GRUIA_B2B50_CONCURRENCY=8
+Environment=GRUIA_B2B50_FABLE_CONCURRENCY=5
+Environment=GRUIA_B2B50_OPUS_CONCURRENCY=3
+Environment=GRUIA_B2B50_BROWSER_QA=1
+Environment=GRUIA_B2B50_STATE=/home/roberto/.local/state/gruia-design-b2b50
+ExecStart=/home/roberto/.local/bin/node --experimental-strip-types /home/roberto/.local/state/gruia-design-b2b50/runner.ts
+Restart=on-failure
+RestartSec=1800
+UMask=0077
+NoNewPrivileges=true
+StandardOutput=append:/home/roberto/.local/state/gruia-design-b2b50/service.log
+StandardError=append:/home/roberto/.local/state/gruia-design-b2b50/service.log
+
+[Install]
+WantedBy=default.target
