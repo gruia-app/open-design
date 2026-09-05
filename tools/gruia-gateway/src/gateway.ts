@@ -22,7 +22,11 @@ const DUMMY_BCRYPT_HASH = "$2b$10$7EqJtq98hPqEX7fNZaFWoO.eD9bjVg4mbhAFt0zHehsFd6
 function random(): string { return randomBytes(32).toString("base64url"); }
 function nowMs(): number { return Date.now(); }
 function noStore(response: ServerResponse): void { response.setHeader("cache-control", "no-store, private, max-age=0"); response.setHeader("pragma", "no-cache"); response.setHeader("x-content-type-options", "nosniff"); }
-function json(response: ServerResponse, status: number, value: unknown): void { noStore(response); response.writeHead(status, { "content-type": "application/json; charset=utf-8" }); response.end(JSON.stringify(value)); }
+function json(response: ServerResponse, status: number, value: unknown): void {
+  if (response.destroyed || response.writableEnded) return;
+  if (response.headersSent) { response.destroy(); return; }
+  noStore(response); response.writeHead(status, { "content-type": "application/json; charset=utf-8" }); response.end(JSON.stringify(value));
+}
 function parseCookies(header: string | undefined): ReadonlyMap<string, string> { const result = new Map<string, string>(); for (const part of (header ?? "").split(";")) { const index = part.indexOf("="); if (index > 0) { try { result.set(part.slice(0, index).trim(), decodeURIComponent(part.slice(index + 1).trim())); } catch { /* malformed cookies are absent */ } } } return result; }
 function equal(left: string, right: string): boolean { const a = Buffer.from(left); const b = Buffer.from(right); return a.length === b.length && timingSafeEqual(a, b); }
 function loginCsrfCookieName(config: GatewayConfig): string { return config.testMode ? "gruia_design_login_csrf" : "__Host-gruia_design_login_csrf"; }
@@ -188,17 +192,28 @@ async function handleLogout(request: IncomingMessage, response: ServerResponse, 
 }
 
 async function proxy(request: IncomingMessage, response: ServerResponse, core: GatewayCore, organizationId: string): Promise<void> {
+  // Authorization may finish after the browser has already left the page.
+  if (response.destroyed || response.writableEnded) return;
   const target = core.config.organizations.get(organizationId); if (!target || !isSafeProxyPath(request.url)) { json(response, 403, { error: "forbidden" }); return; }
   const upstream = new URL(target.upstream); const contentLength = Number(request.headers["content-length"] ?? 0);
   if (!Number.isSafeInteger(contentLength) || contentLength < 0 || contentLength > core.config.requestBodyLimitBytes) { json(response, 413, { error: "payload_too_large" }); return; }
   const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken);
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs }, (upstreamResponse) => {
-    if ((upstreamResponse.statusCode ?? 502) >= 300 && (upstreamResponse.statusCode ?? 502) < 400) { upstreamResponse.resume(); json(response, 502, { error: "upstream_redirect_rejected" }); return; }
-    noStore(response); for (const [name, value] of Object.entries(upstreamResponse.headers)) if (value !== undefined && name.toLowerCase() !== "set-cookie" && name.toLowerCase() !== "cache-control") response.setHeader(name, value);
-    response.writeHead(upstreamResponse.statusCode ?? 502); pipeline(upstreamResponse, response, () => undefined);
+    if (response.destroyed || response.writableEnded) { upstreamResponse.destroy(); return; }
+    try {
+      if ((upstreamResponse.statusCode ?? 502) >= 300 && (upstreamResponse.statusCode ?? 502) < 400) { upstreamResponse.resume(); json(response, 502, { error: "upstream_redirect_rejected" }); return; }
+      noStore(response); for (const [name, value] of Object.entries(upstreamResponse.headers)) if (value !== undefined && name.toLowerCase() !== "set-cookie" && name.toLowerCase() !== "cache-control") response.setHeader(name, value);
+      response.writeHead(upstreamResponse.statusCode ?? 502); pipeline(upstreamResponse, response, () => undefined);
+    } catch {
+      // This callback runs after handleRequest resolves; synchronous stream setup
+      // failures must not escape as uncaught exceptions and stop the gateway.
+      upstreamResponse.destroy();
+      json(response, 502, { error: "upstream_unavailable" });
+    }
   });
+  response.once("close", () => { if (!response.writableFinished) upstreamRequest.destroy(); });
   upstreamRequest.on("timeout", () => upstreamRequest.destroy(new Error("upstream timeout")));
-  upstreamRequest.on("error", () => { if (!response.headersSent) json(response, 502, { error: "upstream_unavailable" }); else response.destroy(); });
+  upstreamRequest.on("error", () => json(response, 502, { error: "upstream_unavailable" }));
   let received = 0;
   const limiter = new Transform({ transform(chunk: Buffer, _encoding, done) { received += chunk.length; done(received > core.config.requestBodyLimitBytes ? new Error("body too large") : null, chunk); } });
   limiter.on("error", () => { upstreamRequest.destroy(); if (!response.headersSent) json(response, 413, { error: "payload_too_large" }); });

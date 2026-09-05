@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { Server } from "node:http";
+import { createServer, request as httpRequest, type Server, type ServerResponse } from "node:http";
 import { describe, expect, it } from "vitest";
 import { GatewayCore, createGatewayServer, daemonUpstreamHeaders, isAuthorizedWebSocketHandshake, isExpectedOrigin, isSafeProxyPath, verifyCanonicalPassword } from "../src/gateway.js";
 import { SqliteSessionStore } from "../src/session-store.js";
@@ -31,6 +31,87 @@ async function close(server: Server, core: GatewayCore): Promise<void> { await n
 function cookies(response: Response): string[] { return response.headers.getSetCookie(); }
 function cookieValue(response: Response, name: string): string { const value = cookies(response).find((item) => item.startsWith(`${name}=`))?.split(";", 1)[0].slice(name.length + 1); if (!value) throw new Error(`missing ${name} cookie`); return decodeURIComponent(value); }
 function csrf(html: string): string { const value = /name="csrf" value="([^"]+)"/.exec(html)?.[1]; if (!value) throw new Error("missing csrf form token"); return value; }
+
+describe("Gruia gateway client cancellation", () => {
+  it("delivers a complete delayed response with the fixed daemon credential", async () => {
+    const received = Promise.withResolvers<ServerResponse>();
+    const upstream = createServer((request, response) => {
+      expect(request.headers.authorization).toBe("Bearer daemon-a");
+      expect(request.headers.cookie).toBeUndefined();
+      response.setHeader("set-cookie", "upstream-cookie=blocked");
+      response.write("first ");
+      received.resolve(response);
+    });
+    await new Promise<void>((resolve) => upstream.listen(0, "127.0.0.1", resolve));
+    const address = upstream.address();
+    if (!address || typeof address === "string") throw new Error("missing upstream listener");
+    const core = new GatewayCore(config({ organizations: new Map([["org-a", { upstream: `http://127.0.0.1:${address.port}`, daemonApiToken: "daemon-a" }]]) }), new SqliteSessionStore(":memory:", secret), new Repository());
+    const { server, base } = await listener(core);
+    try {
+      const session = await core.login("user@gruia.app", "password");
+      const response = await fetch(`${base}/api/projects`, { headers: { cookie: `gruia_design_session=${session!.id}`, authorization: "Bearer untrusted" } });
+      expect(response.status).toBe(200);
+      const upstreamResponse = await received.promise;
+      upstreamResponse.end("last");
+      expect(await response.text()).toBe("first last");
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+    } finally {
+      upstream.closeAllConnections();
+      await new Promise<void>((resolve) => upstream.close(() => resolve()));
+      server.closeAllConnections();
+      await close(server, core);
+    }
+  });
+
+  it.each(["before headers", "while streaming"])("keeps serving requests after a client disconnects %s", async (phase) => {
+    const received = Promise.withResolvers<ServerResponse>();
+    const upstreamClosed = Promise.withResolvers<void>();
+    const upstream = createServer((_request, response) => {
+      response.once("close", () => upstreamClosed.resolve());
+      received.resolve(response);
+      if (phase === "while streaming") {
+        response.writeHead(200, { "content-type": "text/event-stream" });
+        response.write("data: started\n\n");
+      }
+    });
+    await new Promise<void>((resolve) => upstream.listen(0, "127.0.0.1", resolve));
+    const address = upstream.address();
+    if (!address || typeof address === "string") throw new Error("missing upstream listener");
+    const core = new GatewayCore(config({ upstreamTimeoutMs: 5_000, organizations: new Map([["org-a", { upstream: `http://127.0.0.1:${address.port}`, daemonApiToken: "daemon-a" }]]) }), new SqliteSessionStore(":memory:", secret), new Repository());
+    const { server, base } = await listener(core);
+    const downstreamClosed = Promise.withResolvers<void>();
+    server.once("request", (_request, response) => response.once("close", () => downstreamClosed.resolve()));
+    const session = await core.login("user@gruia.app", "password");
+    const streamed = Promise.withResolvers<void>();
+    const client = httpRequest(`${base}/api/runs/example/events`, { headers: { cookie: `gruia_design_session=${session!.id}` } }, (response) => {
+      response.once("data", () => streamed.resolve());
+      response.on("error", () => undefined);
+    });
+    client.on("error", () => undefined);
+    client.end();
+    try {
+      const upstreamResponse = await received.promise;
+      if (phase === "while streaming") await streamed.promise;
+      client.destroy();
+      await downstreamClosed.promise;
+      // A delayed daemon response must not pipe into the now-destroyed browser socket.
+      if (phase === "before headers") upstreamResponse.end("late response");
+      await upstreamClosed.promise;
+      const healthy = await fetch(`${base}/healthz`);
+      expect(healthy.status).toBe(200);
+      expect(await healthy.text()).toBe("ok\n");
+      const authorized = await fetch(`${base}/auth/session`, { headers: { cookie: `gruia_design_session=${session!.id}` } });
+      expect(authorized.status).toBe(200);
+    } finally {
+      client.destroy();
+      upstream.closeAllConnections();
+      await new Promise<void>((resolve) => upstream.close(() => resolve()));
+      server.closeAllConnections();
+      await close(server, core);
+    }
+  });
+});
 
 describe("Gruia gateway password-login security seams", () => {
   it("rejects legacy cookies and stops checking passwords after the email rate limit", async () => {

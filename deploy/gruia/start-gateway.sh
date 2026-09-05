@@ -6,7 +6,7 @@ set -euo pipefail
 : "${DESIGN_POSTGRES_CA:?Set the PostgreSQL certificate file}"
 : "${DESIGN_POSTGRES_HOST_IP:?Set the PostgreSQL server address}"
 export DESIGN_GATEWAY_CONFIG DESIGN_GATEWAY_DATA DESIGN_POSTGRES_CA DESIGN_POSTGRES_HOST_IP
-export DESIGN_GATEWAY_IMAGE="${DESIGN_GATEWAY_IMAGE:-gruia-design-gateway:20260905-password}"
+export DESIGN_GATEWAY_IMAGE="${DESIGN_GATEWAY_IMAGE:-gruia-design-gateway:20260905-stream-fix}"
 server-manager start custom --name gruia-design-gateway --port 3006 --wait \
   --workdir "$DESIGN_DEPLOY_ROOT" \
   --log-path "$DESIGN_DEPLOY_ROOT/gateway.log" \

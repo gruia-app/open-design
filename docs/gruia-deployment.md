@@ -13,7 +13,7 @@ Claude Code 2.1.261. Build from the repository root:
 
 ```bash
 docker build --platform linux/amd64 -t gruia-design:20260905-identity -f deploy/gruia/Dockerfile .
-docker build --platform linux/amd64 -t gruia-design-gateway:20260905-password -f deploy/gruia/Dockerfile.gateway .
+docker build --platform linux/amd64 -t gruia-design-gateway:20260905-stream-fix -f deploy/gruia/Dockerfile.gateway .
 ```
 
 The studio image includes daemon production dependencies, static web, skills,
@@ -68,7 +68,7 @@ DESIGN_STUDIO_ENV=/opt/design/studio.env
 DESIGN_STUDIO_IMAGE=gruia-design:20260905-identity
 DESIGN_GATEWAY_CONFIG=/opt/design/gateway.json
 DESIGN_GATEWAY_DATA=/opt/design/gateway-data
-DESIGN_GATEWAY_IMAGE=gruia-design-gateway:20260905-password
+DESIGN_GATEWAY_IMAGE=gruia-design-gateway:20260905-stream-fix
 DESIGN_POSTGRES_CA=/opt/design/postgres-ca.pem
 DESIGN_POSTGRES_HOST_IP=178.104.126.13
 ```
