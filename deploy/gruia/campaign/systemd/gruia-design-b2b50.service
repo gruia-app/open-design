@@ -6,9 +6,9 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/home/roberto/.local/state/gruia-design-b2b50
-Environment=GRUIA_B2B50_CONCURRENCY=10
+Environment=GRUIA_B2B50_CONCURRENCY=16
 Environment=GRUIA_B2B50_FABLE_CONCURRENCY=5
-Environment=GRUIA_B2B50_OPUS_CONCURRENCY=10
+Environment=GRUIA_B2B50_OPUS_CONCURRENCY=16
 Environment=GRUIA_B2B50_FABLE_FALLBACK=claude-opus-5
 Environment=GRUIA_B2B50_BROWSER_QA=1
 Environment=GRUIA_DESIGN_REPO=/home/roberto/src/design

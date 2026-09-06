@@ -7,7 +7,7 @@ set -euo pipefail
 
 exec docker run --rm --name gruia-design-studio --network host \
   --read-only --cap-drop ALL --security-opt no-new-privileges \
-  --pids-limit 512 --memory 1536m --memory-swap 1536m --cpus 2 \
+  --pids-limit 1024 --memory 4g --memory-swap 4g --cpus 4 \
   --shm-size 256m --tmpfs /tmp:rw,nosuid,nodev,size=512m \
   --mount "type=bind,src=$DESIGN_STUDIO_DATA,dst=/var/lib/open-design" \
   --env-file "$DESIGN_STUDIO_ENV" \
