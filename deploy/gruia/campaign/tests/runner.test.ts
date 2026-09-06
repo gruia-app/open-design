@@ -202,9 +202,9 @@ test('scheduler fills six slots, max three per model, and replaces fast completi
   await eighth;await operation;assert.equal(peak,6);assert.equal(modelPeak,3);assert.equal(started.length,8);
 });
 
-test('configured concurrency above eight is rejected before dispatch',async()=>{
+test('configured concurrency above ten is rejected before dispatch',async()=>{
   const dir=await fixture(activeState('01'));let calls=0;
-  await assert.rejects(main([],{stateDir:dir,concurrency:9,fetch:(async()=>{calls++;return response({});})as typeof fetch}),/between 1 and 8/);assert.equal(calls,0);
+  await assert.rejects(main([],{stateDir:dir,concurrency:11,fetch:(async()=>{calls++;return response({});})as typeof fetch}),/between 1 and 10/);assert.equal(calls,0);
 });
 
 for (const stage of ['GET','POST'] as const) for (const code of [502,429,401,403]) {

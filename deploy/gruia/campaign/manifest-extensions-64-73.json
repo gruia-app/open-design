@@ -1,0 +1,142 @@
+[
+  {
+    "id": "64",
+    "name": "Prisma Quote",
+    "sector": "CPQ industrial",
+    "style": "Blanco técnico y violeta",
+    "layout": "Configurador por pasos",
+    "interaction": "Cotizador de producto complejo",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Crea una aplicación B2B CPQ industrial con catálogo, configuración guiada, reglas, precio, aprobaciones, propuesta y analítica. El cotizador debe reaccionar a opciones incompatibles y recalcular margen. Estilo técnico blanco y violeta, responsive y accesible. Entrega index.html autocontenido, DESIGN.md y README.md, estados completos y datos ficticios."
+  },
+  {
+    "id": "65",
+    "name": "Savia Carbon",
+    "sector": "Contabilidad de carbono",
+    "style": "Verde musgo, hueso y carbón",
+    "layout": "Inventario de emisiones con árbol de fuentes",
+    "interaction": "Simulador de reducción Scope 1-3",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Diseña una app B2B de contabilidad de carbono con inventario, factores, proveedores, objetivos, informes y auditoría. Incluye simulador Scope 1-3 y árbol SVG de fuentes. Estilo verde musgo y papel, navegación y estados accesibles, responsive. Entrega index.html, DESIGN.md y README.md sin backend real."
+  },
+  {
+    "id": "66",
+    "name": "Ronda Field",
+    "sector": "Field service",
+    "style": "Azul uniforme, rojo alerta y gris claro",
+    "layout": "Despacho con mapa y agenda",
+    "interaction": "Asignador de técnicos",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Construye una aplicación B2B de field service con despacho, mapa SVG, agenda, técnicos, órdenes, inventario, clientes y métricas. El asignador debe equilibrar distancia, habilidad y SLA. Estilo operativo azul y rojo, mobile-first para técnicos, AA, teclado y estados completos. Incluye index.html, DESIGN.md y README.md."
+  },
+  {
+    "id": "67",
+    "name": "Ángulo Studio",
+    "sector": "Creative operations",
+    "style": "Negro, blanco y rosa ácido",
+    "layout": "Lienzo de campañas con paneles flotantes",
+    "interaction": "Revisión y aprobación visual",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Crea una app B2B de creative operations con campañas, assets, revisiones, calendario, versiones, aprobaciones y reporting. Incluye anotaciones locales sobre un lienzo y comparación de versiones. Estilo negro, blanco y rosa ácido, expresivo pero usable, responsive y accesible. Entrega HTML autocontenido, DESIGN.md y README.md."
+  },
+  {
+    "id": "68",
+    "name": "Pórtico Assets",
+    "sector": "Asset management inmobiliario",
+    "style": "Arena, azul profundo y cobre",
+    "layout": "Portfolio con mapa y ficha financiera",
+    "interaction": "Simulador de rentabilidad",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Diseña una aplicación B2B para gestionar activos inmobiliarios: portfolio, mapa SVG, contratos, ocupación, capex, documentos e informes. Simulador de rentabilidad con NOI, cap rate y escenarios. Estética arena, azul profundo y cobre, responsive, AA y estados completos. Genera index.html, DESIGN.md y README.md."
+  },
+  {
+    "id": "69",
+    "name": "Clara HealthOps",
+    "sector": "Operaciones clínicas",
+    "style": "Blanco clínico, menta y azul marino",
+    "layout": "Centro operativo por cohortes",
+    "interaction": "Planificador de capacidad",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Construye una app B2B ficticia de operaciones clínicas con cohortes, agenda, capacidad, incidencias, equipos, calidad y permisos. El planificador calcula ocupación y espera sin afirmar uso médico real. Blanco, menta y azul marino, privacidad visible, responsive y accesible. Entrega index.html, DESIGN.md y README.md."
+  },
+  {
+    "id": "70",
+    "name": "Trazado Supply",
+    "sector": "Supply chain planning",
+    "style": "Grafito, lima y azul hielo",
+    "layout": "Red de suministro con escenarios",
+    "interaction": "Simulador de stock y demanda",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Crea una app B2B de supply chain con red SVG, demanda, inventario, compras, alertas, escenarios y proveedores. Simulador de stock de seguridad y roturas con controles vivos. Estilo grafito, lima y azul hielo, tablas legibles, responsive y AA. Incluye index.html, DESIGN.md y README.md autocontenidos."
+  },
+  {
+    "id": "71",
+    "name": "Vela Academy",
+    "sector": "Formación corporativa",
+    "style": "Azul ultramar, melocotón y crema",
+    "layout": "Biblioteca y rutas de aprendizaje",
+    "interaction": "Constructor de itinerarios",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Diseña una aplicación B2B de formación corporativa con biblioteca, rutas, cohortes, progreso, evaluaciones, certificados y analítica. Constructor drag-and-drop simulado de itinerarios. Azul ultramar, melocotón y crema, responsive, teclado, AA y estados completos. Entrega index.html, DESIGN.md y README.md."
+  },
+  {
+    "id": "72",
+    "name": "Umbral Access",
+    "sector": "Identity governance",
+    "style": "Negro azulado, cian y ámbar",
+    "layout": "Grafo de acceso y bandeja de revisiones",
+    "interaction": "Campaña de certificación",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Construye una app B2B de identity governance con usuarios, apps, roles, políticas, revisiones, incidencias y auditoría. Flujo de campaña de certificación con decisiones y grafo SVG de acceso. Negro azulado, cian y ámbar, responsive, accesible, con estados de riesgo. Incluye index.html, DESIGN.md y README.md."
+  },
+  {
+    "id": "73",
+    "name": "Brújula Partner",
+    "sector": "Partner relationship management",
+    "style": "Terracota, crema y verde petróleo",
+    "layout": "Portal de partners con embudo",
+    "interaction": "Constructor de plan conjunto",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Crea una app B2B PRM con partners, oportunidades, campañas, recursos, certificaciones, incentivos y reporting. Constructor interactivo de plan conjunto con objetivos y presupuesto. Terracota, crema y verde petróleo, estilo editorial, responsive y AA. Entrega index.html autocontenido, DESIGN.md y README.md, datos ficticios y estados completos."
+  }
+]

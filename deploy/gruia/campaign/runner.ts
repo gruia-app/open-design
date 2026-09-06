@@ -33,12 +33,12 @@ function index(manifest: ManifestJob[], state: RunnerState) { return manifest.ma
 async function persist(dir: string, manifest: ManifestJob[], state: RunnerState) { await atomic(join(dir, 'state.json'), state); await atomic(join(dir, 'index.json'), index(manifest, state)); }
 
 export function validateManifest(value: unknown): ManifestJob[] {
-  if (!Array.isArray(value) || value.length !== 63) throw new Error('manifest must contain exactly 63 jobs');
+  if (!Array.isArray(value) || value.length < 50 || value.length > 99) throw new Error('manifest must contain between 50 and 99 jobs');
   const ids = new Set<string>();
   for (const x of value) { const j = x as ManifestJob; if (!j || typeof j !== 'object' || !/^\d{2}$/.test(j.id) || ids.has(j.id)) throw new Error('manifest IDs must be unique two-digit values'); ids.add(j.id);
     if (typeof j.name !== 'string' || !j.name || typeof j.sector !== 'string' || !j.sector || typeof j.style !== 'string' || !j.style || typeof j.layout !== 'string' || !j.layout || typeof j.interaction !== 'string' || !j.interaction || typeof j.prompt !== 'string' || !j.prompt || (j.designSystemId !== null && (typeof j.designSystemId !== 'string' || !j.designSystemId)) || !MODELS.includes(j.model) || !Array.isArray(j.inspirations) || !j.inspirations.every(v => typeof v === 'string')) throw new Error(`manifest job ${j.id} has invalid fields`);
   }
-  for (let n = 1; n <= 63; n++) if (!ids.has(String(n).padStart(2, '0'))) throw new Error('manifest IDs must be 01 through 63');
+  for (let n = 1; n <= value.length; n++) if (!ids.has(String(n).padStart(2, '0'))) throw new Error(`manifest IDs must be contiguous from 01 through ${String(value.length).padStart(2, '0')}`);
   return value as ManifestJob[];
 }
 function normalize(state: RunnerState) { if (!state || typeof state !== 'object' || !state.jobs || typeof state.jobs !== 'object' || Array.isArray(state.jobs)) throw new Error('state.json contains invalid jobs'); for (const [id, value] of Object.entries(state.jobs)) { if (!/^\d{2}$/.test(id) || !value || value.id !== id || typeof value.projectId !== 'string' || !value.projectId || !['pending', 'running', 'succeeded', 'failed', 'paused', 'needs_attention'].includes(value.status)) throw new Error('state.json contains invalid job ' + id); } for (const s of Object.values(state.jobs)) { s.normalFailures ??= s.attempts ?? 0; s.attemptPhase ??= s.runId ? 'active' : s.clientRequestId ? 'prepared' : 'none'; } }
@@ -118,7 +118,7 @@ export async function main(argv = process.argv.slice(2), options: RunnerOptions 
   const m = validateManifest(await json<unknown>(join(dir, 'manifest.json'), [])); await mkdir(dir, { recursive: true, mode: 0o700 }); const release = await acquireRunnerLock(dir, false, options.probePid);
   try { const state = await json<RunnerState>(join(dir, 'state.json'), { jobs: {} }); normalize(state); adopt(state, await Promise.all(['pilot-01.json', 'pilot-02.json'].map(x => json<any>(join(dir, x), null)))); for (const j of m) seedJobState(state, j, undefined, iso(now)); if (state.pauseUntil && Date.parse(state.pauseUntil) > now()) { await persist(dir, m, state); return 0; } if (state.pauseUntil) { delete state.pauseUntil; for (const s of Object.values(state.jobs)) if (s.status === 'paused') s.status = 'pending'; } const qa = options.prototypeQa ?? ((argv.includes('--browser-qa') || process.env.GRUIA_B2B50_BROWSER_QA === '1') ? (await import(pathToFileURL(join(dir, 'browser-qa.ts')).href)).checkPrototype as PrototypeQa : undefined); const api = new Api(dir, creds(await json(join(dir, 'credentials.json'), {})), await json(join(dir, 'browser-session.json'), {}), options.fetch ?? globalThis.fetch); await persist(dir, m, state);
     const concurrency = options.concurrency ?? Number(process.env.GRUIA_B2B50_CONCURRENCY ?? 2);
-    if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 8) throw new Error('concurrency must be an integer between 1 and 8');
+    if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 10) throw new Error('concurrency must be an integer between 1 and 10');
     const modelLimits: Record<Model, number> = {
       'claude-fable-5-1': options.fableConcurrency ?? Number(process.env.GRUIA_B2B50_FABLE_CONCURRENCY ?? Math.ceil(concurrency / 2)),
       'claude-opus-5': options.opusConcurrency ?? Number(process.env.GRUIA_B2B50_OPUS_CONCURRENCY ?? Math.ceil(concurrency / 2)),

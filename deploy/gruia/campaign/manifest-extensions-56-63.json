@@ -1,10 +1,114 @@
 [
-{"id":"56","name":"Faro Vendor","sector":"Procurement B2B","style":"Azul cobalto y naranja con tarjetas de proveedor","layout":"Marketplace interno con comparador","interaction":"Comparador de propuestas y aprobación" ,"designSystemId":"dark-data","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Construye una aplicación B2B autocontenida de procurement llamada Faro Vendor. Diseña marketplace interno, comparador de propuestas, ficha de proveedor, solicitudes, aprobaciones, contratos y analítica. Estilo azul cobalto y naranja, responsive, accesible, con comparador interactivo de precio, plazo, riesgo y emisiones. Incluye estados de carga, vacío, error y éxito, index.html, DESIGN.md y README.md, sin dependencias ni backend real."},
-{"id":"57","name":"Cauce Projects","sector":"Gestión de proyectos profesionales","style":"Crema, azul petróleo y rojo ladrillo editorial","layout":"Timeline y tablero híbrido","interaction":"Replanificador de hitos","designSystemId":"warm-editorial","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Crea Cauce Projects, aplicación B2B para agencias profesionales. Incluye portfolio, timeline, tablero, recursos, presupuesto, documentos y cliente. Estilo editorial crema, azul petróleo y rojo ladrillo. Replanificador de hitos con dependencias y fechas que actualice timeline SVG; estados y responsive, teclado y AA. Entrega index.html, DESIGN.md y README.md locales y demostrativos."},
-{"id":"58","name":"Lumen Grid","sector":"Gestión energética empresarial","style":"Negro suave, verde neón y amarillo solar","layout":"Mapa de instalaciones y panel de consumo","interaction":"Simulador de ahorro energético","designSystemId":"dark-data","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Diseña Lumen Grid, app B2B para monitorizar energía en edificios. Mapa de instalaciones, consumo, alertas, tarifas, equipos, informes y usuarios. Negro suave con verde neón y amarillo solar. Simulador de ahorro por tarifa, potencia y horario con gráfica SVG. Responsive, accesible, estados completos, HTML autocontenido y DESIGN.md/README.md."},
-{"id":"59","name":"Nido People","sector":"People operations","style":"Lavanda, coral y grafito con ilustraciones geométricas","layout":"Inicio de personas con tareas y calendario","interaction":"Planificador de onboarding","designSystemId":"pastel","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Construye Nido People, app B2B de onboarding y people operations. Vistas de personas, onboarding, tareas, calendario, documentos, feedback, analítica y ajustes. Lavanda, coral y grafito, ilustraciones geométricas propias. Planificador de onboarding por rol con checklist y progreso interactivo. Incluye responsive, keyboard, AA, reduced motion, index.html, DESIGN.md y README.md sin backend."},
-{"id":"60","name":"Arca Claims","sector":"Gestión de siniestros","style":"Verde oscuro, arena y rojo señal con expediente visual","layout":"Bandeja de casos con expediente lateral","interaction":"Evaluador de cobertura","designSystemId":"mono","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Crea Arca Claims, app B2B para equipos de siniestros. Bandeja de casos, expediente, evidencias, cobertura, tareas, proveedores, pagos y auditoría. Verde oscuro, arena y rojo señal. Evaluador de cobertura con controles que calcula decisión provisional y muestra evidencia; estados, responsive, accesible, HTML local, DESIGN.md y README.md."},
-{"id":"61","name":"Tránsito API","sector":"Developer platform","style":"Blanco, negro y azul eléctrico con documentación viva","layout":"Docs, consola y métricas en una shell","interaction":"Playground de endpoints","designSystemId":"mono","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Diseña Tránsito API, plataforma B2B para desarrolladores. Shell con documentación, endpoints, playground, logs, claves, equipos, usage y billing. Blanco, negro y azul eléctrico; tipografía mono para código. Playground local con parámetros y respuesta JSON ficticia, pestañas y copia. Responsive, AA, teclado, reduced motion, index.html, DESIGN.md y README.md sin llamadas reales."},
-{"id":"62","name":"Métrica Board","sector":"Analítica financiera","style":"Marfil, azul tinta y lima con composición de informe","layout":"Tablero de KPIs y drill-down","interaction":"Constructor de métrica","designSystemId":"paper","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Construye Métrica Board, app B2B de analítica financiera. Overview, KPIs, cuentas, forecast, escenarios, informes, alertas y permisos. Marfil, azul tinta y lima, composición de informe. Constructor de métrica con dimensiones, filtros y fórmula que actualiza tabla y gráfico SVG. Incluye estados, responsive, accesibilidad y archivos index.html, DESIGN.md y README.md locales."},
-{"id":"63","name":"Quilla Fleet","sector":"Gestión de flotas","style":"Azul marino, turquesa y ámbar con mapa técnico","layout":"Mapa operativo y lista de vehículos","interaction":"Planificador de rutas y carga","designSystemId":"dark-data","model":"claude-opus-5","inspirations":["https://www.saasframe.io/"],"prompt":"Crea Quilla Fleet, app B2B para flotas de reparto. Mapa operativo, vehículos, rutas, cargas, conductores, mantenimiento, incidencias e informes. Azul marino, turquesa y ámbar con mapa SVG propio. Planificador de rutas y carga que reordena paradas y calcula capacidad, tiempo y coste ficticios. Responsive, teclado, AA, reduced motion, index.html, DESIGN.md y README.md sin backend."}
+  {
+    "id": "56",
+    "name": "Faro Vendor",
+    "sector": "Procurement B2B",
+    "style": "Azul cobalto y naranja con tarjetas de proveedor",
+    "layout": "Marketplace interno con comparador",
+    "interaction": "Comparador de propuestas y aprobación",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Construye una aplicación B2B autocontenida de procurement llamada Faro Vendor. Diseña marketplace interno, comparador de propuestas, ficha de proveedor, solicitudes, aprobaciones, contratos y analítica. Estilo azul cobalto y naranja, responsive, accesible, con comparador interactivo de precio, plazo, riesgo y emisiones. Incluye estados de carga, vacío, error y éxito, index.html, DESIGN.md y README.md, sin dependencias ni backend real."
+  },
+  {
+    "id": "57",
+    "name": "Cauce Projects",
+    "sector": "Gestión de proyectos profesionales",
+    "style": "Crema, azul petróleo y rojo ladrillo editorial",
+    "layout": "Timeline y tablero híbrido",
+    "interaction": "Replanificador de hitos",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Crea Cauce Projects, aplicación B2B para agencias profesionales. Incluye portfolio, timeline, tablero, recursos, presupuesto, documentos y cliente. Estilo editorial crema, azul petróleo y rojo ladrillo. Replanificador de hitos con dependencias y fechas que actualice timeline SVG; estados y responsive, teclado y AA. Entrega index.html, DESIGN.md y README.md locales y demostrativos."
+  },
+  {
+    "id": "58",
+    "name": "Lumen Grid",
+    "sector": "Gestión energética empresarial",
+    "style": "Negro suave, verde neón y amarillo solar",
+    "layout": "Mapa de instalaciones y panel de consumo",
+    "interaction": "Simulador de ahorro energético",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Diseña Lumen Grid, app B2B para monitorizar energía en edificios. Mapa de instalaciones, consumo, alertas, tarifas, equipos, informes y usuarios. Negro suave con verde neón y amarillo solar. Simulador de ahorro por tarifa, potencia y horario con gráfica SVG. Responsive, accesible, estados completos, HTML autocontenido y DESIGN.md/README.md."
+  },
+  {
+    "id": "59",
+    "name": "Nido People",
+    "sector": "People operations",
+    "style": "Lavanda, coral y grafito con ilustraciones geométricas",
+    "layout": "Inicio de personas con tareas y calendario",
+    "interaction": "Planificador de onboarding",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Construye Nido People, app B2B de onboarding y people operations. Vistas de personas, onboarding, tareas, calendario, documentos, feedback, analítica y ajustes. Lavanda, coral y grafito, ilustraciones geométricas propias. Planificador de onboarding por rol con checklist y progreso interactivo. Incluye responsive, keyboard, AA, reduced motion, index.html, DESIGN.md y README.md sin backend."
+  },
+  {
+    "id": "60",
+    "name": "Arca Claims",
+    "sector": "Gestión de siniestros",
+    "style": "Verde oscuro, arena y rojo señal con expediente visual",
+    "layout": "Bandeja de casos con expediente lateral",
+    "interaction": "Evaluador de cobertura",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Crea Arca Claims, app B2B para equipos de siniestros. Bandeja de casos, expediente, evidencias, cobertura, tareas, proveedores, pagos y auditoría. Verde oscuro, arena y rojo señal. Evaluador de cobertura con controles que calcula decisión provisional y muestra evidencia; estados, responsive, accesible, HTML local, DESIGN.md y README.md."
+  },
+  {
+    "id": "61",
+    "name": "Tránsito API",
+    "sector": "Developer platform",
+    "style": "Blanco, negro y azul eléctrico con documentación viva",
+    "layout": "Docs, consola y métricas en una shell",
+    "interaction": "Playground de endpoints",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Diseña Tránsito API, plataforma B2B para desarrolladores. Shell con documentación, endpoints, playground, logs, claves, equipos, usage y billing. Blanco, negro y azul eléctrico; tipografía mono para código. Playground local con parámetros y respuesta JSON ficticia, pestañas y copia. Responsive, AA, teclado, reduced motion, index.html, DESIGN.md y README.md sin llamadas reales."
+  },
+  {
+    "id": "62",
+    "name": "Métrica Board",
+    "sector": "Analítica financiera",
+    "style": "Marfil, azul tinta y lima con composición de informe",
+    "layout": "Tablero de KPIs y drill-down",
+    "interaction": "Constructor de métrica",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Construye Métrica Board, app B2B de analítica financiera. Overview, KPIs, cuentas, forecast, escenarios, informes, alertas y permisos. Marfil, azul tinta y lima, composición de informe. Constructor de métrica con dimensiones, filtros y fórmula que actualiza tabla y gráfico SVG. Incluye estados, responsive, accesibilidad y archivos index.html, DESIGN.md y README.md locales."
+  },
+  {
+    "id": "63",
+    "name": "Quilla Fleet",
+    "sector": "Gestión de flotas",
+    "style": "Azul marino, turquesa y ámbar con mapa técnico",
+    "layout": "Mapa operativo y lista de vehículos",
+    "interaction": "Planificador de rutas y carga",
+    "designSystemId": null,
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/"
+    ],
+    "prompt": "Crea Quilla Fleet, app B2B para flotas de reparto. Mapa operativo, vehículos, rutas, cargas, conductores, mantenimiento, incidencias e informes. Azul marino, turquesa y ámbar con mapa SVG propio. Planificador de rutas y carga que reordena paradas y calcula capacidad, tiempo y coste ficticios. Responsive, teclado, AA, reduced motion, index.html, DESIGN.md y README.md sin backend."
+  }
 ]
