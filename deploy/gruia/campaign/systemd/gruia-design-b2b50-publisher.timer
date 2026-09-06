@@ -1,0 +1,9 @@
+[Unit]
+Description=Retry pending public verification every half hour
+[Timer]
+OnCalendar=*-*-* *:00,30:00
+Persistent=true
+AccuracySec=30
+Unit=gruia-design-b2b50-publisher.service
+[Install]
+WantedBy=timers.target

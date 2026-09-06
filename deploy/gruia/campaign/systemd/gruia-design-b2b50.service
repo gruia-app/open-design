@@ -8,8 +8,10 @@ Type=simple
 WorkingDirectory=/home/roberto/.local/state/gruia-design-b2b50
 Environment=GRUIA_B2B50_CONCURRENCY=8
 Environment=GRUIA_B2B50_FABLE_CONCURRENCY=5
-Environment=GRUIA_B2B50_OPUS_CONCURRENCY=3
+Environment=GRUIA_B2B50_OPUS_CONCURRENCY=8
+Environment=GRUIA_B2B50_FABLE_FALLBACK=claude-opus-5
 Environment=GRUIA_B2B50_BROWSER_QA=1
+Environment=GRUIA_DESIGN_REPO=/home/roberto/src/design
 Environment=GRUIA_B2B50_STATE=/home/roberto/.local/state/gruia-design-b2b50
 ExecStart=/home/roberto/.local/bin/node --experimental-strip-types /home/roberto/.local/state/gruia-design-b2b50/runner.ts
 Restart=on-failure

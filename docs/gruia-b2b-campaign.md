@@ -1,13 +1,13 @@
 # Colección de 50 prototipos B2B
 
 La colección se genera dentro de Design mediante su API de proyectos, mensajes y
-runs. Fable 5.1 recibe los 25 ejemplos impares y Opus 5 los 25 pares. Los briefs
+runs. Los briefs iniciales se repartieron entre Fable 5.1 (25 impares) y Opus 5 (25 pares). El manifiesto operativo conserva el modelo previsto cuando un límite obliga a continuar con el otro modelo autorizado. Los briefs
 originales y sus referencias están en
 [`manifest.json`](../deploy/gruia/campaign/manifest.json). Cada proyecto entrega
 `index.html`, `DESIGN.md` y `README.md`, y aparece con el nombre
 `B2B NN · Marca · Sector` en los proyectos de Design.
 
-El controlador mantiene hasta ocho trabajos simultáneos, cinco de Fable y tres de Opus.
+El controlador mantiene hasta ocho trabajos simultáneos. Tras alcanzar el límite específico de Fable, sus pendientes continúan con Opus 5 mediante el fallback explícito `GRUIA_B2B50_FABLE_FALLBACK=claude-opus-5`; los ejemplos aprobados no cambian.
 Conserva los identificadores antes de crear proyectos y ejecuciones, recupera
 respuestas perdidas, renueva la sesión Gruia y comprueba el estado autoritativo
 al finalizar el stream. Si la cuota se agota, pausa los nuevos encargos durante
@@ -44,7 +44,8 @@ Variables de ejecución:
 GRUIA_B2B50_STATE=/home/roberto/.local/state/gruia-design-b2b50
 GRUIA_B2B50_CONCURRENCY=8
 GRUIA_B2B50_FABLE_CONCURRENCY=5
-GRUIA_B2B50_OPUS_CONCURRENCY=3
+GRUIA_B2B50_OPUS_CONCURRENCY=8
+GRUIA_B2B50_FABLE_FALLBACK=claude-opus-5
 GRUIA_B2B50_BROWSER_QA=1
 ```
 
@@ -95,3 +96,22 @@ renueva su sesión y el proceso actualiza únicamente el token del equipo ya
 conectado. El refresh token permanece local. Si se cambia o desconecta el
 equipo en Design, el sincronizador se detiene sin sobrescribir esa decisión.
 El temporizador funciona aunque la campaña de generación haya terminado.
+
+## Publicación de los aprobados
+
+`gruia-design-b2b50-publisher.path` observa cambios del estado y ejecuta una
+pasada de `publisher.ts`. El temporizador del mismo nombre reintenta la
+verificación cada media hora. Publica únicamente trabajos aprobados cuya
+huella SHA-256 coincide con la copia revisada y el HTML actual de Design.
+
+`publications.json` conserva los IDs nativos y de Vercel antes de comprobar el
+enlace. Una respuesta perdida se recupera desde el historial; un resultado
+desconocido no genera otro despliegue automáticamente. Los despliegues conocidos
+se reutilizan. Las publicaciones no cambian `state.json` ni los prototipos.
+
+El publicador comprueba que cada proyecto Vercel se llama exactamente
+`od-{UUID del proyecto Design}` antes de retirar su protección SSO. La
+verificación pública usa una petición HTTP sin credenciales desde el servidor
+configurado por `GRUIA_PUBLIC_VERIFY_HOST`, para distinguir la página real de
+una comprobación antibot del navegador automatizado local. El estado
+`published` exige contenido del ejemplo y acceso HTTP 200.

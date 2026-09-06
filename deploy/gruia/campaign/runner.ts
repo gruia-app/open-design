@@ -17,7 +17,7 @@ export interface RunnerOptions { concurrency?: number; fableConcurrency?: number
 const ORIGIN = 'https://design.gruia.app', API = `${ORIGIN}/api`, MAX_SSE_MS = 20 * 60 * 1000, REQUEST_TIMEOUT_MS = 30_000;
 const MODELS: readonly Model[] = ['claude-fable-5-1', 'claude-opus-5'];
 const writeChains = new Map<string, Promise<void>>();
-export function classifyQuotaError(error: unknown): boolean { if ((error as any)?.status === 429) return true; return /(rate[_ -]?limit|quota|usage\s*limit|you['’]?ve hit your limit|resets?\b)/i.test(error instanceof Error ? error.message : typeof error === 'string' ? error : JSON.stringify(error ?? '')); }
+export function classifyQuotaError(error: unknown): boolean { if ((error as any)?.status === 429) return true; return /(rate[_ -]?limit|quota|usage\s*limit|you['’]?ve (?:hit|reached) your (?:\w+ )?limit|resets?\b)/i.test(error instanceof Error ? error.message : typeof error === 'string' ? error : JSON.stringify(error ?? '')); }
 export function isDeliveredHtml(html: unknown): html is string { if (typeof html !== 'string' || html.length <= 6000) return false; const s = html.toLowerCase(); return /<html\b|<body\b/.test(s) && /<style\b|<script\b/.test(s) && /<main\b|<button\b|<input\b|<select\b|<nav\b/.test(s); }
 export function seedJobState(state: RunnerState, job: ManifestJob, projectId = randomUUID(), now = new Date().toISOString()): RunnerState { if (!state.jobs[job.id]) state.jobs[job.id] = { id: job.id, projectId, normalFailures: 0, attemptPhase: 'none', status: 'pending', createdAt: now, updatedAt: now }; return state; }
 function msg(e: unknown) { return e instanceof Error ? e.message : typeof e === 'string' ? e : JSON.stringify(e); }
@@ -96,6 +96,7 @@ async function run(api: Api, dir: string, m: ManifestJob[], state: RunnerState, 
     }
     const failure = r.error ?? r.failureDetail ?? r.failureCategory ?? deliveryError;
     if (r.status === 'succeeded' && delivered) { s.status = 'succeeded'; s.completedAt = iso(now); s.error = undefined; delete s.qaIssues; }
+    else if (/reached your Fable limit/i.test(String(failure ?? '')) && process.env.GRUIA_B2B50_FABLE_FALLBACK === 'claude-opus-5') { (j as ManifestJob & {plannedModel?: Model}).plannedModel ??= j.model; j.model = 'claude-opus-5'; s.status = 'pending'; s.error = 'Fable model limit; continuing with explicitly configured Opus 5'; await atomic(join(dir, 'manifest.json'), m); }
     else if (classifyQuotaError(failure)) { state.pauseUntil = new Date(now() + 30 * 60 * 1000).toISOString(); s.status = 'paused'; s.error = summary(failure ?? 'quota'); }
     else if (attention(failure)) { s.status = 'needs_attention'; s.error = summary(failure); state.stopQueue = true; }
     else { s.normalFailures++; s.status = s.normalFailures >= 3 ? 'failed' : 'pending'; s.error = summary(failure ?? 'incomplete output'); }

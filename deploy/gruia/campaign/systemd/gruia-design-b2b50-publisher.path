@@ -1,0 +1,7 @@
+[Unit]
+Description=Publish newly approved Gruia B2B examples on state changes
+[Path]
+PathChanged=/home/roberto/.local/state/gruia-design-b2b50/state.json
+Unit=gruia-design-b2b50-publisher.service
+[Install]
+WantedBy=default.target

@@ -1,5 +1,6 @@
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 const require = createRequire(import.meta.url);
 const repository = process.env.GRUIA_DESIGN_REPO ?? resolve(import.meta.dirname, '../../..');
@@ -10,11 +11,12 @@ export async function checkPrototype(stateDir: string, id: string, projectId: st
   const browser = await chromium.launch({headless:true,executablePath:process.env.GRUIA_CHROMIUM_EXECUTABLE ?? chromium.executablePath(),args:['--no-sandbox']});
   const issues: string[] = [];
   try {
-    const context = await browser.newContext({storageState:join(stateDir,'browser-session.json'),locale:'es-ES'});
+    const context = await browser.newContext({storageState:join(stateDir,'browser-session.json'),locale:'es-ES',reducedMotion:'reduce'});
     const page = await context.newPage(); page.on('pageerror',(error: Error)=>issues.push('JavaScript: '+error.message.slice(0,250)));
     for (const [name,width,height] of [['desktop',1440,1000],['mobile',390,844]] as const) {
       await page.setViewportSize({width,height});
       const response = await page.goto(`https://design.gruia.app/api/projects/${projectId}/raw/index.html`,{waitUntil:'load',timeout:60000});
+      await page.evaluate(() => Promise.race([document.fonts.ready, new Promise(resolve => setTimeout(resolve, 2500))]));
       if (!response || response.status() !== 200) issues.push(`${name}: preview HTTP ${response?.status()}`);
       const result = await page.evaluate(()=>({
         title:document.title,heading:document.querySelector('h1')?.textContent?.trim(),text:document.body.innerText.length,
@@ -33,5 +35,6 @@ export async function checkPrototype(stateDir: string, id: string, projectId: st
     }
   } catch (error) {issues.push(error instanceof Error?error.message:String(error));}
   finally {await browser.close();}
-  const result={ok:issues.length===0,issues:[...new Set(issues)]};await writeFile(join(directory,'qa.json'),JSON.stringify(result,null,2),{mode:0o600});return result;
+  const localHTMLSHA256=createHash('sha256').update(await readFile(join(directory,'index.html'))).digest('hex');
+  const result={ok:issues.length===0,issues:[...new Set(issues)],localHTMLSHA256};await writeFile(join(directory,'qa.json'),JSON.stringify(result,null,2),{mode:0o600});return result;
 }

@@ -249,3 +249,14 @@ test('native dispatch is bounded to eight with independent Fable five and Opus t
   await ready;assert.equal(posts.length,8);assert.equal(posts.filter(p=>p.model==='claude-fable-5-1').length,5);assert.equal(posts.filter(p=>p.model==='claude-opus-5').length,3);
   for(const controller of streams)controller.close();await operation;assert.equal(posts.length,8,'disconnect yields rather than refilling or duplicating');
 });
+
+test('explicit Fable-to-Opus fallback preserves the project and does not spend a refinement attempt', async () => {
+  const m=manifest(),state=failedState(m);state.jobs['01']={id:'01',projectId:'p-01',conversationId:'c-01',clientRequestId:'fable-client',runId:'fable-run',normalFailures:2,attemptPhase:'active',status:'running',updatedAt:'2020-01-01T00:00:00.000Z'};
+  const dir=await fixture(state,m);const before=process.env.GRUIA_B2B50_FABLE_FALLBACK;process.env.GRUIA_B2B50_FABLE_FALLBACK='claude-opus-5';
+  try {
+    await main(['--once'],{stateDir:dir,fetch:(async(input:RequestInfo|URL)=>{assert.equal(String(input),'https://design.gruia.app/api/runs/fable-run');return response({status:'failed',error:"You've reached your Fable limit. Switch to another model to continue."});}) as typeof fetch});
+    const saved=JSON.parse(await readFile(join(dir,'state.json'),'utf8'));const plan=JSON.parse(await readFile(join(dir,'manifest.json'),'utf8'));
+    assert.equal(saved.jobs['01'].status,'pending');assert.equal(saved.jobs['01'].projectId,'p-01');assert.equal(saved.jobs['01'].normalFailures,2);assert.equal(saved.pauseUntil,undefined);
+    assert.equal(plan[0].model,'claude-opus-5');assert.equal(plan[0].plannedModel,'claude-fable-5-1');
+  } finally { if(before===undefined)delete process.env.GRUIA_B2B50_FABLE_FALLBACK;else process.env.GRUIA_B2B50_FABLE_FALLBACK=before; }
+});
