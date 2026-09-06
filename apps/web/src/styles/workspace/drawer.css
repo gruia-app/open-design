@@ -1560,6 +1560,35 @@
   color: var(--brand, #87ea5c);
 }
 
+/* A deployed prototype is chiefly useful as a page people can visit. Keep its
+   live URL in the file toolbar instead of hiding it inside the Share dialog. */
+.app .ws-tabs-actions .chrome-deployed-link {
+  max-width: min(260px, 24vw);
+  color: var(--text);
+  text-decoration: none;
+}
+.app .ws-tabs-actions .chrome-deployed-link__url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app .ws-tabs-actions .chrome-deployed-link__provider {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .app .ws-tabs-actions .chrome-deployed-link {
+    max-width: none;
+  }
+  .app .ws-tabs-actions .chrome-deployed-link__url {
+    display: none;
+  }
+  .app .ws-tabs-actions .chrome-deployed-link__provider {
+    display: inline;
+  }
+}
+
 .project-collab-demo-stage {
   position: relative;
   min-width: 0;

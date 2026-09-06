@@ -762,6 +762,14 @@ function publicShareUrlForDeployment(deployment?: WebDeploymentInfo | null): str
     : '';
 }
 
+function deploymentDisplayHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
 async function copyTextToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
@@ -15615,10 +15623,14 @@ function HtmlViewer({
   const deployedEntries = DEPLOY_PROVIDER_OPTIONS
     .map((option) => deploymentsByProvider[option.id])
     .filter((item): item is WebDeploymentInfo => Boolean(item?.url?.trim()));
-  const shareableDeploymentUrl =
+  const visibleToolbarDeployment =
     DEPLOY_PROVIDER_OPTIONS.map((option) => deploymentsByProvider[option.id])
-      .map((item) => publicShareUrlForDeployment(item))
-      .find(Boolean) ?? '';
+      .find((item) => Boolean(publicShareUrlForDeployment(item))) ?? null;
+  const shareableDeploymentUrl = publicShareUrlForDeployment(visibleToolbarDeployment);
+  const visibleToolbarDeploymentLabel = visibleToolbarDeployment
+    ? t(getDeployProviderOption(visibleToolbarDeployment.providerId).labelKey)
+    : '';
+  const visibleToolbarDeploymentHostname = deploymentDisplayHostname(shareableDeploymentUrl);
   // A link is a link: the published-file URL unlocks social sharing exactly
   // like a ready deployment does, so a blocked/protected deployment never
   // gates sharing when a clean publish link exists.
@@ -16733,6 +16745,21 @@ function HtmlViewer({
             >
               <RemixIcon name="history-line" size={15} />
             </button>
+          ) : null}
+          {shareableDeploymentUrl ? (
+            <a
+              className="chrome-action chrome-action-secondary chrome-action-with-label chrome-deployed-link"
+              href={shareableDeploymentUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label={`${t('fileViewer.open')}: ${visibleToolbarDeploymentHostname}`}
+              title={shareableDeploymentUrl}
+              data-testid="visible-deployment-link"
+            >
+              <RemixIcon name="external-link-line" size={15} />
+              <span className="chrome-deployed-link__url">{visibleToolbarDeploymentHostname}</span>
+              <span className="chrome-deployed-link__provider">{visibleToolbarDeploymentLabel}</span>
+            </a>
           ) : null}
           {rawCanShare || rawCanDownload ? (
             <div className="chrome-file-action-menus">

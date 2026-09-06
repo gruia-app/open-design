@@ -6418,6 +6418,54 @@ describe('FileViewer SVG artifacts', () => {
     });
   });
 
+  it('keeps the live deployment link visible without opening the share menu', async () => {
+    const file = baseFile({
+      name: 'index.html',
+      path: 'index.html',
+      mime: 'text/html',
+      kind: 'html',
+      artifactManifest: {
+        version: 1,
+        kind: 'html',
+        title: 'Page',
+        entry: 'index.html',
+        renderer: 'html',
+        exports: ['html'],
+      },
+    });
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input);
+      if (url === '/api/projects/project-1/deployments') {
+        return Response.json({
+          deployments: [{
+            id: 'vercel-deploy',
+            projectId: 'project-1',
+            fileName: 'index.html',
+            providerId: 'vercel-self',
+            url: 'https://page-example.vercel.app',
+            deploymentCount: 1,
+            target: 'production',
+            status: 'ready',
+            createdAt: 1,
+            updatedAt: 2,
+          }],
+        });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    }));
+
+    render(
+      <FileViewer projectId="project-1" projectKind="prototype" file={file}
+        liveHtml="<html><body><h1>Hello</h1></body></html>"
+      />,
+    );
+
+    const link = await screen.findByRole('link', { name: /page-example\.vercel\.app/i });
+    expect(link.getAttribute('href')).toBe('https://page-example.vercel.app');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('copies the newest deployment URL across providers', async () => {
     const file = baseFile({
       name: 'index.html',
