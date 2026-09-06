@@ -748,5 +748,80 @@
       "https://saaspages.xyz/"
     ],
     "prompt": "Programa el sitio de Ártico Recovery, proveedor ficticio de continuidad de negocio y recuperación ante desastres IT: réplica de sistemas, plan de contingencia, pruebas de conmutación y recuperación asistida para empresas con producción crítica. Decisor: responsable de sistemas o dirección de operaciones. Conversión: solicitar una prueba de recuperación sobre un sistema real. Entrega un index.html autocontenido, con CSS y JS en línea y sin dependencias JS externas.\n\nDirección visual de minimalismo extremo, casi austero: blanco hielo #FBFCFD, blanco puro #FFFFFF, negro #000000, gris línea #E4E7EA, gris texto #6B7075 y un único acento azul hielo #0057FF reservado a la cifra activa y a la llamada a la acción. Tipografía como principal recurso gráfico: números gigantes de 120–200px en sans neutra de peso 300 con tracking -0.04em y alineación óptica, titulares de 40–56px, texto a 17px/1.7 y monoespaciada de 12px solo en marcas de tiempo. Nada de tarjetas, sombras, degradados, iconos decorativos ni bordes redondeados: solo líneas horizontales de 1px, mucho blanco y una retícula de 12 columnas rigurosa.\n\nEstructura de 7 secciones: apertura con una sola cifra enorme, los minutos que cuesta una hora de parada, y una frase; el coste de la caída en tres números gigantes con nota breve; la cronología de recuperación, una línea temporal horizontal desde el incidente hasta el servicio restablecido con hitos, responsables y minutos acumulados; el simulador de RTO, RPO y pérdida de datos; cómo lo conseguimos, con arquitectura de réplica en esquema SVG de trazo fino (sitio principal, réplica, punto de consistencia, conmutación); pruebas y evidencias con calendario de simulacros y resultados ficticios en tabla; y contacto con formulario de prueba de recuperación.\n\nInteracción principal: simulador de RTO, RPO y pérdida de datos. El usuario define sistema crítico (ERP, comercio electrónico, MES de planta, correo, base de datos), frecuencia de copia, tipo de réplica (fría, templada, caliente), horas de operación al día, facturación por hora y transacciones por hora. Se calculan RPO en minutos, RTO estimado, transacciones perdidas, pérdida económica y coste de la solución, dibujando en SVG una línea temporal con la ventana de datos perdidos y la de indisponibilidad, proporcionales. Un comparador enfrenta la situación actual con dos escenarios de mejora en euros y minutos, con aviso de que las cifras son ilustrativas. Además: cronología recorrible paso a paso por teclado con el reloj acumulado en cada hito; conmutador de sector (industria, retail, sanidad, servicios) que ajusta los valores por defecto; y tabla de simulacros ordenable por fecha, duración o resultado.\n\nRequisitos: HTML semántico, tabla accesible equivalente a cada línea temporal, contraste AA holgado, foco visible azul de 2px claramente perceptible sobre blanco, simulador, cronología y tabla operables por teclado, resultados en región aria-live, prefers-reduced-motion que presente la cronología sin animación de conteo, y móvil de 390px con números gigantes a 72px y cronología vertical. Ilustraciones exclusivamente SVG/CSS locales de trazo fino: línea temporal, esquema de réplica, ventana de pérdida, reloj. Datos, clientes y resultados ficticios coherentes, sin proveedores reales, sin copy ajeno y sin prometer disponibilidad, certificación o garantía de servicio; simulador y formulario declarados demostración sin envío ni servicio real; ningún enlace '#' vacío, solo anclas internas reales. Entrega DESIGN.md con tokens CSS exactos, componentes y reglas de interacción para B2BWeb, y README.md con carencias y referencias.\n\nEntrega index.html autocontenido, DESIGN.md y README.md dentro de este proyecto. Todos los formularios son demostraciones locales: no envíes información a terceros. Cuida móvil a360y390px sin desbordamiento global, teclado, enlaces internos reales y estados interactivos funcionales. Documenta tokens y cómo trasladar la identidad a B2BWeb."
+  },
+  {
+    "id": "51",
+    "name": "Órbita Revenue",
+    "sector": "Revenue operations B2B",
+    "style": "Índigo nocturno con tarjetas de señal y gráficos fluorescentes",
+    "layout": "Dashboard de embudo con panel lateral contextual",
+    "interaction": "Constructor de forecast por etapas y probabilidad",
+    "designSystemId": "dark-data",
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/",
+      "https://www.saasframe.io/#dashboard"
+    ],
+    "prompt": "Construye una aplicación B2B autocontenida para Órbita Revenue, una plataforma de revenue operations para equipos comerciales complejos. Usa un dashboard oscuro índigo, acentos lima y violeta, tipografía sans compacta y números tabulares. Crea 8 vistas conectadas: resumen, pipeline, cuentas, forecast, actividad, playbooks, integraciones y configuración. El prototipo debe incluir un constructor de forecast por etapas y probabilidad que actualice una gráfica SVG y el forecast ponderado; filtros persistentes, panel lateral de detalle, tabla accesible con ordenación, estados de carga, vacío y error. Incluye navegación por teclado, contraste AA, responsive móvil sin desbordamiento, prefers-reduced-motion, HTML semántico, index.html, DESIGN.md y README.md. Todo es ficticio y demo local, sin dependencias externas, enlaces muertos ni marcas copiadas."
+  },
+  {
+    "id": "52",
+    "name": "Marea Support",
+    "sector": "Customer support SaaS",
+    "style": "Blanco cálido, coral y azul tinta con bandeja editorial",
+    "layout": "Inbox de tres columnas con vista de conversación",
+    "interaction": "Reglas de enrutado y respuesta guardada",
+    "designSystemId": "warm-editorial",
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/",
+      "https://www.saasframe.io/#inbox"
+    ],
+    "prompt": "Diseña Marea Support, una aplicación B2B para operaciones de soporte multicanal. Inspírate en patrones de inbox, onboarding y detalle de SaaSFrame sin copiar interfaces. Usa blanco cálido, azul tinta, coral y verde confirmación; la pantalla principal es una bandeja de tres columnas que se convierte en navegación apilada en móvil. Implementa vistas de inbox, conversación, clientes, automatizaciones, SLA, base de conocimiento y analítica. El flujo principal permite crear una regla de enrutado con condiciones, vista previa y prueba sobre tickets ficticios; añade respuestas guardadas, filtros, etiquetas, estados vacío/cargando/error y confirmación accesible. Entrega index.html, DESIGN.md y README.md autocontenidos, con teclado, foco visible, contraste AA, reduced motion y sin servicios reales ni enlaces #."
+  },
+  {
+    "id": "53",
+    "name": "Bóveda Control",
+    "sector": "Compliance y riesgo empresarial",
+    "style": "Marfil, verde botella y rojo sello con estética de expediente",
+    "layout": "Lista de controles y expediente con timeline",
+    "interaction": "Evaluación de riesgo y plan de remediación",
+    "designSystemId": "mono",
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/",
+      "https://www.saasframe.io/#details"
+    ],
+    "prompt": "Crea Bóveda Control, una aplicación B2B de compliance para equipos de riesgo. Dirección visual de expediente: marfil, verde botella, rojo sello, líneas finas, etiquetas numeradas y tipografía serif para titulares junto a sans legible. Incluye overview, controles, evidencias, proveedores, incidentes, auditorías, calendario y roles. El prototipo central permite seleccionar un control, valorar impacto y probabilidad, calcular el nivel de riesgo y generar un plan de remediación en una timeline SVG; panel de evidencia con drag-and-drop simulado, filtros y comentarios locales. Añade estados de loading, vacío, error y éxito, responsive, navegación por teclado, roles ARIA, AA, reduced motion. Produce index.html, DESIGN.md y README.md sin dependencias, marcas reales, backend ni enlaces muertos; deja claro que los datos son ficticios."
+  },
+  {
+    "id": "54",
+    "name": "Pulso Planta",
+    "sector": "Operaciones de fabricación",
+    "style": "Gris grafito, amarillo seguridad y cian con panel industrial",
+    "layout": "Mosaico de máquinas y vista de orden de trabajo",
+    "interaction": "Secuenciador de producción y simulador OEE",
+    "designSystemId": "dark-data",
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/",
+      "https://www.saasframe.io/#flowchart"
+    ],
+    "prompt": "Construye Pulso Planta, una aplicación B2B para responsables de producción industrial. Usa grafito, amarillo seguridad y cian; tipografía monoespaciada para métricas, tarjetas con estados de máquina y diagramas SVG de línea. Incluye tablero de planta, órdenes de trabajo, máquinas, mantenimiento, calidad, inventario, turnos y configuración. El flujo principal es un secuenciador de producción: el usuario mueve órdenes entre estaciones, ajusta duración y merma, y el simulador calcula OEE, disponibilidad y cuello de botella con actualización visual. Añade detalle de máquina en panel lateral, filtros por turno, estados vacíos/error/cargando y vista móvil en lista. Entrega HTML autocontenido, DESIGN.md y README.md, accesibilidad AA, teclado, reduced motion, sin APIs reales, marcas copiadas ni enlaces #."
+  },
+  {
+    "id": "55",
+    "name": "Nexo Atlas",
+    "sector": "Gestión de conocimiento empresarial",
+    "style": "Azul papel, naranja cálido y lavanda con mapas de conocimiento",
+    "layout": "Buscador protagonista con grafo y resultados agrupados",
+    "interaction": "Explorador semántico y colecciones compartidas",
+    "designSystemId": "paper",
+    "model": "claude-opus-5",
+    "inspirations": [
+      "https://www.saasframe.io/",
+      "https://www.saasframe.io/#search-modal"
+    ],
+    "prompt": "Diseña Nexo Atlas, una aplicación B2B de conocimiento interno para organizaciones distribuidas. Dirección visual de papel digital: azul tinta, fondo azul muy claro, naranja cálido y lavanda; buscador grande, tarjetas de documentos y un grafo SVG de relaciones. Implementa inicio, búsqueda, documento, colecciones, personas expertas, actividad, permisos y ajustes. El flujo principal permite escribir una consulta, seleccionar filtros, explorar un grafo de temas y guardar resultados en una colección; incluye modal de búsqueda, panel de filtros, estados de no resultados, carga, error y éxito, además de navegación móvil. Genera index.html, DESIGN.md y README.md autocontenidos, semánticos, AA, con teclado y reduced motion. Todo el contenido es ficticio y la demo no envía datos ni usa dependencias externas o enlaces muertos."
   }
 ]

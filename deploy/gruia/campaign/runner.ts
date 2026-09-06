@@ -33,12 +33,12 @@ function index(manifest: ManifestJob[], state: RunnerState) { return manifest.ma
 async function persist(dir: string, manifest: ManifestJob[], state: RunnerState) { await atomic(join(dir, 'state.json'), state); await atomic(join(dir, 'index.json'), index(manifest, state)); }
 
 export function validateManifest(value: unknown): ManifestJob[] {
-  if (!Array.isArray(value) || value.length !== 50) throw new Error('manifest must contain exactly 50 jobs');
+  if (!Array.isArray(value) || value.length !== 55) throw new Error('manifest must contain exactly 55 jobs');
   const ids = new Set<string>();
   for (const x of value) { const j = x as ManifestJob; if (!j || typeof j !== 'object' || !/^\d{2}$/.test(j.id) || ids.has(j.id)) throw new Error('manifest IDs must be unique two-digit values'); ids.add(j.id);
     if (typeof j.name !== 'string' || !j.name || typeof j.sector !== 'string' || !j.sector || typeof j.style !== 'string' || !j.style || typeof j.layout !== 'string' || !j.layout || typeof j.interaction !== 'string' || !j.interaction || typeof j.prompt !== 'string' || !j.prompt || (j.designSystemId !== null && (typeof j.designSystemId !== 'string' || !j.designSystemId)) || !MODELS.includes(j.model) || !Array.isArray(j.inspirations) || !j.inspirations.every(v => typeof v === 'string')) throw new Error(`manifest job ${j.id} has invalid fields`);
   }
-  for (let n = 1; n <= 50; n++) if (!ids.has(String(n).padStart(2, '0'))) throw new Error('manifest IDs must be 01 through 50');
+  for (let n = 1; n <= 55; n++) if (!ids.has(String(n).padStart(2, '0'))) throw new Error('manifest IDs must be 01 through 55');
   return value as ManifestJob[];
 }
 function normalize(state: RunnerState) { if (!state || typeof state !== 'object' || !state.jobs || typeof state.jobs !== 'object' || Array.isArray(state.jobs)) throw new Error('state.json contains invalid jobs'); for (const [id, value] of Object.entries(state.jobs)) { if (!/^\d{2}$/.test(id) || !value || value.id !== id || typeof value.projectId !== 'string' || !value.projectId || !['pending', 'running', 'succeeded', 'failed', 'paused', 'needs_attention'].includes(value.status)) throw new Error('state.json contains invalid job ' + id); } for (const s of Object.values(state.jobs)) { s.normalFailures ??= s.attempts ?? 0; s.attemptPhase ??= s.runId ? 'active' : s.clientRequestId ? 'prepared' : 'none'; } }
