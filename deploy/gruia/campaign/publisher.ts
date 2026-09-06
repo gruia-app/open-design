@@ -136,7 +136,8 @@ async function localEligibility(dir: string, job: { id: string; projectId: strin
   if (qa.ok !== true || typeof qa.localHTMLSHA256 !== 'string' || !/^[a-f0-9]{64}$/i.test(qa.localHTMLSHA256)) return undefined;
   const html = await readFile(join(output, 'index.html'), 'utf8').catch(() => '');
   if (!html || sha256(html) !== qa.localHTMLSHA256) return undefined;
-  return { sha256: qa.localHTMLSHA256.toLowerCase(), brand: typeof qa.expectedBrand === 'string' && qa.expectedBrand.trim() ? qa.expectedBrand : undefined };
+  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
+  return { sha256: qa.localHTMLSHA256.toLowerCase(), brand: typeof qa.expectedBrand === 'string' && qa.expectedBrand.trim() ? qa.expectedBrand : title || undefined };
 }
 async function adopt02(dir: string, ledger: PublicationLedger) {
   if (ledger.publications['02']) return;

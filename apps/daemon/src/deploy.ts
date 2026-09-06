@@ -1262,6 +1262,10 @@ export function resolveReferencedPath(raw: unknown, baseDir: string) {
   const trimmed = raw.trim();
   if (!trimmed || trimmed.startsWith('#')) return null;
   if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(trimmed)) return null;
+  // A quoted CSS data URL containing a literal `)` can be truncated by the
+  // bounded url() extractor before its closing quote. It is still an absolute
+  // URI, not a project file reference.
+  if (/^['"][A-Za-z][A-Za-z0-9+.-]*:/.test(trimmed)) return null;
   if (trimmed.startsWith('//')) return null;
   const withoutHash = trimmed.split('#')[0] ?? '';
   const withoutQuery = withoutHash.split('?')[0] ?? '';

@@ -71,6 +71,17 @@ test('failed QA is ineligible and never calls the native deploy POST', async () 
   assert.equal(postCount(calls), 0);
 });
 
+test('public verification follows the approved document title when the model renames the example', async () => {
+  const dir = await fixture();
+  const renamed = `<!doctype html><html><head><title>Actual Brand · Dashboard</title></head><body><main><h1>Actual Brand</h1><p>${'durable preview '.repeat(500)}</p></main></body></html>`;
+  await writeFile(join(dir, 'outputs', '03', 'index.html'), renamed);
+  await writeFile(join(dir, 'outputs', '03', 'qa.json'), JSON.stringify({ ok: true, localHTMLSHA256: sha(renamed) }));
+  const calls: ApiCall[] = [];
+  await main({ stateDir: dir, api: nativeApi(calls, { raw: { '03': renamed } }), vercelFetch: vercel().fetcher, verifyPublic: async (_url, expectedBrand) => ({ status: 200, body: renamed.includes(expectedBrand) ? renamed : '<html>wrong identity</html>' }), now: fixedNow });
+  const ledger = JSON.parse(await readFile(join(dir, 'publications.json'), 'utf8'));
+  assert.equal(ledger.publications['03'].stage, 'published');
+});
+
 test('publishing leaves every originally accepted campaign HTML and state record byte-for-byte unchanged', async () => {
   const ids = ['01', '02', '03', '04']; const dir = await fixture({ ids });
   const before = await Promise.all(ids.map(id => readFile(join(dir, 'outputs', id, 'index.html'), 'utf8')));

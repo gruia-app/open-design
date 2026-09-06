@@ -545,6 +545,12 @@ describe('deploy file set', () => {
     );
   });
 
+  it('ignores quoted data URLs truncated at a literal parenthesis', () => {
+    const [ref] = extractCssReferences(`body{background-image:url("data:image/svg+xml,<svg><g transform='translate(1 2)'></g></svg>")}`);
+    expect(ref).toBeTruthy();
+    expect(resolveReferencedPath(ref, '.')).toBeNull();
+  });
+
   it('bundles assets referenced from inline <style> blocks', async () => {
     const { projectsRoot, projectId, dir } = await setupProject();
     await mkdir(path.join(dir, 'assets'));
