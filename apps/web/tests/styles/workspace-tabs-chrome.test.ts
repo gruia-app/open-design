@@ -425,4 +425,14 @@ describe('workspace tabs chrome styles', () => {
     expect(ruleValue(menu, 'overflow-y')).toBe('auto');
     expect(ruleValue(menu, 'overscroll-behavior')).toBe('contain');
   });
+
+  it('lets an open docked dropdown escape the clipped chat slot', () => {
+    const openSlot = cssDeclarations(
+      routinesCss,
+      '.app .split-chat-slot:has(.workspace-tabs-dropdown__menu)',
+    );
+
+    expect(ruleValue(openSlot, 'overflow')).toBe('visible');
+    expect(Number(ruleValue(openSlot, 'z-index'))).toBeGreaterThan(1);
+  });
 });

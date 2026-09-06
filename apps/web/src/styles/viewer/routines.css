@@ -953,6 +953,14 @@
   flex: 0 0 auto;
   min-width: 0;
 }
+/* The chat slot normally clips the pane and its shadow. While the docked tab
+   menu is open that same clipping boundary would hide the menu below this
+   40px row, making the trigger appear inert. Release it only for the open
+   state and lift the slot above the adjacent workspace pane. */
+.app .split-chat-slot:has(.workspace-tabs-dropdown__menu) {
+  overflow: visible;
+  z-index: 70;
+}
 /* The chrome row VISUALLY keeps only the pinned Home tab (per product: 顶部
    只保留 home 和头像/积分) — project tabs surface through the docked
    dropdown above instead, never as pills in the chrome. Rows still render
