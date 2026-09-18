@@ -41,8 +41,12 @@ function buildCommandShellCommand(command: string, args: readonly string[]): str
 
 function buildLoginShellCommand(innerCommand: string): string {
   // Use a non-login shell and re-export PATH so test fakes and agent wrappers
-  // remain visible; login shells often reset PATH from profile scripts.
-  return `export PATH=${quotePosixShellArg(process.env.PATH)}; ${innerCommand}`;
+  // remain visible; login shells often reset PATH from profile scripts. When
+  // the daemon itself has no PATH, skip the export entirely — `export PATH=''`
+  // would clobber the child shell's built-in default.
+  const path = process.env.PATH;
+  const prefix = path ? `export PATH=${quotePosixShellArg(path)}; ` : '';
+  return `${prefix}${innerCommand}`;
 }
 
 export function execGhBuffered(

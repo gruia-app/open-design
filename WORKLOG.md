@@ -168,6 +168,26 @@ contenido (siblings intactos), retry del boundary genérico re-monta tras
 limpiar el fallo — 4/4 verdes; `pnpm --filter @open-design/web typecheck` y
 `pnpm guard` verdes.
 
+## Ítem 7 — Tests del boundary de shell-quoting + fix `PATH=''`
+
+**Hecho** (leaf-1 #5/#6): `apps/daemon/src/services/login-shell.ts` es la
+única superficie del daemon donde argv se re-encadena en un string de shell
+(`sh -c "export PATH=…; gh 'auth' 'status'"`) — `quotePosixShellArg` era el
+boundary de inyección sin cobertura, y `plugin-share-tasks.ts` enruta publish
+de usuario por ahí. Además `buildLoginShellCommand` emitía `export PATH=''`
+cuando el daemon arrancaba sin `PATH` (GUI launch), clobber del default del
+shell hijo — justo el escenario que el helper existe para arreglar.
+
+- `buildLoginShellCommand`: omite el `export PATH=…` cuando `process.env.PATH`
+  es falsy; el shell hijo aplica su propio default.
+- Nuevo `apps/daemon/tests/login-shell.test.ts`: 11 argv hostiles (comillas,
+  `$(…)`, backticks, newline, `$HOME`, `*`, `;`, vacío) deben sobrevivir
+  verbatim a través de un `sh -c` real; tests de PATH (default no clobbered +
+  re-export cuando existe). Skip en win32 (path POSIX-only).
+
+**Verificación:** `pnpm exec vitest run tests/login-shell.test.ts` — 14/14
+verdes; `pnpm --filter @open-design/daemon typecheck` verde.
+
 ## Bloqueados
 
 - Ninguno todavía.
