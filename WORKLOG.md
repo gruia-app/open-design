@@ -507,3 +507,28 @@ No accionado del review:
 - Bind wildcard `0.0.0.0` en test fixture (especulativo, sandbox-dependiente).
 - `error?.code` → `'code' in error` en execFileBuffered (equivalente para
   errores execFile).
+
+## Ítem 23 — Lockdown 0600 en stores con credenciales (daemon)
+
+Patrón del fix `.mcp.json` extendido al resto de writers tmp+rename que
+persisten credenciales sin chmod:
+
+- `mcp-oauth.ts::writeClientCache` — caché de Dynamic Client Registration;
+  puede llevar `client_secret`.
+- `mcp-config.ts::doWrite` — `mcp-config.json` con `env`/`headers` del
+  usuario que pueden contener secretos MCP.
+- `app-config.ts::doWrite` — `app-config.json` con `agentCliEnv`
+  (ANTHROPIC_API_KEY, OPENAI_API_KEY, ...).
+
+Tests: aserción `mode & 0o777 === 0o600` (POSIX-only) añadida a
+`mcp-config.test.ts`, `app-config.test.ts` y al test de caché de cliente en
+`mcp-oauth.test.ts`.
+
+**Verificación:** mcp-config 86/86 (incl. nuevo), mcp-oauth 21/21,
+app-config 90/90; typecheck daemon verde.
+
+No tocado (mismo patrón, sin credenciales o perms que deben conservarse):
+`plugin-asset-cache` (blobs), `patch-edit`/`artifact-writer` (ficheros de
+usuario/artefactos), `orbit.ts` (store de producto), `codex-config-normalize`
+(patchea el config.toml del usuario — preservar perms propios),
+`update-apply-observations` (metadatos de migración).
