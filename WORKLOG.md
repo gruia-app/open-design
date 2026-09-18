@@ -667,3 +667,7 @@ escribían estado durable directo. Un write cortado corrompe el manifest
 **Verificación:** typecheck daemon verde; live-artifacts-store 40/40,
 live-artifacts-schema 26/26, project-file-versions 14/14,
 automation-templates 3/3.
+- Re-verificación 06:27 con carga normalizada (load ~9):
+  `connectors-routes` 45/45 verdes — el suite que fallaba con 33
+  hook-timeouts ahora pasa completo; confirma que el fix de timeouts
+  (ítem 25) resuelve la clase de flake sin tocar producción.
