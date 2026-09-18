@@ -642,3 +642,7 @@ deferido).
 - `23fa1c4`: regresión TasksView — `/api/projects` 500 → routines del
   mismo batch siguen renderizando (4/4 verde en
   TasksView.routines.test.tsx). Cierra el último low del late review.
+- `613a268`: test de componente DesktopPetSurface — read inicial ok →
+  failure en la pierna runs (y en projects) conserva el task center
+  last-good. Cierra la cobertura pendiente del late review; todos los
+  hallazgos accionables quedan actuados o documentados.
