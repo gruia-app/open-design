@@ -650,3 +650,20 @@ deferido).
   de useWorkspaceContext usaban `window` sin re-check — uncaught
   ReferenceError post-teardown (visto como unhandled error en el suite
   web completo). Guard dentro del callback en ambos.
+
+## Ítem 26 — Writes atómicos en stores de estado (06:18)
+
+`live-artifacts/store.ts` tenía `writeFileAtomic` pero varios paths lo
+bypasseaban; `project-file-versions.ts` y `automation-templates.ts`
+escribían estado durable directo. Un write cortado corrompe el manifest
+(huerfaniza todas las versiones) o el store completo de templates.
+
+- live-artifacts: refresh-state, persisted-artifact, create path y
+  regeneraciones de preview → `writeFileAtomic`.
+- project-file-versions: manifest + content file (referenciado por
+  digest) → tmp+rename.
+- automation-templates: store de usuario → tmp+rename.
+
+**Verificación:** typecheck daemon verde; live-artifacts-store 40/40,
+live-artifacts-schema 26/26, project-file-versions 14/14,
+automation-templates 3/3.
