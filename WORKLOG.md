@@ -112,3 +112,26 @@
   vela.ts (tokens de protocolo, migración diseñada documentada en
   SAAS_GAPS). ~150 tests verdes en el batch; typechecks OK. Flakes de
   carga en od-next e2e clasificados por rerun aislado.
+
+## Gateway auth — G7 auditoría + G4 rate-limit IP (rama fleet/next-gaps-2)
+
+- Revisión post-muerte del tramo anterior: diffs G7/G4 auditados, 27/27
+  tests re-ejecutados — trabajo del predecesor correcto, sin correcciones.
+- `7db05a69b` G7: tabla `auth_audit` (event/at/email/user_id/org/ip/
+  user_agent/detail) con retención sweep-on-write (90d + 100k cap, mismo
+  patrón que login_csrf/password_sessions). `SessionStore` gana
+  recordAuthEvent/readAuthAudit; `GatewayCore` registra login_success,
+  login_failure (invalid_credentials / not_admitted / rate_limited /
+  csrf_rejected) y logout con contexto del request (x-forwarded-for
+  primer hop o socket, user-agent acotado). Detalle de fallo queda
+  interno — respuesta HTTP inalterada (sin enumeración de usuarios).
+- `380311354` G4: tercer bucket en `LoginRateLimiter` — 20 intentos/min
+  por IP (cap 10k IPs trackeadas, evicción FIFO como el bucket email),
+  alimentado por `AuthAuditContext.ip`. Callers sin contexto mantienen
+  comportamiento previo (email+global). Intentos rechazados no consumen
+  slot y auditan `rate_limited` con la IP.
+- `a8f0e978f` refinamiento G7: `authorize()` audita `session_revoked`
+  (detail `identity_mismatch`) cuando mata una sesión por identidad
+  revocada — delete antes de auditar → una fila por revocación, no una
+  por request con cookie stale.
+- Verificación: typecheck + 27/27 tests gateway verdes en cada paso.

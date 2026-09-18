@@ -10,13 +10,18 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   `X-Frame-Options: DENY` (commit `0dfb46556`, tests 11/11). Merged vía PR #4.
 - [ ] G3 — sin barrido periódico de sesiones: aun con sweep-on-write, una org sin
   logins acumula. (!) decisión: ¿merece timer dedicado? Bajo — G1 lo hace opcional.
-- [ ] G4 — rate limit de login solo en memoria y por email+global; sin bucket por IP.
-  (!) decisión si multi-instancia.
+- [x] G4 — rate limit de login solo en memoria y por email+global; sin bucket por IP.
+  Añadido bucket por IP (20/min, 10k keys, sweep-on-access) alimentado por
+  `AuthAuditContext.ip` (commit `380311354`, tests 27/27). Single-instancia
+  in-memory — si el gateway pasa a multi-instancia reabrir como limiter
+  compartido.
 - [x] G5 — `GET /auth/session` `csrfToken`: verificado — `json()` aplica `noStore`
   globalmente a rutas /auth. Sin gap real.
 - [ ] G6 — sin métricas/observabilidad propia (solo /healthz). (!) decisión de diseño.
-- [ ] G7 — sin auditoría de logins (quién, cuándo, desde dónde). (!) decisión: tabla
-  `auth_audit` + retención.
+- [x] G7 — sin auditoría de logins (quién, cuándo, desde dónde). Tabla
+  `auth_audit` (event/at/email/user_id/org/ip/user_agent/detail) con retención
+  90d + 100k rows; eventos login_success/login_failure(detail)/logout/
+  session_revoked (commits `7db05a69b` + `a8f0e978f`, tests 27/27).
 - [ ] G8 — `verifyCsrf`/`readSession` devuelven bool/null sin distinguir "expirada" de
   "inexistente" — logging forense limitado. Bajo.
 - [x] G9 — `sessionTtlSeconds` hardcodeado a 14400 en config.ts ignorando el valor

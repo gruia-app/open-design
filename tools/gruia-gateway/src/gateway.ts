@@ -3,7 +3,7 @@ import { pbkdf2, randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, request as httpRequest, type IncomingHttpHeaders, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { Transform, pipeline } from "node:stream";
 import type { Duplex } from "node:stream";
-import type { AuthorizationRepository, GatewayConfig, GatewayIdentity, SessionStore, StoredSession } from "./types.js";
+import type { AuthAuditContext, AuthAuditEvent, AuthorizationRepository, GatewayConfig, GatewayIdentity, SessionStore, StoredSession } from "./types.js";
 
 type Authorized = Readonly<{ session: StoredSession; identity: GatewayIdentity }>;
 type Form = ReadonlyMap<string, string>;
@@ -14,8 +14,10 @@ const MAX_AUTH_FORM_BYTES = 8 * 1024;
 const LOGIN_CSRF_TTL_MS = 10 * 60_000;
 const LOGIN_GLOBAL_LIMIT = 60;
 const LOGIN_EMAIL_LIMIT = 8;
+const LOGIN_IP_LIMIT = 20;
 const LOGIN_WINDOW_MS = 60_000;
 const MAX_TRACKED_EMAILS = 5_000;
+const MAX_TRACKED_IPS = 10_000;
 const MAX_PBKDF2_ITERATIONS = 2_000_000;
 const DUMMY_BCRYPT_HASH = "$2b$10$7EqJtq98hPqEX7fNZaFWoO.eD9bjVg4mbhAFt0zHehsFd6rC0AY1i";
 
@@ -85,15 +87,26 @@ export async function verifyCanonicalPassword(password: string, hash: string): P
 class LoginRateLimiter {
   private global: number[] = [];
   private readonly emails = new Map<string, number[]>();
+  private readonly ips = new Map<string, number[]>();
   constructor(private readonly clock: () => number) {}
-  allow(email: string): boolean {
+  private sweep(map: Map<string, number[]>, cutoff: number): void { for (const [key, values] of map) { const active = values.filter((time) => time >= cutoff); if (active.length) map.set(key, active); else map.delete(key); } }
+  private track(map: Map<string, number[]>, key: string, cap: number, now: number): number[] {
+    const attempts = map.get(key) ?? [];
+    if (!map.has(key) && map.size >= cap) map.delete(map.keys().next().value!);
+    attempts.push(now); map.set(key, attempts);
+    return attempts;
+  }
+  allow(email: string, ip?: string): boolean {
     const now = this.clock(); const cutoff = now - LOGIN_WINDOW_MS;
     this.global = this.global.filter((time) => time >= cutoff);
-    for (const [key, values] of this.emails) { const active = values.filter((time) => time >= cutoff); if (active.length) this.emails.set(key, active); else this.emails.delete(key); }
-    const attempts = this.emails.get(email) ?? [];
-    if (this.global.length >= LOGIN_GLOBAL_LIMIT || attempts.length >= LOGIN_EMAIL_LIMIT) return false;
-    if (!this.emails.has(email) && this.emails.size >= MAX_TRACKED_EMAILS) this.emails.delete(this.emails.keys().next().value!);
-    attempts.push(now); this.emails.set(email, attempts); this.global.push(now);
+    this.sweep(this.emails, cutoff); this.sweep(this.ips, cutoff);
+    const ipAttempts = ip ? (this.ips.get(ip) ?? []) : null;
+    if (this.global.length >= LOGIN_GLOBAL_LIMIT
+      || (this.emails.get(email) ?? []).length >= LOGIN_EMAIL_LIMIT
+      || (ipAttempts !== null && ipAttempts.length >= LOGIN_IP_LIMIT)) return false;
+    this.track(this.emails, email, MAX_TRACKED_EMAILS, now);
+    if (ip) this.track(this.ips, ip, MAX_TRACKED_IPS, now);
+    this.global.push(now);
     return true;
   }
 }
@@ -103,15 +116,20 @@ export class GatewayCore {
   constructor(readonly config: GatewayConfig, private readonly store: SessionStore, private readonly identities: AuthorizationRepository, private readonly clock: () => number = nowMs) { this.limiter = new LoginRateLimiter(clock); }
   startLoginCsrf(): { token: string; expiresAt: number } { const token = random(); const expiresAt = this.clock() + LOGIN_CSRF_TTL_MS; this.store.createLoginCsrf(token, expiresAt); return { token, expiresAt }; }
   consumeLoginCsrf(cookieToken: string | undefined, formToken: string | undefined): boolean { return !!cookieToken && !!formToken && cookieToken.length <= 1024 && formToken.length <= 1024 && this.store.consumeLoginCsrf(cookieToken, formToken, this.clock()); }
-  async login(email: string, password: string): Promise<{ id: string; expiresAt: number } | null> {
-    if (!this.limiter.allow(email)) return null;
+  recordAuthEvent(event: AuthAuditEvent, fields: Omit<Parameters<SessionStore["recordAuthEvent"]>[0], "event" | "at"> = {}): void {
+    this.store.recordAuthEvent({ event, at: this.clock(), ...fields });
+  }
+  async login(email: string, password: string, context?: AuthAuditContext): Promise<{ id: string; expiresAt: number } | null> {
+    const audit = (detail: string): void => this.recordAuthEvent("login_failure", { email, detail, ...(context ?? {}) });
+    if (!this.limiter.allow(email, context?.ip)) { audit("rate_limited"); return null; }
     const user = await this.identities.findLoginUser(email, this.admittedOrganizationIds());
     const validPassword = await verifyCanonicalPassword(password, user?.hashedPassword ?? DUMMY_BCRYPT_HASH);
-    if (!user || !validPassword) return null;
+    if (!user || !validPassword) { audit("invalid_credentials"); return null; }
     const identity = this.singleAdmittedIdentity(user.identities);
-    if (!identity) return null;
+    if (!identity) { audit("not_admitted"); return null; }
     const id = random(); const expiresAt = this.clock() + this.config.sessionTtlSeconds * 1000;
     this.store.createSession(Object.freeze({ id, userId: identity.userId, organizationId: identity.organizationId, role: identity.role, csrfToken: random(), expiresAt }));
+    this.recordAuthEvent("login_success", { email, userId: identity.userId, organizationId: identity.organizationId, ...(context ?? {}) });
     return { id, expiresAt };
   }
   async authorize(sessionId: string | undefined): Promise<Authorized | null> {
@@ -119,11 +137,20 @@ export class GatewayCore {
     const session = this.store.readSession(sessionId, this.clock());
     if (!session || !this.admittedOrganizationIds().includes(session.organizationId)) return null;
     const identity = this.singleAdmittedIdentity(await this.identities.resolveUser(session.userId, [session.organizationId]));
-    if (!identity || !equal(identity.userId, session.userId) || !equal(identity.organizationId, session.organizationId)) { this.store.deleteSession(session.id); return null; }
+    if (!identity || !equal(identity.userId, session.userId) || !equal(identity.organizationId, session.organizationId)) {
+      this.store.deleteSession(session.id);
+      this.recordAuthEvent("session_revoked", { userId: session.userId, organizationId: session.organizationId, detail: "identity_mismatch" });
+      return null;
+    }
     return Object.freeze({ session, identity });
   }
   csrf(sessionId: string, value: string | undefined): boolean { return !!value && value.length <= 1024 && this.store.verifyCsrf(sessionId, value, this.clock()); }
-  async logout(sessionId: string | undefined): Promise<void> { if (sessionId) this.store.deleteSession(sessionId); }
+  async logout(sessionId: string | undefined, context?: AuthAuditContext): Promise<void> {
+    if (!sessionId) return;
+    const session = this.store.readSession(sessionId, this.clock());
+    this.store.deleteSession(sessionId);
+    if (session) this.recordAuthEvent("logout", { userId: session.userId, organizationId: session.organizationId, ...(context ?? {}) });
+  }
   async close(): Promise<void> { this.store.close(); await this.identities.close(); }
   private admittedOrganizationIds(): string[] { return [...this.config.organizations].filter(([, target]) => target.audience === "internal" || this.config.clientAccessOpen).map(([id]) => id); }
   private singleAdmittedIdentity(identities: readonly GatewayIdentity[]): GatewayIdentity | null { return identities.length === 1 && this.config.organizations.has(identities[0].organizationId) && this.admittedOrganizationIds().includes(identities[0].organizationId) ? identities[0] : null; }
@@ -176,20 +203,28 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   await proxy(request, response, core, authorized.identity.organizationId);
 }
 
+function authContext(request: IncomingMessage): AuthAuditContext {
+  const forwarded = request.headers["x-forwarded-for"];
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",", 1)[0]?.trim();
+  const ip = first && first.length <= 64 ? first : request.socket.remoteAddress;
+  const agent = request.headers["user-agent"];
+  return { ...(ip ? { ip } : {}), ...(typeof agent === "string" && agent.length <= 512 ? { userAgent: agent } : {}) };
+}
 async function handleLogin(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
   const csrfName = loginCsrfCookieName(core.config); const form = await readForm(request);
   const csrfCookie = parseCookies(request.headers.cookie).get(csrfName);
   const validCsrf = isExpectedOrigin(request.headers.origin, core.config) && !!form && core.consumeLoginCsrf(csrfCookie, form.get("csrf"));
-  if (!validCsrf) { loginPage(response, core, 403, "No fue posible iniciar sesión."); return; }
+  const context = authContext(request);
+  if (!validCsrf) { core.recordAuthEvent("login_failure", { detail: "csrf_rejected", ...context }); loginPage(response, core, 403, "No fue posible iniciar sesión."); return; }
   const email = normalizeEmail(form.get("email")); const password = form.get("password");
-  const result = email && typeof password === "string" ? await core.login(email, password) : null;
+  const result = email && typeof password === "string" ? await core.login(email, password, context) : null;
   if (!result) { loginPage(response, core, 401, "Credenciales inválidas o acceso no autorizado."); return; }
   noStore(response); response.setHeader("set-cookie", [expiredCookie(core.config, csrfName), cookie(core.config, core.config.cookieName, result.id, result.expiresAt)]); response.writeHead(303, { location: "/" }); response.end();
 }
 async function handleLogout(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const form = await readForm(request);
   if (!sessionId || !form || !isExpectedOrigin(request.headers.origin, core.config) || !core.csrf(sessionId, form.get("csrf"))) { loginPage(response, core, 403, "No fue posible cerrar la sesión."); return; }
-  await core.logout(sessionId); noStore(response); response.setHeader("set-cookie", expiredCookie(core.config, core.config.cookieName)); response.writeHead(303, { location: "/auth" }); response.end();
+  await core.logout(sessionId, authContext(request)); noStore(response); response.setHeader("set-cookie", expiredCookie(core.config, core.config.cookieName)); response.writeHead(303, { location: "/auth" }); response.end();
 }
 
 async function proxy(request: IncomingMessage, response: ServerResponse, core: GatewayCore, organizationId: string): Promise<void> {

@@ -56,6 +56,19 @@ describe("SqliteSessionStore", () => {
     expect(rowCount(path)).toBe(0);
   });
 
+  it("audits session_expired exactly once when an expired row is read", () => {
+    const s = open().store;
+    const now = Date.now();
+    s.createSession(session("stale", now - 1));
+    expect(s.readSession("stale", now)).toBeNull();
+    expect(s.readSession("stale", now)).toBeNull();
+    const rows = s.readAuthAudit(10);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toEqual({ event: "session_expired", at: now, userId: "u1", organizationId: "org1" });
+    expect(s.readSession("missing", now)).toBeNull();
+    expect(s.readAuthAudit(10)).toHaveLength(1);
+  });
+
   it("sweeps expired sessions when a new one is created", () => {
     const { path } = open();
     const now = Date.now();
@@ -90,5 +103,32 @@ describe("SqliteSessionStore", () => {
     expect(s.consumeLoginCsrf("tok-1", "tok-1", now)).toBe(true);
     expect(s.consumeLoginCsrf("tok-1", "tok-1", now)).toBe(false);
     expect(s.consumeLoginCsrf("tok-1", "different", now)).toBe(false);
+  });
+
+  it("round-trips auth audit records newest-first and omits null fields", () => {
+    const s = open().store;
+    const now = Date.now();
+    s.recordAuthEvent({ event: "login_failure", at: now - 1000, email: "user@gruia.app", detail: "invalid_credentials", ip: "10.0.0.1", userAgent: "agent" });
+    s.recordAuthEvent({ event: "login_success", at: now, email: "user@gruia.app", userId: "u1", organizationId: "org1", ip: "10.0.0.1" });
+    const rows = s.readAuthAudit(10);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual({ event: "login_success", at: now, email: "user@gruia.app", userId: "u1", organizationId: "org1", ip: "10.0.0.1" });
+    expect(rows[1].detail).toBe("invalid_credentials");
+    expect(rows[1].userAgent).toBe("agent");
+    expect(rows[1].userId).toBeUndefined();
+    expect(s.readAuthAudit(1)).toHaveLength(1);
+  });
+
+  it("sweeps audit rows older than the retention window on write", () => {
+    const s = open().store;
+    const now = Date.now();
+    const expired = now - 91 * 24 * 60 * 60 * 1000;
+    s.recordAuthEvent({ event: "login_success", at: expired, email: "old@gruia.app" });
+    s.recordAuthEvent({ event: "login_success", at: expired + 1, email: "old@gruia.app" });
+    expect(s.readAuthAudit(10)).toHaveLength(2);
+    s.recordAuthEvent({ event: "logout", at: now, userId: "u1" });
+    const rows = s.readAuthAudit(10);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].event).toBe("logout");
   });
 });

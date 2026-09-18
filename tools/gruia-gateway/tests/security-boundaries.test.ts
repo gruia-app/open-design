@@ -148,8 +148,47 @@ describe("Gruia gateway password-login security seams", () => {
       const pageTwo = await fetch(`${base}/auth`); const tokenTwo = csrf(await pageTwo.text()); const cookieTwo = cookieValue(pageTwo, "gruia_design_login_csrf"); const invalid = await fetch(`${base}/auth/login`, { method: "POST", redirect: "manual", headers: { origin: "http://localhost", cookie: `gruia_design_login_csrf=${cookieTwo}`, "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ csrf: tokenTwo, email: "nobody@gruia.app", password: "wrong" }) }); expect(invalid.status).toBe(401); expect(await invalid.text()).toContain("Credenciales inválidas o acceso no autorizado."); expect(await core.authorize("forged-session")).toBeNull();
     } finally { await close(server, core); }
   });
+  it("writes auth audit rows for login success, failure kinds, and logout", async () => {
+    const { core, store } = setup();
+    try {
+      expect(await core.login("user@gruia.app", "incorrect")).toBeNull();
+      const login = await core.login("user@gruia.app", "password");
+      expect(login).not.toBeNull();
+      await core.logout(login!.id);
+      const rows = store.readAuthAudit(10);
+      expect(rows.map((row) => `${row.event}:${row.detail ?? "-"}`)).toEqual(["logout:-", "login_success:-", "login_failure:invalid_credentials"]);
+      expect(rows[1].email).toBe("user@gruia.app");
+      expect(rows[1].userId).toBe(identity.userId);
+      expect(rows[1].organizationId).toBe("org-a");
+      expect(rows[0].userId).toBe(identity.userId);
+    } finally { await core.close(); }
+  });
+  it("audits rate-limited attempts without hitting the identity store", async () => {
+    const { core, store, repo } = setup();
+    try {
+      for (let i = 0; i < 8; i++) await core.login("user@gruia.app", "incorrect");
+      const queries = repo.loginEmails.length;
+      expect(await core.login("user@gruia.app", "password")).toBeNull();
+      expect(repo.loginEmails).toHaveLength(queries);
+      const rows = store.readAuthAudit(20);
+      expect(rows[0]).toMatchObject({ event: "login_failure", detail: "rate_limited", email: "user@gruia.app" });
+      expect(rows.filter((row) => row.detail === "invalid_credentials")).toHaveLength(8);
+    } finally { await core.close(); }
+  });
+  it("rate-limits repeated attempts from one client IP across different emails", async () => {
+    const { core, store } = setup();
+    try {
+      const context = { ip: "203.0.113.7" };
+      for (let i = 0; i < 20; i++) await core.login(`user${i}@gruia.app`, "incorrect", context);
+      expect(await core.login("fresh@gruia.app", "password", context)).toBeNull();
+      expect(await core.login("fresh@gruia.app", "password", { ip: "198.51.100.9" })).not.toBeNull();
+      const rows = store.readAuthAudit(30);
+      expect(rows[0].event).toBe("login_success");
+      expect(rows[1]).toMatchObject({ event: "login_failure", detail: "rate_limited", ip: "203.0.113.7" });
+    } finally { await core.close(); }
+  });
   it("admits internal memberships while client access is closed and revalidates active status", async () => {
-    const internal = setup({ clientAccessOpen: false, audience: "internal" }); const login = await internal.core.login("user@gruia.app", "password"); expect(login).not.toBeNull(); expect(await internal.core.authorize(login!.id)).not.toBeNull(); internal.repo.active = false; expect(await internal.core.authorize(login!.id)).toBeNull(); await internal.core.close();
+    const internal = setup({ clientAccessOpen: false, audience: "internal" }); const login = await internal.core.login("user@gruia.app", "password"); expect(login).not.toBeNull(); expect(await internal.core.authorize(login!.id)).not.toBeNull(); internal.repo.active = false; expect(await internal.core.authorize(login!.id)).toBeNull(); expect(internal.store.readAuthAudit(5)[0]).toMatchObject({ event: "session_revoked", userId: identity.userId, organizationId: "org-a", detail: "identity_mismatch" }); await internal.core.close();
     const client = setup({ clientAccessOpen: false, audience: "client" }); expect(await client.core.login("user@gruia.app", "password")).toBeNull(); await client.core.close();
   });
   it("verifies canonical bcrypt and PBKDF2 password records asynchronously", async () => {

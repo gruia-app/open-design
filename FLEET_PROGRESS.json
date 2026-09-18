@@ -1,7 +1,11 @@
 {
   "app": "design",
-  "updated_at": "2025-01-01T00:00:00Z",
-  "current": "fleet/envelope-batch-5 — D3 sweep completo salvo tokens protocolo (vela/collab-context)",
+  "updated_at": "2026-09-18T22:45:00Z",
+  "current": {
+    "item": "fleet/next-gaps-2 — gaps gateway cerrados (G7+G4+session_revoked); siguiente: G8 session_expired o migración diseñada de tokens protocolo",
+    "state": "in_progress",
+    "branch": "fleet/next-gaps-2"
+  },
   "done": [
     {
       "item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado",
@@ -98,28 +102,57 @@
       "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
       "commit": "29b4fe3bb",
       "deploy": "pending"
+    },
+    {
+      "item": "D3 batch 4: collab-sync + stragglers + multiline sweep + media residuals",
+      "commit": "e10add9b4",
+      "pr": 13,
+      "merged": true,
+      "deploy": "pending"
+    },
+    {
+      "item": "D3 batch 5: plugins/index + daemon oauth-launch + comments fallback + plugin-assets + strategy-rollout; sweep envelope completo salvo tokens protocolo",
+      "commit": "cb28b84ac",
+      "pr": 14,
+      "merged": true,
+      "deploy": "pending"
+    },
+    {
+      "item": "revision post-muerte (esta sesión): diffs G7/G4 del predecesor auditados con escepticismo — schema auth_audit, retención, orden sweep/check del limiter IP y flujo de contexto correctos; 27/27 tests re-ejecutados verdes",
+      "commit": "n/a",
+      "deploy": "n/a"
+    },
+    {
+      "item": "G7: auth audit trail — tabla auth_audit (90d/100k retención), login_success/login_failure(detail)/logout con ip+user-agent del request",
+      "commit": "7db05a69b",
+      "deploy": "pending"
+    },
+    {
+      "item": "G4: bucket rate-limit por IP en login (20/min, 10k keys, sweep-on-access) via AuthAuditContext.ip",
+      "commit": "380311354",
+      "deploy": "pending"
+    },
+    {
+      "item": "G7 refinamiento: authorize() audita session_revoked (identity_mismatch) al matar sesión por identidad revocada — 1 fila por revocación",
+      "commit": "a8f0e978f",
+      "deploy": "pending"
     }
   ],
   "blocked": [
     {
       "item": "G3 timer de barrido periódico de sesiones",
-      "reason": "decisión de diseño — G1 sweep-on-write lo hace opcional"
-    },
-    {
-      "item": "G4 bucket rate-limit por IP",
-      "reason": "decisión — depende de si gateway será multi-instancia"
+      "reason": "bajo valor — G1 sweep-on-write cubre el caso activo; evaluar intervalo unref() barato si se retoma",
+      "needs": "decision"
     },
     {
       "item": "G6 métricas/observabilidad gateway",
-      "reason": "decisión de diseño"
-    },
-    {
-      "item": "G7 auditoría de logins (auth_audit)",
-      "reason": "decisión — requiere schema+retención"
+      "reason": "decisión de diseño — endpoint /metrics vs logs estructurados",
+      "needs": "decision"
     },
     {
       "item": "collab-context/vela/server.ts vela-proxy envelope",
-      "reason": "tokens snake_case de protocolo que clients matchean — requiere migración diseñada de ~10 consumers"
+      "reason": "tokens snake_case de protocolo que clients matchean — requiere migración diseñada consumer-by-consumer con lectura dual",
+      "needs": "review"
     }
   ],
   "prs_open": [
@@ -145,6 +178,12 @@
       "pr": 13,
       "merged": "e10add9b4",
       "note": "auto-merge squash ejecutado"
+    },
+    {
+      "repo": "gruia-app/design",
+      "pr": 14,
+      "merged": "cb28b84ac",
+      "note": "auto-merge squash ejecutado"
     }
   ],
   "deploys_pending": [
@@ -157,7 +196,9 @@
     "9b3ef04ec (PR #10)",
     "74fcd820e (PR #11)",
     "d011a5f76 (PR #12)",
-    "e10add9b4 (PR #13)"
+    "e10add9b4 (PR #13)",
+    "cb28b84ac (PR #14)",
+    "7db05a69b + 380311354 + a8f0e978f (fleet/next-gaps-2, sin PR aún — 3/5 commits)"
   ],
-  "notes": "bucle en repo privado gruia-app/design. Paridad upstream D1 cerrada. D3 en curso: un fichero por iteración. Siguiente candidato: design-systems.ts (sendWorkspaceScopeError propio, ejercido por explicit-workspace-scope tests vía registerDesignSystemRoutes)."
+  "notes": "bucle en repo privado gruia-app/design. D3 cerrado salvo tokens protocolo. Gateway gaps restantes: G8 (session_expired forense), G3/G6 decisiones. Próximo PR al llegar a 5 commits en fleet/next-gaps-2."
 }
