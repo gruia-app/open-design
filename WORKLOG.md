@@ -273,6 +273,36 @@ copia eliminada.
 `updater-fixture` 12/12, `release-storage-fixture` 2/2,
 `collab-cloud-fixture` 10/10; typecheck tools-serve verde.
 
+## Ítem 12 — Estado vacío del filtro de conversaciones traducido
+
+**Hecho:** `ChatPane.tsx` renderizaba el literal inglés "No conversations
+match." cuando la búsqueda del historial no devolvía resultados — visible en
+los 18 locales no-EN. Nueva clave `chat.noMatchingConversations` en `Dict`
+(types.ts) + traducción en las 19 locales, insertada junto a la vecina
+`chat.emptyConversations`.
+
+**Verificación:** typecheck `@open-design/web` verde (Dict estricto confirma
+las 19 locales); `pnpm guard` verde.
+
+## Ítem 13 — Validación estricta de generation records standalone
+
+**Hecho:** `readGeneration` en `packages/standalone` solo comprobaba
+`schemaVersion`/`id`/`channel` antes de entregar el record a
+materialización, activación y sweeping — un record tampered en disco
+(p.ej. `resources[x].path` apuntando fuera del store root) pasaba sin
+oposición, a diferencia de `readState` que usa el validador estricto
+`validateGenerationState`. Nuevo `validateGenerationRecord` exportado en
+`store.ts`: conjunto exacto de claves, shapes de digest/versión/commit,
+paths absolutos obligatoriamente bajo el store root, entrypoints de
+materialización relativos seguros, exactamente un `standalone.launcher` y
+consistencia launcher↔resource. Aplicado en `readGeneration` y en el
+lector duplicado de `garbage.ts` (que además ganó la misma cobertura).
+
+**Verificación:** +1 test (`fails closed on a tampered on-disk generation
+record`: path fuera del root → reject; drift launcher↔resource → reject;
+record intacto → lectura OK). `standalone.test.ts` 15/15, suite completo
+del paquete 34/34, typecheck verde.
+
 ## Bloqueados
 
 - Ninguno todavía.
