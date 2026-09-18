@@ -188,6 +188,37 @@ shell hijo — justo el escenario que el helper existe para arreglar.
 **Verificación:** `pnpm exec vitest run tests/login-shell.test.ts` — 14/14
 verdes; `pnpm --filter @open-design/daemon typecheck` verde.
 
+## Ítem 8 — Rutas daemon: auth de brands, envelope de import, .env gitignore
+
+**Hecho** (leaf-0 #2/#5, leaf-5 #1):
+
+- `apps/daemon/src/brand-routes.ts`: `DELETE /api/brands/:id`,
+  `continue-extraction`, `cancel-extraction` y `extract-from-html` mutaban
+  sin autorización cuando el brand no tenía `designSystemId` (el estado
+  normal pre-finalize) — el gate de design-system solo corría post-finalize.
+  Las cuatro rutas ahora llaman `authorizeProjectRequest(mode:'write')`
+  (`capability: 'delete'`/`'writeFiles'`) antes de cualquier mutación cuando
+  el brand tiene `projectId`; no-bound → pass-through (mismo contrato que el
+  resto del data plane: `!persisted.workspaceId → true` en local).
+- `apps/daemon/src/import-export-routes.ts`: `/api/import/claude-design`
+  devolvía `{error: String(err)}` — envelope divergente con paths internos.
+  Ahora `sendApiError(res, 400, 'BAD_REQUEST', …)` como el resto del fichero.
+- `.gitignore`: `tools-dev` carga `.env`/`.env.development` desde la raíz pero
+  solo `.env.local`/`.env.*.local` estaban ignorados — credenciales BYOK en
+  `.env` quedaban trackeables. Añadidos `.env` + `.env.*` con `!.env.example`.
+
+**Verificación:** `tests/brand-routes.test.ts` +4 tests (deny en delete /
+cancel / extract-from-html con 403 y sin mutación; delete unbound no invoca el
+gate) — 33/33; `git check-ignore` confirma `.env`, `.env.development`,
+`apps/web/.env` ignorados y `deploy/.env.example`/`.env.example` trackeados;
+typecheck daemon verde.
+
+**Revisado sin fix:** leaf-0 #4 (`/api/mcp/install-info`) — el middleware `/api`
+ya exige bearer token a peers no-loopback cuando `OD_API_TOKEN` está activo, y
+bind no-loopback exige token (server.ts:2904); el hueco solo existe con
+`OD_DISABLE_API_AUTH=1` explícito. leaf-0 #3 (rate limiting) queda como
+follow-up — requiere decisión de diseño (token bucket vs cap de concurrencia).
+
 ## Bloqueados
 
 - Ninguno todavía.

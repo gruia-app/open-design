@@ -182,7 +182,7 @@ export function registerImportRoutes(app: Express, ctx: RegisterImportRoutesDeps
         if (importedProjectDir) {
           await fs.promises.rm(importedProjectDir, { recursive: true, force: true }).catch(() => {});
         }
-        res.status(400).json({ error: String(err) });
+        sendApiError(res, 400, 'BAD_REQUEST', String(err?.message || err));
       }
     },
   );
