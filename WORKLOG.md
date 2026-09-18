@@ -639,3 +639,6 @@ deferido).
 - Suite web completo: 7247/7248 verdes; único fallo
   `srcdoc-bridge-empty-targets` (retry-window timing) pasa en
   aislamiento 19/19 — flake ambiental, no regresión.
+- `23fa1c4`: regresión TasksView — `/api/projects` 500 → routines del
+  mismo batch siguen renderizando (4/4 verde en
+  TasksView.routines.test.tsx). Cierra el último low del late review.
