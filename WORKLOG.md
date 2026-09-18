@@ -250,3 +250,15 @@
   `d465086b2`, `07170f8d2`, `712b0db97`, `11943a400`, `875d0b95a`.
 - run-retry-runtime: 2 fallos iniciales clasificados como flakes de carga —
   ambos pasan aislados en HEAD y en el padre.
+
+## Paridad upstream — lote 9 (rama fleet/parity-9)
+
+- `bc064afaa` (#8027): packaged MCP runtime integrity + sidecar delivery —
+  nuevo `packaged-entry.ts` + `runtime-manifest.ts` (35/35 tools-pack).
+- `850e75056` (#7957): runtime-verification de prerelease + contratos Vela
+  (8/8 + e2e vela-contract nuevo).
+- `1dc3876cc`/`f38c77c65`/`2848fe3f6` (#7792/#7698/#6590): docs.
+- `3f04072f9` (#7825): DeepSeek Harness 0.1.2-rc.1 (7/7 daemon + 7/7 e2e).
+- `b830d0452` (#7753): copy francés setup/recovery.
+- Descartado: `81044a03c` (whats-new doc conflicto), resto de cola depende de
+  ChatPanel rebuild o pipelines no portados.

@@ -31,6 +31,8 @@ const allowedE2eScripts = new Set([
   "e2e/scripts/playwright.ts",
   "e2e/scripts/release-smoke.ts",
   "e2e/scripts/visual-report.ts",
+  // Cross-version real Vela / synthetic OpenCode protocol acceptance.
+  "e2e/scripts/vela-contract.ts",
 ]);
 
 function toRepositoryPath(filePath: string): string {

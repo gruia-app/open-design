@@ -1,6 +1,6 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T22:35:28.430068+00:00",
+ "updated_at": "2026-09-18T22:39:29.210585+00:00",
  "current": {
   "item": "paridad upstream lote 6 — rama fleet/parity-6",
   "state": "in_progress",
@@ -316,6 +316,41 @@
    "item": "D1 paridad: Thursday patch cut gate (upstream #7977)",
    "commit": "c3513c9d9",
    "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: packaged MCP runtime integrity + sidecar delivery (upstream #8027)",
+   "commit": "bc064afaa",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: prerelease runtime identity + Vela contract tests (upstream #7957)",
+   "commit": "850e75056",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs anchor TRANSLATIONS (upstream #7792)",
+   "commit": "1dc3876cc",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs Linux desktop availability (upstream #7698)",
+   "commit": "f38c77c65",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs Vela CLI Linux Docker (upstream #6590)",
+   "commit": "2848fe3f6",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: DeepSeek Harness 0.1.2-rc.1 (upstream #7825)",
+   "commit": "3f04072f9",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: French setup/recovery copy (upstream #7753)",
+   "commit": "b830d0452",
+   "deploy": "pending"
   }
  ],
  "blocked": [
@@ -409,5 +444,5 @@
   "194286537 (PR #18)",
   "38abb6aee (PR #19)"
  ],
- "notes": "fleet/parity-8: 5 picks (2 con conflicto resuelto a mano). Descartados: 810cbe058 (suppression arch ausente), 6801f25c0 (depende de deliverable-syntax #7801), d465086b2 (depende de domain cutover #7880), 07170f8d2 (fichero borrado), 712b0db97 (prompt machinery divergida)."
+ "notes": "fleet/parity-9: 7 picks limpios. Cola upstream restante: mayoria depende del rebuild ChatPanel (ad09d3883) o de pipelines no portados (deliverable-syntax, suppression arch, domain cutover)."
 }
