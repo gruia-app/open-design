@@ -540,3 +540,27 @@ devolviendo `{error: string}` plano mientras el resto de la ruta usa
 `sendApiError`. Convertidos al envelope `{error:{code,message}}` — el
 consumer web (ítem 22) acepta ambas formas; ningún test pineaba la forma
 plana.
+
+## Verificación final — suite completo daemon
+
+`pnpm --filter @open-design/daemon test` (background, ~50min, load avg
+40-70 por carga compartida del host). Resultados:
+
+- Verde: la inmensa mayoría del suite, incl. collab-sync 109/109,
+  chat-route 76/76, brand-routes 33/33, standalone paths.
+- Fallos por carga, verificados al reejecutar en aislamiento:
+  - `run-retry-runtime` 11/11 ✓, `api-token-guard` 8/8 ✓,
+    `codex-session-resume` ✓, `plain-stream-artifact-event-truncation` ✓.
+  - `connectors-routes`: 33 fallos, todos "Hook timed out in 10000ms" en
+    `beforeEach` (seeding de plugins + server); ambientales.
+  - `od-next-automatic-simple-server`: 29 fallos por el mismo patrón.
+  - `cli-startup` 2 tests: timeout hardcodeado de 15s esperando
+    `[od] listening on`; arranque manual del daemon verificado OK —
+    bajo load ~50 el primer arranque (seeding 460 plugins + sqlite)
+    excede 15s. Flake ambiental pre-existente, no regresión.
+  - `app-config`/`mcp-config`/`mcp-oauth` 1 fallo c/u: los tests nuevos
+    de modo 0600 se ejecutaron mientras el src estaba a medio editar;
+    todos verdes al reejecutar (90/90, 86/86, 21/21).
+- Sin fallo atribuible a los cambios de la rama.
+
+`pnpm guard` verde completo; `pnpm typecheck` workspace verde (28 pkgs).
