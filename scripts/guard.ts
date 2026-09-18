@@ -50,6 +50,9 @@ const residualSkippedDirectories = new Set([
   ".od",
   ".od-e2e",
   ".opencode",
+  // simplia-ci pipeline scratch (command telemetry, helpers like
+  // npm_cache_prune.js) materialized into the workspace at build time.
+  ".simplia-ci",
   // Local agent deepwork/worktree scratch (git-ignored; not product source).
   ".slim",
   ".task",
