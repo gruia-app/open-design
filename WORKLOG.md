@@ -68,6 +68,45 @@ existing packaged-source owner` es flaky bajo carga (falló con `attempts` 2 vs
 del suite solo quedó ese fallo de timing). No relacionado con el cambio;
 candidato a investigación de flake.
 
+## Ítem 3 — XSS reflejado en callback OAuth de MCP (`0844e37`)
+
+**Hecho:** `/api/mcp/oauth/callback?error=…` reflejaba el valor dentro de
+`var payload = ${JSON.stringify(payload)}` en un `<script>` inline — un
+`</script>` en el valor cerraba el bloque e inyectaba markup. Se escapan
+`<>&` y U+2028/29 como `\uXXXX` en `src/http/oauth-result-page.ts`. Bonus:
+`mcp-routes.ts` tenía una copia local duplicada del renderer (la que realmente
+servía la ruta); se reemplazó por el helper compartido y se eliminó el import
+muerto en `server.ts`.
+
+**Verificación:** nuevo `tests/http/oauth-result-page.test.ts` (payload hostil
+`</script><script>…` no rompe el bloque, deserializa idéntico, body HTML
+escapado; `serverId` con quotes/markup escapado) — 2/2 verdes;
+`pnpm --filter @open-design/daemon typecheck` verde.
+
+## Ítem 4 — Lista de proyectos web: fallo de transporte ≠ lista vacía
+
+**Hecho:** `listCurrentWorkspaceProjects` sin `throwOnError` devolvía `[]` ante
+un fallo de transporte/5xx. Cuatro call-sites en `apps/web/src/App.tsx`
+reconciliaban ese `[]` como si fuese una lista autoritativa: bootstrap inicial
+(sobreescribía el snapshot restaurado), `refreshProjects` manual (podía vaciar
+la UI y hacer que un proyecto abierto se tratase como borrado con alert
+"missing project"), refresh tras crear proyecto (perdía el stub optimista) y el
+fallback al abrir proyecto. Ahora los cuatro piden `throwOnError: true` y
+atrapan el fallo preservando el estado last-good. Una lista vacía *exitosa*
+sigue siendo autoritativa (el test de borrado real lo cubre).
+
+**Verificación:** nuevo test `keeps the open project mounted when a manual
+refresh transport-fails` en
+`apps/web/tests/components/App.workspace-switch-project-list.test.tsx` (fetch
+500 tras bootstrap → `project-view` sigue montado, sin alert);
+`pnpm --filter @open-design/web exec vitest run
+tests/components/App.workspace-switch-project-list.test.tsx` — 11/11;
+`pnpm --filter @open-design/web typecheck` verde.
+
+**Nota:** primera versión del test asertaba `unmounts` nunca llamado — demasiado
+estricto (un remount incidental lo rompía); reescrito con la implementación real
+de `listProjects` + HTTP 500, asertando solo el comportamiento visible.
+
 ## Bloqueados
 
 - Ninguno todavía.
