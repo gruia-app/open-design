@@ -354,6 +354,21 @@ sigue cubriendo el boundary compartido (14/14 previo).
 real corre los typechecks de todos los paquetes del workspace más
 `tsc -p scripts/tsconfig.json --noEmit`. Corregido el comentario.
 
+## Ítem 18 — `throwOnError` en los pickers de proyectos de Tasks/Routines
+
+**Hecho:** `listProjects` sin `throwOnError` devuelve `[]` ante cualquier fallo
+de transporte/HTTP; `TasksView` y `RoutinesSection` lo usaban en `Promise.all`
+y commiteaban `setProjects([])` — un 500 transitorio vaciaba el picker de
+proyectos sin error visible (mismo patrón ya corregido en `refreshProjects`
+de App.tsx). Ambos callers ahora pasan `throwOnError: true`, así el fallo
+propaga al `catch → setError` existente. `DesktopPetSurface` se deja con el
+fallback silencioso: su task-center es decorativo y un throw sería un
+unhandled rejection.
+
+**Verificación:** +1 test (`RoutinesSection.test.tsx`: `/api/projects` 500 →
+alerta `projects 500` en vez de lista vacía silenciosa). Suite del fichero
+16/16; `TasksView.{routines,page}` 17/17; typecheck web verde.
+
 ## Revisados sin cambio (con rationale)
 
 - **BYOK `apiKey` en `localStorage` (web):** `saveConfig` ya sanea

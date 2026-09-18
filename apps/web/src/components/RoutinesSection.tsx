@@ -547,7 +547,11 @@ export function RoutinesSection({ onClose }: RoutinesSectionProps) {
             ? workspaceProjectHeaders(requestWorkspaceContext)
             : {},
         }),
-        listProjects({ workspaceContext: requestWorkspaceContext, workspaceView: 'all' }),
+        listProjects({
+          workspaceContext: requestWorkspaceContext,
+          workspaceView: 'all',
+          throwOnError: true,
+        }),
       ]);
       if (!rRes.ok) throw new Error(`routines: ${rRes.status}`);
       const rJson = await rRes.json();

@@ -619,6 +619,30 @@ describe('RoutinesSection', () => {
     expect(screen.getByRole('alert').textContent).toContain('routines: 500');
   });
 
+  it('shows an error alert when the project picker list fails to load', async () => {
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = input.toString();
+      if (url === '/api/routines') {
+        return new Response(JSON.stringify({ routines: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url === '/api/projects') {
+        return new Response(JSON.stringify({ error: 'boom' }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({}), { status: 404 });
+    }) as typeof fetch;
+
+    render(<RoutinesSection />);
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('projects 500');
+  });
+
   it('shows an error alert when creating a routine fails', async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();

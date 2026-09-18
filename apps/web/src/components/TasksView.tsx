@@ -493,7 +493,11 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
         });
       const [rRes, projectList, tJson, proposalJson] = await Promise.all([
         fetch('/api/routines', routineHeaders ? { headers: routineHeaders } : undefined),
-        listProjects({ workspaceContext: tasksWorkspaceContext, workspaceView: 'all' }),
+        listProjects({
+          workspaceContext: tasksWorkspaceContext,
+          workspaceView: 'all',
+          throwOnError: true,
+        }),
         templateRequest,
         proposalRequest,
       ]);
