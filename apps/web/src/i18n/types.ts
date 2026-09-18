@@ -125,8 +125,38 @@ export interface Dict {
   'chat.figmaHelp.step2': string;
   'chat.figmaHelp.step3': string;
   'chat.figmaHelp.note': string;
+  'figma.import.dialogAria': string;
+  'figma.import.notesPlaceholder': string;
+  'figma.import.submit': string;
+  'figma.import.colorsAria': string;
+  'figma.import.summaryFoot': string;
+  'figma.import.tabFile': string;
+  'figma.import.dropHint': string;
+  'figma.import.urlHint': string;
+  'figma.import.decoding': string;
+  'figma.import.notFigError': string;
+  'figma.import.importedLabel': string;
+  'figma.import.assetsOnlySuffix': string;
+  'figma.import.statNodes': string;
+  'figma.import.statPages': string;
+  'figma.import.statFrames': string;
+  'figma.import.statComponents': string;
+  'figma.import.statColors': string;
+  'figma.import.statFonts': string;
+  'figma.import.statAssets': string;
   'designFiles.library.label': string;
   'designFiles.library.title': string;
+  'library.upload.title': string;
+  'library.upload.closeAria': string;
+  'library.upload.dropHint': string;
+  'library.upload.uploading': string;
+  'library.upload.deduped': string;
+  'library.upload.added': string;
+  'library.upload.failed': string;
+  'library.upload.empty': string;
+  'library.upload.summaryAdded': string;
+  'library.upload.summaryFailed': string;
+  'library.upload.done': string;
   'libraryPicker.title': string;
   'libraryPicker.searchPlaceholder': string;
   'libraryPicker.empty': string;
@@ -135,6 +165,7 @@ export interface Dict {
   'libraryPicker.loading': string;
   'common.save': string;
   'common.close': string;
+  'common.closeEsc': string;
   'common.clear': string;
   'common.delete': string;
   'common.rename': string;
@@ -261,6 +292,11 @@ export interface Dict {
   'plugins.import.noFolderSelected': string;
   'plugins.import.filesSelected': string;
   'plugins.import.footerNote': string;
+  'plugins.filtersAria': string;
+  'plugins.previewHero.eyebrow': string;
+  'plugins.previewHero.outputsAria': string;
+  'plugins.previewHero.openNewTabTitle': string;
+  'plugins.previewHero.openLabel': string;
 
   // App / brand
   'app.brand': string;
@@ -270,6 +306,7 @@ export interface Dict {
 
   // Settings dialog
   'settings.welcomeKicker': string;
+  'settings.sectionsAria': string;
   'settings.welcomeTitle': string;
   'settings.welcomeSubtitle': string;
   'settings.onboardingCreateTitle': string;
@@ -2251,6 +2288,7 @@ export interface Dict {
   // Connectors tab
   'connectors.title': string;
   'connectors.subtitle': string;
+  'connectors.providerAria': string;
   'connectors.account': string;
   'connectors.noAccount': string;
   'connectors.tools': string;
@@ -2368,6 +2406,8 @@ export interface Dict {
   'newproj.titleMedia': string;
   'newproj.titleOther': string;
   'newproj.namePlaceholder': string;
+  'newproj.scrollTypesLeft': string;
+  'newproj.scrollTypesRight': string;
   'newproj.fidelityLabel': string;
   'newproj.fidelityWireframe': string;
   'newproj.fidelityHigh': string;
@@ -3009,6 +3049,8 @@ export interface Dict {
   'chat.comments.addAll': string;
   'chat.comments.remove': string;
   'chat.comments.placeholder': string;
+  'chat.comments.annotationAria': string;
+  'chat.comments.moveBox': string;
   'chat.comments.addSend': string;
   'chat.comments.updateSend': string;
   'chat.comments.removeAttachment': string;
@@ -3733,6 +3775,8 @@ export interface Dict {
   'workspace.focusMode': string;
   'workspace.showChat': string;
   'workspace.closeTab': string;
+  'workspace.tabsChrome': string;
+  'workspace.tabsStrip': string;
   'workspace.deleteFileConfirm': string;
   'workspace.readonlyNotice': string;
   'workspace.readonlyNoticeBy': string;
