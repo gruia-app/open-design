@@ -636,7 +636,7 @@ async function findFreePort(): Promise<number> {
   return port;
 }
 
-async function waitFor(predicate: () => boolean, timeoutMs = 10_000): Promise<void> {
+async function waitFor(predicate: () => boolean, timeoutMs = 60_000): Promise<void> {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     if (predicate()) return;

@@ -592,3 +592,13 @@ tarda >15s bajo carga (medido: 40s en el test de restart).
 
 **Verificación:** los 2 tests de cli-startup que fallaban ahora pasan
 (12.9s, 39.8s) — confirma flake, no regresión.
+
+## Ítem 25b — testTimeout del suite od-next-automatic
+
+Mismo patrón de flake: cada test conduce un daemon real + run de agente
+end-to-end; bajo carga exceden el `testTimeout` de 20s (29 fallos a ~20s
+exactos). `describe` ahora lleva `{ timeout: 60_000 }` (suite options de
+vitest 4) y `waitFor` de cli-startup sube a 60s.
+
+**Verificación:** test de 34s pasa con el nuevo límite (habría expirado a
+20s con el default).
