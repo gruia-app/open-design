@@ -577,3 +577,18 @@ plana.
   documentado en "No accionado".
 - Único bloqueo pendiente de diseño: custodia daemon-side de la clave BYOK
   (requiere endpoint nuevo + migración — decisión de producto).
+
+## Ítem 25 — Timeouts de test suite daemon bajo carga (flake fix)
+
+El suite completo reveló una clase de flake ambiental: 129 ficheros levantan
+un daemon real en `beforeEach` y el `hookTimeout` por defecto (10s) expira
+cuando el host está cargado (load avg 40-70 durante el run). Además
+`cli-startup.test.ts::waitForStdoutLine` tenía 15s hardcodeados para
+`od daemon start` — el arranque en frío (seeding 460 plugins + migraciones)
+tarda >15s bajo carga (medido: 40s en el test de restart).
+
+- `vitest.config.ts`: `hookTimeout: 60_000`.
+- `cli-startup.test.ts`: `waitForStdoutLine` default 15s → 60s.
+
+**Verificación:** los 2 tests de cli-startup que fallaban ahora pasan
+(12.9s, 39.8s) — confirma flake, no regresión.
