@@ -1227,6 +1227,7 @@ export async function listActiveChatRuns(
 
 export async function listProjectRuns(
   workspaceContext?: WorkspaceCollabContext | null,
+  options?: { throwOnError?: boolean },
 ): Promise<ChatRunStatusResponse[]> {
   try {
     const resp = await fetch('/api/runs', {
@@ -1234,10 +1235,14 @@ export async function listProjectRuns(
         ? { headers: workspaceProjectHeaders(workspaceContext) }
         : {}),
     });
-    if (!resp.ok) return [];
+    if (!resp.ok) {
+      if (options?.throwOnError) throw new Error(`list runs failed: ${resp.status}`);
+      return [];
+    }
     const body = (await resp.json()) as ChatRunListResponse;
     return body.runs ?? [];
-  } catch {
+  } catch (err) {
+    if (options?.throwOnError) throw err;
     return [];
   }
 }

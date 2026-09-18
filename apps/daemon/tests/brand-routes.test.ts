@@ -193,6 +193,37 @@ describe('brand routes', () => {
     }
   });
 
+  it('denies preview/finalize on the meta-bound project even when the body omits projectId', async () => {
+    writeBrandFixture('brand-meta-bound', {
+      projectId: 'project-meta-bound',
+      logoPrimary: 'logos/missing.svg',
+      status: 'extracting',
+    });
+    const authorized: string[] = [];
+    const authorizeProjectRequest = vi.fn(async (_req, res, projectId, options) => {
+      authorized.push(projectId);
+      expect(projectId).toBe('project-meta-bound');
+      expect(options).toEqual({ mode: 'write', capability: 'writeFiles' });
+      res.status(403).json({ error: 'WORKSPACE_PROJECT_PERMISSION_DENIED' });
+      return false;
+    });
+    const server = await startBrandServer({ authorizeProjectRequest });
+    try {
+      // No projectId in the body — the store would fall back to
+      // meta.projectId, so the gate must resolve the same target.
+      for (const route of ['preview', 'finalize']) {
+        const response = await server.requestJson(`/api/brands/brand-meta-bound/${route}`, {
+          method: 'POST',
+          body: {},
+        });
+        expect(response.status).toBe(403);
+      }
+      expect(authorized).toEqual(['project-meta-bound', 'project-meta-bound']);
+    } finally {
+      await server.close();
+    }
+  });
+
   it('denies extract-from-html for a workspace-bound brand', async () => {
     writeBrandFixture('brand-html-denied', {
       projectId: 'project-html-denied',

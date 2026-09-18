@@ -516,6 +516,17 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
         ? String(req.body.locale)
         : undefined;
     try {
+      // Preview writes rendered files into the backing project — same
+      // workspace gate as the other brand mutation routes. The store resolves
+      // `opts.projectId ?? meta.projectId ?? brandProjectId(id)`, so the gate
+      // must cover the meta fallback too, not only the body value.
+      const effectiveProjectId = projectId ?? readBrandDetail(brandsRoot, id)?.meta.projectId;
+      if (effectiveProjectId && deps.authorizeProjectRequest) {
+        if (!(await deps.authorizeProjectRequest(req, res, effectiveProjectId, {
+          mode: 'write',
+          capability: 'writeFiles',
+        }))) return;
+      }
       const renderOptions: Parameters<typeof renderBrandPreviewIntoProject>[0] = {
         id,
         brandsRoot,
@@ -547,6 +558,17 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
         ? String(req.body.locale)
         : undefined;
     try {
+      // Finalize registers a design system and marks the brand ready — same
+      // workspace gate as the other brand mutation routes. The store resolves
+      // `opts.projectId ?? meta.projectId ?? brandProjectId(id)`, so the gate
+      // must cover the meta fallback too, not only the body value.
+      const effectiveProjectId = projectId ?? readBrandDetail(brandsRoot, id)?.meta.projectId;
+      if (effectiveProjectId && deps.authorizeProjectRequest) {
+        if (!(await deps.authorizeProjectRequest(req, res, effectiveProjectId, {
+          mode: 'write',
+          capability: 'writeFiles',
+        }))) return;
+      }
       const finalizeOptions: Parameters<typeof finalizeBrand>[0] = {
         id,
         brandsRoot,
