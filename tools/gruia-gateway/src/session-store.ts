@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import type { AuthAuditRecord, SessionStore, StoredSession } from "./types.js";
+import type { AuthAuditContext, AuthAuditRecord, SessionStore, StoredSession } from "./types.js";
 
 type SessionRow = { id_hash: string; user_id: string; organization_id: string; role: string; csrf_token: string; expires_at: number };
 const digest = (value: string): string => createHash("sha256").update(value).digest("base64url");
@@ -45,14 +45,14 @@ export class SqliteSessionStore implements SessionStore {
     try { const row = this.db.prepare("SELECT expires_at FROM login_csrf WHERE token_hash = ?").get(hash) as { expires_at: number } | undefined; this.db.prepare("DELETE FROM login_csrf WHERE token_hash = ?").run(hash); this.db.exec("COMMIT"); return !!row && row.expires_at >= now; } catch (error) { this.db.exec("ROLLBACK"); throw error; }
   }
   createSession(session: StoredSession): void { this.db.prepare("DELETE FROM password_sessions WHERE expires_at < ?").run(Date.now()); this.db.prepare("INSERT INTO password_sessions VALUES (?, ?, ?, ?, ?, ?)").run(digest(session.id), session.userId, session.organizationId, session.role, encrypted(this.key, session.csrfToken), session.expiresAt); }
-  readSession(id: string, now: number): StoredSession | null {
+  readSession(id: string, now: number, context?: AuthAuditContext): StoredSession | null {
     const row = this.db.prepare("SELECT * FROM password_sessions WHERE id_hash = ?").get(digest(id)) as SessionRow | undefined;
-    if (!row || row.expires_at < now) { if (row) { this.db.prepare("DELETE FROM password_sessions WHERE id_hash = ?").run(digest(id)); this.recordAuthEvent({ event: "session_expired", at: now, userId: row.user_id, organizationId: row.organization_id }); } return null; }
+    if (!row || row.expires_at < now) { if (row) { this.db.prepare("DELETE FROM password_sessions WHERE id_hash = ?").run(digest(id)); this.recordAuthEvent({ event: "session_expired", at: now, userId: row.user_id, organizationId: row.organization_id, ...(context ?? {}) }); } return null; }
     const csrfToken = decrypted(this.key, row.csrf_token);
     if (!csrfToken) { this.deleteSession(id); return null; }
     return Object.freeze({ id, userId: row.user_id, organizationId: row.organization_id, role: row.role, csrfToken, expiresAt: row.expires_at });
   }
-  verifyCsrf(id: string, csrf: string, now: number): boolean { const session = this.readSession(id, now); return !!session && equal(csrf, session.csrfToken); }
+  verifyCsrf(id: string, csrf: string, now: number, context?: AuthAuditContext): boolean { const session = this.readSession(id, now, context); return !!session && equal(csrf, session.csrfToken); }
   deleteSession(id: string): void { this.db.prepare("DELETE FROM password_sessions WHERE id_hash = ?").run(digest(id)); }
   recordAuthEvent(record: AuthAuditRecord): void {
     const cutoff = record.at - AUTH_AUDIT_RETENTION_MS;

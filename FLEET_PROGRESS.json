@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T22:56:54.022484+00:00",
+ "updated_at": "2026-09-18T23:01:31.013220+00:00",
  "current": {
-  "item": "push + PR lote 11",
+  "item": "push + PR lote 12",
   "state": "in_progress"
  },
  "done": [
@@ -370,6 +370,26 @@
    "item": "paridad lote 11: drift card, stable release notes, e2e readiness, diagnostics env evidence",
    "commit": "fleet/parity-11",
    "deploy": "PR pendiente"
+  },
+  {
+   "item": "paridad lote 11 merged via PR #25",
+   "commit": "640974bf8",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "G11 — session_revoked audit lleva ip/user-agent (authorize context)",
+   "commit": "a9a7099f0",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G12 — session_expired audit con ip/user-agent",
+   "commit": "4898b0bd9",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G13 — malformed_form + logout csrf_rejected auditados",
+   "commit": "HEAD",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
@@ -462,7 +482,8 @@
   "b52a7cf28 (PR #17)",
   "194286537 (PR #18)",
   "38abb6aee (PR #19)",
-  "PR #24 / e856fdbba (lote 10)"
+  "PR #24 / e856fdbba (lote 10)",
+  "PR #25 / 640974bf8 (lote 11)"
  ],
- "notes": "Cola upstream limpia agotada: resto es ChatPanel/CMS/codex-app-server/prerelease-card (ausentes) o features grandes."
+ "notes": "Paridad upstream: cola limpia agotada (ChatPanel/CMS/codex-app-server/prerelease-card ausentes). Gateway: audit forense completo. Bloqueados: G6 (decision /metrics), proxyAmrApiRequest (parsing binario vela no verificable — ELF)."
 }

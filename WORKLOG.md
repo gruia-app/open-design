@@ -280,3 +280,16 @@
 - `a2229cec2` — e2e: timeout de readiness de packaged Home determinista (7/7).
 - `7fa06a408`→pick — diagnostics: evidencia de entorno acotada para fallos workspace (91/91 suites tocadas; conflicto en diagnostics-export resuelto descartando el bloque scroll-forensics — maquinaria `diagnostics-client-evidence.ts` ausente en el fork).
 - Descartados: `6b60b567a` (ya aplicado — pick vacío), `954f304dd`/`1424be972` (ChatPanel diverge), `5b50e9e4b`/`46be6eacc` (deps ausentes), `f95b9a6ee` (contracts media-task diverge), `875d0b95a`/`35fa33b3c`/`d232620c1`/`21bba485b` (conflictos), `07170f8d2`/`1bdc05228`/`a07dc736f`/`faba30243` (maquinaria prerelease-card ausente), CMS (app ausente).
+
+## Lote 12 — gateway forense (fleet/parity-12)
+
+- Cola upstream agotada: todo lo restante depende de ChatPanel rebuild, CMS,
+  codex-app-server o maquinaria prerelease-card ausentes en el fork.
+- `a9a7099f0` — G11: `authorize()` acepta AuthAuditContext; los 3 call-sites
+  (GET /auth, requests protegidos, upgrade WS) pasan ip/user-agent →
+  `session_revoked` registra quién presentó la sesión revocada (31/31).
+- `4898b0bd9` — G12: mismo contexto para `session_expired` (readSession/
+  verifyCsrf aceptan AuthAuditContext; cubre authorize + logout + csrf).
+- `G13` — `login_failure:malformed_form` para POSTs sin email/password y
+  `logout_failure:csrf_rejected` para logout con CSRF inválido (antes ambos
+  salían 401/403 en silencio) (31/31).

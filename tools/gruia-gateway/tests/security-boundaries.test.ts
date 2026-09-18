@@ -148,6 +148,18 @@ describe("Gruia gateway password-login security seams", () => {
       const pageTwo = await fetch(`${base}/auth`); const tokenTwo = csrf(await pageTwo.text()); const cookieTwo = cookieValue(pageTwo, "gruia_design_login_csrf"); const invalid = await fetch(`${base}/auth/login`, { method: "POST", redirect: "manual", headers: { origin: "http://localhost", cookie: `gruia_design_login_csrf=${cookieTwo}`, "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ csrf: tokenTwo, email: "nobody@gruia.app", password: "wrong" }) }); expect(invalid.status).toBe(401); expect(await invalid.text()).toContain("Credenciales inválidas o acceso no autorizado."); expect(await core.authorize("forged-session")).toBeNull();
     } finally { await close(server, core); }
   });
+  it("audits malformed login forms and rejected logout CSRF", async () => {
+    const { core, store } = setup(); const { server, base } = await listener(core);
+    try {
+      const page = await fetch(`${base}/auth`); const token = csrf(await page.text()); const csrfCookie = cookieValue(page, "gruia_design_login_csrf");
+      const malformed = await fetch(`${base}/auth/login`, { method: "POST", redirect: "manual", headers: { origin: "http://localhost", cookie: `gruia_design_login_csrf=${csrfCookie}`, "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ csrf: token, email: "user@gruia.app" }) });
+      expect(malformed.status).toBe(401);
+      const logoutDenied = await fetch(`${base}/auth/logout`, { method: "POST", redirect: "manual", headers: { origin: "http://localhost", cookie: "gruia_design_session=fake", "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ csrf: "wrong" }) });
+      expect(logoutDenied.status).toBe(403);
+      const rows = store.readAuthAudit(10);
+      expect(rows.map((row) => `${row.event}:${row.detail}`)).toEqual(["logout_failure:csrf_rejected", "login_failure:malformed_form"]);
+    } finally { await close(server, core); }
+  });
   it("writes auth audit rows for login success, failure kinds, and logout", async () => {
     const { core, store } = setup();
     try {
@@ -188,7 +200,7 @@ describe("Gruia gateway password-login security seams", () => {
     } finally { await core.close(); }
   });
   it("admits internal memberships while client access is closed and revalidates active status", async () => {
-    const internal = setup({ clientAccessOpen: false, audience: "internal" }); const login = await internal.core.login("user@gruia.app", "password"); expect(login).not.toBeNull(); expect(await internal.core.authorize(login!.id)).not.toBeNull(); internal.repo.active = false; expect(await internal.core.authorize(login!.id)).toBeNull(); expect(internal.store.readAuthAudit(5)[0]).toMatchObject({ event: "session_revoked", userId: identity.userId, organizationId: "org-a", detail: "identity_mismatch" }); await internal.core.close();
+    const internal = setup({ clientAccessOpen: false, audience: "internal" }); const login = await internal.core.login("user@gruia.app", "password"); expect(login).not.toBeNull(); expect(await internal.core.authorize(login!.id)).not.toBeNull(); internal.repo.active = false; expect(await internal.core.authorize(login!.id, { ip: "198.51.100.23", userAgent: "audit-test" })).toBeNull(); expect(internal.store.readAuthAudit(5)[0]).toMatchObject({ event: "session_revoked", userId: identity.userId, organizationId: "org-a", detail: "identity_mismatch", ip: "198.51.100.23", userAgent: "audit-test" }); await internal.core.close();
     const client = setup({ clientAccessOpen: false, audience: "client" }); expect(await client.core.login("user@gruia.app", "password")).toBeNull(); await client.core.close();
   });
   it("verifies canonical bcrypt and PBKDF2 password records asynchronously", async () => {

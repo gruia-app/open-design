@@ -60,11 +60,11 @@ describe("SqliteSessionStore", () => {
     const s = open().store;
     const now = Date.now();
     s.createSession(session("stale", now - 1));
-    expect(s.readSession("stale", now)).toBeNull();
+    expect(s.readSession("stale", now, { ip: "198.51.100.9", userAgent: "audit-test" })).toBeNull();
     expect(s.readSession("stale", now)).toBeNull();
     const rows = s.readAuthAudit(10);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toEqual({ event: "session_expired", at: now, userId: "u1", organizationId: "org1" });
+    expect(rows[0]).toEqual({ event: "session_expired", at: now, userId: "u1", organizationId: "org1", ip: "198.51.100.9", userAgent: "audit-test" });
     expect(s.readSession("missing", now)).toBeNull();
     expect(s.readAuthAudit(10)).toHaveLength(1);
   });

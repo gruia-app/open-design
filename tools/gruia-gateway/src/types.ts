@@ -41,7 +41,7 @@ export type StoredSession = Readonly<{
   expiresAt: number;
 }>;
 
-export type AuthAuditEvent = "login_success" | "login_failure" | "logout" | "session_revoked" | "session_expired";
+export type AuthAuditEvent = "login_success" | "login_failure" | "logout" | "logout_failure" | "session_revoked" | "session_expired";
 
 export type AuthAuditContext = Readonly<{ ip?: string; userAgent?: string }>;
 
@@ -60,8 +60,8 @@ export interface SessionStore {
   createLoginCsrf(token: string, expiresAt: number): void;
   consumeLoginCsrf(cookieToken: string, formToken: string, now: number): boolean;
   createSession(session: StoredSession): void;
-  readSession(id: string, now: number): StoredSession | null;
-  verifyCsrf(id: string, csrf: string, now: number): boolean;
+  readSession(id: string, now: number, context?: AuthAuditContext): StoredSession | null;
+  verifyCsrf(id: string, csrf: string, now: number, context?: AuthAuditContext): boolean;
   deleteSession(id: string): void;
   recordAuthEvent(record: AuthAuditRecord): void;
   readAuthAudit(limit: number): AuthAuditRecord[];

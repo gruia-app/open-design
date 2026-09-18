@@ -132,22 +132,22 @@ export class GatewayCore {
     this.recordAuthEvent("login_success", { email, userId: identity.userId, organizationId: identity.organizationId, ...(context ?? {}) });
     return { id, expiresAt };
   }
-  async authorize(sessionId: string | undefined): Promise<Authorized | null> {
+  async authorize(sessionId: string | undefined, context?: AuthAuditContext): Promise<Authorized | null> {
     if (!sessionId || sessionId.length > 1024) return null;
-    const session = this.store.readSession(sessionId, this.clock());
+    const session = this.store.readSession(sessionId, this.clock(), context);
     if (!session || !this.admittedOrganizationIds().includes(session.organizationId)) return null;
     const identity = this.singleAdmittedIdentity(await this.identities.resolveUser(session.userId, [session.organizationId]));
     if (!identity || !equal(identity.userId, session.userId) || !equal(identity.organizationId, session.organizationId)) {
       this.store.deleteSession(session.id);
-      this.recordAuthEvent("session_revoked", { userId: session.userId, organizationId: session.organizationId, detail: "identity_mismatch" });
+      this.recordAuthEvent("session_revoked", { userId: session.userId, organizationId: session.organizationId, detail: "identity_mismatch", ...(context ?? {}) });
       return null;
     }
     return Object.freeze({ session, identity });
   }
-  csrf(sessionId: string, value: string | undefined): boolean { return !!value && value.length <= 1024 && this.store.verifyCsrf(sessionId, value, this.clock()); }
+  csrf(sessionId: string, value: string | undefined, context?: AuthAuditContext): boolean { return !!value && value.length <= 1024 && this.store.verifyCsrf(sessionId, value, this.clock(), context); }
   async logout(sessionId: string | undefined, context?: AuthAuditContext): Promise<void> {
     if (!sessionId) return;
-    const session = this.store.readSession(sessionId, this.clock());
+    const session = this.store.readSession(sessionId, this.clock(), context);
     this.store.deleteSession(sessionId);
     if (session) this.recordAuthEvent("logout", { userId: session.userId, organizationId: session.organizationId, ...(context ?? {}) });
   }
@@ -190,13 +190,13 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   const url = new URL(raw, core.config.publicOrigin); const method = request.method ?? "GET";
   if (url.pathname === "/healthz" || url.pathname === "/health") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } noStore(response); response.writeHead(200, { "content-type": "text/plain; charset=utf-8" }); response.end("ok\n"); return; }
   if (url.pathname === "/auth" || url.pathname === "/auth/login") {
-    if (method === "GET") { const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId); if (authorized) signedInPage(response, core, authorized.session); else loginPage(response, core); return; }
+    if (method === "GET") { const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request)); if (authorized) signedInPage(response, core, authorized.session); else loginPage(response, core); return; }
     if (url.pathname === "/auth/login" && method === "POST") { await handleLogin(request, response, core); return; }
     json(response, 405, { error: "method_not_allowed" }); return;
   }
   if (url.pathname === "/auth/logout") { if (method !== "POST") { json(response, 405, { error: "method_not_allowed" }); return; } await handleLogout(request, response, core); return; }
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName);
-  const authorized = await core.authorize(sessionId);
+  const authorized = await core.authorize(sessionId, authContext(request));
   if (!authorized || !sessionId) { if ((request.headers.accept ?? "").includes("text/html")) { response.writeHead(302, { location: "/auth", "cache-control": "no-store" }); response.end(); } else json(response, 401, { error: "authentication_required" }); return; }
   if (unsafeMethods.has(method) && (!isExpectedOrigin(request.headers.origin, core.config) || authorized.identity.role.toUpperCase() === "VIEWER")) { json(response, 403, { error: "forbidden" }); return; }
   if (url.pathname === "/auth/session") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } json(response, 200, { userId: authorized.identity.userId, organizationId: authorized.identity.organizationId, role: authorized.identity.role, csrfToken: authorized.session.csrfToken }); return; }
@@ -217,13 +217,14 @@ async function handleLogin(request: IncomingMessage, response: ServerResponse, c
   const context = authContext(request);
   if (!validCsrf) { core.recordAuthEvent("login_failure", { detail: "csrf_rejected", ...context }); loginPage(response, core, 403, "No fue posible iniciar sesión."); return; }
   const email = normalizeEmail(form.get("email")); const password = form.get("password");
-  const result = email && typeof password === "string" ? await core.login(email, password, context) : null;
+  if (!email || typeof password !== "string") { core.recordAuthEvent("login_failure", { detail: "malformed_form", ...context }); loginPage(response, core, 401, "Credenciales inválidas o acceso no autorizado."); return; }
+  const result = await core.login(email, password, context);
   if (!result) { loginPage(response, core, 401, "Credenciales inválidas o acceso no autorizado."); return; }
   noStore(response); response.setHeader("set-cookie", [expiredCookie(core.config, csrfName), cookie(core.config, core.config.cookieName, result.id, result.expiresAt)]); response.writeHead(303, { location: "/" }); response.end();
 }
 async function handleLogout(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const form = await readForm(request);
-  if (!sessionId || !form || !isExpectedOrigin(request.headers.origin, core.config) || !core.csrf(sessionId, form.get("csrf"))) { loginPage(response, core, 403, "No fue posible cerrar la sesión."); return; }
+  if (!sessionId || !form || !isExpectedOrigin(request.headers.origin, core.config) || !core.csrf(sessionId, form.get("csrf"), authContext(request))) { core.recordAuthEvent("logout_failure", { detail: "csrf_rejected", ...authContext(request) }); loginPage(response, core, 403, "No fue posible cerrar la sesión."); return; }
   await core.logout(sessionId, authContext(request)); noStore(response); response.setHeader("set-cookie", expiredCookie(core.config, core.config.cookieName)); response.writeHead(303, { location: "/auth" }); response.end();
 }
 
@@ -259,7 +260,7 @@ async function proxy(request: IncomingMessage, response: ServerResponse, core: G
 async function handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer, core: GatewayCore): Promise<void> {
   const deny = (): void => { socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n"); socket.destroy(); };
   if (!isSafeProxyPath(request.url) || head.length > core.config.requestBodyLimitBytes || !isAuthorizedWebSocketHandshake(request.headers, core.config)) { deny(); return; }
-  const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId);
+  const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request));
   if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER") { deny(); return; }
   const target = core.config.organizations.get(authorized.identity.organizationId); if (!target) { deny(); return; }
   const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken);
