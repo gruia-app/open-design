@@ -693,3 +693,6 @@ automation-templates 3/3.
   review `wf_93e78204f3e445a2`: todos los hallazgos accionables
   implementados con regresión o documentados con rationale.
 - Suites de apoyo re-verificados con carga normalizada.
+- Verificación final de paquetes no tocados: platform 88/88,
+  launcher-proto 18/18, download 21/21 — verdes. Sin regresiones en
+  ningún paquete del workspace.
