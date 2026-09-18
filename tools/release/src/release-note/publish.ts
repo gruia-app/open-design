@@ -5,7 +5,7 @@ import { parseReleaseVersion, releaseChannelDescriptor } from "@open-design/rele
 
 import { optional, required, storageConfigFromEnv, writeJson } from "../storage/common.ts";
 import { getStorageObject, putStorageObjectWithStatus } from "../storage/s3-upload.ts";
-import { assertReleaseNotePlanPolicy } from "./policy.ts";
+import { reviewReleaseNotePlanPolicy } from "./policy.ts";
 import { createReleaseNotePublication } from "./publication.ts";
 import { parseReleaseNotePlan } from "./source.ts";
 
@@ -24,7 +24,7 @@ const plan = parseReleaseNotePlan(JSON.parse(readFileSync(planPath, "utf8")) as 
 if (plan.channel !== channel || plan.releaseVersion !== releaseVersion) {
   throw new Error(`release note plan identity mismatch for ${channel} ${releaseVersion}`);
 }
-assertReleaseNotePlanPolicy(plan, channel);
+reviewReleaseNotePlanPolicy(plan, channel);
 
 const storage = publishSideEffectsEnabled && plan.state === "ready" ? storageConfigFromEnv() : null;
 

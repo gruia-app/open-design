@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T22:49:19.001818+00:00",
+ "updated_at": "2026-09-18T22:56:54.022484+00:00",
  "current": {
-  "item": "push + PR lote 10",
+  "item": "push + PR lote 11",
   "state": "in_progress"
  },
  "done": [
@@ -360,6 +360,16 @@
    "item": "paridad lote 10: packaged updater ordering, AMR chat-capable guard, PPTX portable compare, e2e mock hardening",
    "commit": "fleet/parity-10",
    "deploy": "PR pendiente"
+  },
+  {
+   "item": "paridad lote 10 merged via PR #24",
+   "commit": "e856fdbba",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "paridad lote 11: drift card, stable release notes, e2e readiness, diagnostics env evidence",
+   "commit": "fleet/parity-11",
+   "deploy": "PR pendiente"
   }
  ],
  "blocked": [
@@ -451,7 +461,8 @@
   "ce045f845 (PR #16)",
   "b52a7cf28 (PR #17)",
   "194286537 (PR #18)",
-  "38abb6aee (PR #19)"
+  "38abb6aee (PR #19)",
+  "PR #24 / e856fdbba (lote 10)"
  ],
- "notes": "fleet/parity-10: 2 picks verificados. Cola upstream remanente: mayoria ChatPanel-dependiente o pipelines no portados."
+ "notes": "Cola upstream limpia agotada: resto es ChatPanel/CMS/codex-app-server/prerelease-card (ausentes) o features grandes."
 }

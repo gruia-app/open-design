@@ -271,3 +271,12 @@
 - `d3f232306` — desktop: comparación portable de capturas PPTX (62/62 verdes).
 - `4cc7d9be1` — e2e: hardening del mock de onboarding status ante reload race (Playwright, fuera de vitest).
 - Descartado: `53a47bf91` (10 ficheros de tests chat-observability conflictúan — divergencia ChatPanel).
+
+## Lote 11 — paridad (fleet/parity-11)
+
+- Revisión post-muerte: diffs de lote 10 auditados y correctos antes de mergear (PR #24 `e856fdbba`).
+- `28382121c` — ci: DSH upstream drift card legible (16/16 script test).
+- `7ce1b7484` — release: stable ya no se bloquea por release notes ausentes (80/80 smoke-topology, 90/90 tools-release).
+- `a2229cec2` — e2e: timeout de readiness de packaged Home determinista (7/7).
+- `7fa06a408`→pick — diagnostics: evidencia de entorno acotada para fallos workspace (91/91 suites tocadas; conflicto en diagnostics-export resuelto descartando el bloque scroll-forensics — maquinaria `diagnostics-client-evidence.ts` ausente en el fork).
+- Descartados: `6b60b567a` (ya aplicado — pick vacío), `954f304dd`/`1424be972` (ChatPanel diverge), `5b50e9e4b`/`46be6eacc` (deps ausentes), `f95b9a6ee` (contracts media-task diverge), `875d0b95a`/`35fa33b3c`/`d232620c1`/`21bba485b` (conflictos), `07170f8d2`/`1bdc05228`/`a07dc736f`/`faba30243` (maquinaria prerelease-card ausente), CMS (app ausente).
