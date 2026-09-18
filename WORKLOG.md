@@ -293,3 +293,17 @@
 - `G13` — `login_failure:malformed_form` para POSTs sin email/password y
   `logout_failure:csrf_rejected` para logout con CSRF inválido (antes ambos
   salían 401/403 en silencio) (31/31).
+
+## Lote 13 — gateway forense + convergencia (fleet/gaps-13)
+
+- `f490b4785` — G14: `authorize()` revoca + audita `session_revoked:org_not_admitted`
+  cuando la org de una sesión válida deja de estar admitida (antes null silencioso,
+  fila viva hasta expirar) — 32/32.
+- Convergencia: la cola upstream restante depende íntegramente de maquinaria
+  ausente en el fork (rebuild ChatPanel, CMS, codex-app-server,
+  prerelease-progress-card, deliverable-syntax pipeline, scroll-freeze
+  observability) o son features grandes (bb9682a5f OD Next default route).
+  Verificado por existencia de ficheros + cherry-pick seco.
+- Pendientes reales: G6 (decisión /metrics vs logs estructurados — requiere
+  operador), proxyAmrApiRequest flat tokens (parsing del binario vela no
+  verificable — ELF Go compilado; conservador mantenerlos).

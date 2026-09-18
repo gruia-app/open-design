@@ -203,6 +203,15 @@ describe("Gruia gateway password-login security seams", () => {
     const internal = setup({ clientAccessOpen: false, audience: "internal" }); const login = await internal.core.login("user@gruia.app", "password"); expect(login).not.toBeNull(); expect(await internal.core.authorize(login!.id)).not.toBeNull(); internal.repo.active = false; expect(await internal.core.authorize(login!.id, { ip: "198.51.100.23", userAgent: "audit-test" })).toBeNull(); expect(internal.store.readAuthAudit(5)[0]).toMatchObject({ event: "session_revoked", userId: identity.userId, organizationId: "org-a", detail: "identity_mismatch", ip: "198.51.100.23", userAgent: "audit-test" }); await internal.core.close();
     const client = setup({ clientAccessOpen: false, audience: "client" }); expect(await client.core.login("user@gruia.app", "password")).toBeNull(); await client.core.close();
   });
+  it("revokes and audits a session whose organization stops being admitted", async () => {
+    const internal = setup({ clientAccessOpen: false, audience: "internal" });
+    const login = await internal.core.login("user@gruia.app", "password");
+    expect(login).not.toBeNull();
+    const closed = new GatewayCore(config({ organizations: new Map([["org-a", { upstream: "http://127.0.0.1:3010", daemonApiToken: "daemon-a", audience: "client" }]]), clientAccessOpen: false }), internal.store, internal.repo);
+    expect(await closed.authorize(login!.id, { ip: "203.0.113.40" })).toBeNull();
+    expect(internal.store.readAuthAudit(5)[0]).toMatchObject({ event: "session_revoked", detail: "org_not_admitted", organizationId: "org-a", ip: "203.0.113.40" });
+    await internal.core.close();
+  });
   it("verifies canonical bcrypt and PBKDF2 password records asynchronously", async () => {
     expect(await verifyCanonicalPassword("password", passwordHash)).toBe(true); expect(await verifyCanonicalPassword("incorrect", passwordHash)).toBe(false); const pbkdf2Hash = "pbkdf2_sha256$1000$MTIzNDU2Nzg$FTjwoBVYl1UMxU9geIRwoYLQGocXCPkkesEhX_dg4L0"; expect(await verifyCanonicalPassword("correct horse", pbkdf2Hash)).toBe(true); expect(await verifyCanonicalPassword("correct battery", pbkdf2Hash)).toBe(false); expect(await verifyCanonicalPassword("correct horse", pbkdf2Hash.replace("$1000$", "$2000001$"))).toBe(false);
   });

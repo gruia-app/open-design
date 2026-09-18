@@ -135,7 +135,12 @@ export class GatewayCore {
   async authorize(sessionId: string | undefined, context?: AuthAuditContext): Promise<Authorized | null> {
     if (!sessionId || sessionId.length > 1024) return null;
     const session = this.store.readSession(sessionId, this.clock(), context);
-    if (!session || !this.admittedOrganizationIds().includes(session.organizationId)) return null;
+    if (!session) return null;
+    if (!this.admittedOrganizationIds().includes(session.organizationId)) {
+      this.store.deleteSession(session.id);
+      this.recordAuthEvent("session_revoked", { userId: session.userId, organizationId: session.organizationId, detail: "org_not_admitted", ...(context ?? {}) });
+      return null;
+    }
     const identity = this.singleAdmittedIdentity(await this.identities.resolveUser(session.userId, [session.organizationId]));
     if (!identity || !equal(identity.userId, session.userId) || !equal(identity.organizationId, session.organizationId)) {
       this.store.deleteSession(session.id);

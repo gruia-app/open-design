@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T23:01:31.013220+00:00",
+ "updated_at": "2026-09-18T23:03:32.254637+00:00",
  "current": {
-  "item": "push + PR lote 12",
+  "item": "push + PR lote final (gateway forense)",
   "state": "in_progress"
  },
  "done": [
@@ -390,18 +390,31 @@
    "item": "G13 — malformed_form + logout csrf_rejected auditados",
    "commit": "HEAD",
    "deploy": "n/a"
+  },
+  {
+   "item": "lote 12 gateway forense merged via PR #26",
+   "commit": "af43be3b5",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "G14 — session_revoked:org_not_admitted con borrado + contexto",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "convergencia: cola upstream agotada + inventario gaps propio cerrado",
+   "commit": "n/a",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
   {
-   "item": "G6 métricas/observabilidad gateway",
-   "reason": "decisión de diseño — endpoint /metrics vs logs estructurados",
-   "needs": "decision"
+   "item": "G6 — métricas/observabilidad gateway",
+   "needs": "decisión operador: /metrics vs logs estructurados"
   },
   {
-   "item": "proxyAmrApiRequest (/api/integrations/vela/api-proxy/*) flat tokens",
-   "reason": "superficie consumida por el binario vela hijo — verificar su parsing de errores antes de convertir (6 sitios)",
-   "needs": "review"
+   "item": "proxyAmrApiRequest flat tokens",
+   "needs": "verificación parsing errores binario vela (ELF compilado, no introspectable) — mantener flat"
   }
  ],
  "prs_open": [
@@ -483,7 +496,8 @@
   "194286537 (PR #18)",
   "38abb6aee (PR #19)",
   "PR #24 / e856fdbba (lote 10)",
-  "PR #25 / 640974bf8 (lote 11)"
+  "PR #25 / 640974bf8 (lote 11)",
+  "PR #26 / af43be3b5 (gateway audit context)"
  ],
  "notes": "Paridad upstream: cola limpia agotada (ChatPanel/CMS/codex-app-server/prerelease-card ausentes). Gateway: audit forense completo. Bloqueados: G6 (decision /metrics), proxyAmrApiRequest (parsing binario vela no verificable — ELF)."
 }
