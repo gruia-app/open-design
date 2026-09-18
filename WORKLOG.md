@@ -170,3 +170,17 @@
   en afterEach). Tests 30/30 + typecheck verdes.
 - Cherry-pick descartado: `441ab84b0` (od-card JSON parse) — los ficheros
   no existen en el fork (refactor ChatPanel eliminó `runtime/chat/`).
+
+## Paridad upstream — lote 4 (rama fleet/parity-4)
+
+- Cherry-picks limpios: `49bcdfecc` (prefer direct Copilot CLI, #7974 —
+  65/65 env-and-detection), `b8b23ea1f` (defer invalid-payload until
+  launcher eligible, #7520 — 2/2), `3f3425835` (BYOK image input sin
+  capability metadata, #8035 — 103/103 chat-route+byok), `e7e4b52b2`
+  (MCP workflow id en confirm briefs, #7779 — 15/15).
+- Descartados: `441ab84b0` (od-card) y `b9c05695f` (cover renderer) — sus
+  ficheros no existen en el fork (runtime/chat + chat-artifacts
+  eliminados por refactor ChatPanel). `ad4a8fc40` conflictúa en
+  ProjectView divergente.
+- `3552c6a53`→`9f9e26f31` (en PR #17): ACP URL title fix con test e2e
+  portado a unitario daemon (build-turn-blocks no existe en el fork).

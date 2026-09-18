@@ -1,10 +1,10 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T21:30:16.333517+00:00",
+ "updated_at": "2026-09-18T21:42:25.391805+00:00",
  "current": {
-  "item": "fleet/next-gap-3: 1 commit (G3). Siguiente gap acotado",
+  "item": "umbral >=5 commits — push + PR + auto-merge",
   "state": "in_progress",
-  "branch": "fleet/next-gap-3"
+  "branch": "fleet/parity-4"
  },
  "done": [
   {
@@ -185,6 +185,33 @@
    "item": "G3: sweep periódico unref'd (15min) en SqliteSessionStore — sessions+csrf+audit retention; tests 30/30",
    "commit": "d12f06f71",
    "deploy": "pending"
+  },
+  {
+   "item": "PR #17 (G3 periodic sweep + cherry-picks #8212/#8063) mergeado squash",
+   "commit": "b52a7cf28",
+   "pr": 17,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: prefer direct Copilot CLI (upstream #7974)",
+   "commit": "49bcdfecc",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: defer invalid-payload until launcher eligible (upstream #7520)",
+   "commit": "b8b23ea1f",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: BYOK image input sin capability metadata (upstream #8035)",
+   "commit": "3f3425835",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: MCP workflow id en confirm briefs (upstream #7779)",
+   "commit": "e7e4b52b2",
+   "deploy": "pending"
   }
  ],
  "blocked": [
@@ -240,6 +267,12 @@
    "pr": 16,
    "merged": "ce045f845",
    "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 17,
+   "merged": "b52a7cf28",
+   "note": "auto-merge squash ejecutado"
   }
  ],
  "deploys_pending": [
@@ -255,7 +288,8 @@
   "e10add9b4 (PR #13)",
   "cb28b84ac (PR #14)",
   "50a8470db (PR #15)",
-  "ce045f845 (PR #16)"
+  "ce045f845 (PR #16)",
+  "b52a7cf28 (PR #17)"
  ],
  "notes": "bucle en repo privado gruia-app/design. D3 cerrado salvo tokens protocolo (collab-context/vela — migración diseñada en curso en fleet/protocol-tokens-1). Gateway: G3/G6 pendientes como decisiones de diseño."
 }
