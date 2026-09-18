@@ -18,6 +18,7 @@ import {
   openDatabase,
 } from '../../src/db.js';
 import { workspaceContextFromDirectoryItem } from '../../src/collab/vela-workspace-context.js';
+import { sendApiError } from '../../src/http/api-errors.js';
 import { registerDesignSystemRoutes } from '../../src/routes/design-systems.js';
 import { registerStaticResourceRoutes } from '../../src/routes/static-resource.js';
 import { registerBrandRoutes } from '../../src/brand-routes.js';
@@ -160,7 +161,7 @@ async function startListRoute(input: {
       isLocalSameOrigin: () => true,
       requireLocalDaemonRequest: (_req: unknown, _res: unknown, next: () => void) => next(),
       resolvedPortRef: { current: 0 },
-      sendApiError: () => undefined,
+      sendApiError,
       sendLiveArtifactRouteError: () => undefined,
       sendMulterError: () => undefined,
     },
@@ -280,8 +281,7 @@ describe('design-system explicit Workspace request scope', () => {
         isLocalSameOrigin: () => true,
         requireLocalDaemonRequest: (_req: unknown, _res: unknown, next: () => void) => next(),
         resolvedPortRef: { current: 0 },
-        sendApiError: (res: express.Response, status: number, code: string, message: string) =>
-          res.status(status).json({ error: code, message }),
+        sendApiError,
         sendLiveArtifactRouteError: () => undefined,
         sendMulterError: () => undefined,
       },
@@ -382,8 +382,7 @@ describe('design-system explicit Workspace request scope', () => {
         isLocalSameOrigin: () => true,
         requireLocalDaemonRequest: (_req: unknown, _res: unknown, next: () => void) => next(),
         resolvedPortRef: { current: 0 },
-        sendApiError: (res: express.Response, status: number, code: string, message: string) =>
-          res.status(status).json({ error: code, message }),
+        sendApiError,
         sendLiveArtifactRouteError: () => undefined,
         sendMulterError: () => undefined,
       },
@@ -545,8 +544,10 @@ describe('design-system explicit Workspace request scope', () => {
       expect(response.status).toBe(status);
       expect(listAllDesignSystems).not.toHaveBeenCalled();
       expect(await response.json()).toMatchObject({
-        error: scopeError(status).code,
-        ...(status === 503 ? { retryable: true } : {}),
+        error: {
+          code: scopeError(status).code,
+          ...(status === 503 ? { retryable: true } : {}),
+        },
       });
     },
   );
@@ -602,8 +603,10 @@ describe('design-system explicit Workspace request scope', () => {
       expect(response.status).toBe(status);
       expect(create).not.toHaveBeenCalled();
       expect(await response.json()).toMatchObject({
-        error: scopeError(status).code,
-        ...(status === 503 ? { retryable: true } : {}),
+        error: {
+          code: scopeError(status).code,
+          ...(status === 503 ? { retryable: true } : {}),
+        },
       });
     },
   );

@@ -28,9 +28,26 @@ import {
   type VerifyWorkspaceRequestAuthority,
   type WorkspaceResourceAccessInput,
 } from '../collab/workspace-resource-mutation.js';
-import type { Project, ProjectFile } from '@open-design/contracts';
+import type { ApiError, ApiErrorCode, Project, ProjectFile } from '@open-design/contracts';
+import { sendApiError } from '../http/api-errors.js';
 
 type DbHandle = ReturnType<typeof openDatabase>;
+
+/**
+ * Workspace scope/authority failures carry API-meaningful codes by
+ * construction — including the dynamic `WORKSPACE_<TYPE>_PERMISSION_DENIED`
+ * family — but the `ApiErrorCode` union lags the emitted set, hence the
+ * single cast here (same treatment as routes/static-resource.ts).
+ */
+function sendScopeError(
+  res: Response,
+  status: number,
+  code: string,
+  message: string,
+  init: Omit<ApiError, 'code' | 'message'> = {},
+) {
+  return sendApiError(res, status, code as ApiErrorCode, message, init);
+}
 
 type DesignSystemWorkspaceProject = {
   project: Project;
@@ -289,19 +306,23 @@ export function registerDesignSystemRoutes(
       ? requestWithWorkspaceNavigationScope(req)
       : req;
     if (scopedRequest === 'conflict') {
-      res.status(400).json({
-        error: 'WORKSPACE_CONTEXT_CONFLICT',
-        message: 'workspace header and navigation scope must match',
-      });
+      sendScopeError(
+        res,
+        400,
+        'WORKSPACE_CONTEXT_CONFLICT',
+        'workspace header and navigation scope must match',
+      );
       return false;
     }
     const resolution = resolveOptionalLocalWorkspaceRequestAuthority(scopedRequest);
     if (!resolution.ok) {
-      res.status(resolution.status).json({
-        error: resolution.code,
-        message: resolution.message,
-        ...(resolution.retryable ? { retryable: true } : {}),
-      });
+      sendScopeError(
+        res,
+        resolution.status,
+        resolution.code,
+        resolution.message,
+        resolution.retryable ? { retryable: true } : {},
+      );
       return false;
     }
     let bindingResourceId = id;
@@ -345,17 +366,21 @@ export function registerDesignSystemRoutes(
         && binding.createdByWorkspaceMemberId !== resolution.context.workspaceMemberId
       )
     )) {
-      res.status(403).json({
-        error: 'WORKSPACE_DESIGN_SYSTEM_PERMISSION_DENIED',
-        message: 'workspace design_system read is not allowed',
-      });
+      sendScopeError(
+        res,
+        403,
+        'WORKSPACE_DESIGN_SYSTEM_PERMISSION_DENIED',
+        'workspace design_system read is not allowed',
+      );
       return false;
     }
     if (binding && !resolution.context) {
-      res.status(400).json({
-        error: 'WORKSPACE_CONTEXT_REQUIRED',
-        message: 'an explicit workspace context is required',
-      });
+      sendScopeError(
+        res,
+        400,
+        'WORKSPACE_CONTEXT_REQUIRED',
+        'an explicit workspace context is required',
+      );
       return false;
     }
     return enforceVerifiedWorkspaceResourceRead(
@@ -363,7 +388,7 @@ export function registerDesignSystemRoutes(
       req,
       res,
       (_res, status, code, message, details) =>
-        res.status(status).json({ error: code, message, ...details }),
+        sendScopeError(_res, status, code, message, details as Omit<ApiError, 'code' | 'message'> | undefined),
       getBoundDesignSystem,
       getDesignSystemBinding,
       db,
@@ -382,11 +407,13 @@ export function registerDesignSystemRoutes(
   ): Promise<boolean> {
     const resolution = resolveOptionalLocalWorkspaceRequestAuthority(req);
     if (!resolution.ok) {
-      res.status(resolution.status).json({
-        error: resolution.code,
-        message: resolution.message,
-        ...(resolution.retryable ? { retryable: true } : {}),
-      });
+      sendScopeError(
+        res,
+        resolution.status,
+        resolution.code,
+        resolution.message,
+        resolution.retryable ? { retryable: true } : {},
+      );
       return false;
     }
     let bindingResourceId = id;
@@ -420,17 +447,21 @@ export function registerDesignSystemRoutes(
         && binding.createdByWorkspaceMemberId !== resolution.context.workspaceMemberId
       )
     )) {
-      res.status(403).json({
-        error: 'WORKSPACE_DESIGN_SYSTEM_PERMISSION_DENIED',
-        message: 'workspace design_system mutation is not allowed',
-      });
+      sendScopeError(
+        res,
+        403,
+        'WORKSPACE_DESIGN_SYSTEM_PERMISSION_DENIED',
+        'workspace design_system mutation is not allowed',
+      );
       return false;
     }
     if (binding && !resolution.context) {
-      res.status(400).json({
-        error: 'WORKSPACE_CONTEXT_REQUIRED',
-        message: 'an explicit workspace context is required',
-      });
+      sendScopeError(
+        res,
+        400,
+        'WORKSPACE_CONTEXT_REQUIRED',
+        'an explicit workspace context is required',
+      );
       return false;
     }
     return enforceVerifiedWorkspaceResourceMutation(
@@ -438,7 +469,7 @@ export function registerDesignSystemRoutes(
       req,
       res,
       (_res, status, code, message) =>
-        res.status(status).json({ error: code, message }),
+        sendScopeError(_res, status, code, message),
       getBoundDesignSystem,
       getDesignSystemBinding,
       db,
@@ -456,11 +487,13 @@ export function registerDesignSystemRoutes(
   ): Promise<{ workspaceId: string; workspaceMemberId: string } | null | 'denied'> {
     const resolution = resolveOptionalLocalWorkspaceRequestAuthority(req);
     if (!resolution.ok) {
-      res.status(resolution.status).json({
-        error: resolution.code,
-        message: resolution.message,
-        ...(resolution.retryable ? { retryable: true } : {}),
-      });
+      sendScopeError(
+        res,
+        resolution.status,
+        resolution.code,
+        resolution.message,
+        resolution.retryable ? { retryable: true } : {},
+      );
       return 'denied';
     }
     return resolution.context
@@ -485,7 +518,12 @@ export function registerDesignSystemRoutes(
         || resolution.workspaceId !== scope.workspaceId
         || resolution.workspaceMemberId !== scope.workspaceMemberId
       ) {
-        res.status(403).json({ error: 'WORKSPACE_DESIGN_SYSTEM_PERMISSION_DENIED' });
+        sendScopeError(
+          res,
+          403,
+          'WORKSPACE_DESIGN_SYSTEM_PERMISSION_DENIED',
+          'workspace design_system read is not allowed',
+        );
         return false;
       }
       return true;
@@ -506,11 +544,13 @@ export function registerDesignSystemRoutes(
     ) {
       return false;
     }
-    res.status(error.status).json({
-      error: error.code,
-      message: error instanceof Error ? error.message : String(error.code),
-      ...('retryable' in error && error.retryable === true ? { retryable: true } : {}),
-    });
+    sendScopeError(
+      res,
+      error.status,
+      error.code,
+      error instanceof Error ? error.message : String(error.code),
+      'retryable' in error && error.retryable === true ? { retryable: true } : {},
+    );
     return true;
   }
 
@@ -524,7 +564,7 @@ export function registerDesignSystemRoutes(
       res.status(201).json({ ...created as object, designSystem: created });
     } catch (err) {
       if (sendWorkspaceScopeError(res, err)) return;
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err));
     }
   });
 
@@ -539,7 +579,7 @@ export function registerDesignSystemRoutes(
       generationJobScopes.set(job.id, scope);
       res.status(202).json({ job });
     } catch (err) {
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err));
     }
   });
 
@@ -547,12 +587,12 @@ export function registerDesignSystemRoutes(
     try {
       const job = designSystemGenerationJobs.get(req.params.jobId);
       if (!job) {
-        return res.status(404).json({ error: 'design system generation job not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'design system generation job not found');
       }
       if (!(await authorizeGenerationJobRead(req, res, job))) return;
       res.json({ job });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -563,7 +603,7 @@ export function registerDesignSystemRoutes(
       if (scope === 'denied') return;
       const storage = resolveDesignSystemStorage(req, req.params.id);
       const feedback = typeof req.body?.feedback === 'string' ? req.body.feedback : '';
-      if (!feedback.trim()) return res.status(400).json({ error: 'feedback is required' });
+      if (!feedback.trim()) return sendApiError(res, 400, 'BAD_REQUEST', 'feedback is required');
       const job = designSystemGenerationJobs.revise({
         root: storage.root,
         designSystemId: req.params.id,
@@ -574,7 +614,7 @@ export function registerDesignSystemRoutes(
       generationJobScopes.set(job.id, scope);
       res.status(202).json({ job });
     } catch (err) {
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err));
     }
   });
 
@@ -604,7 +644,7 @@ export function registerDesignSystemRoutes(
       generationJobScopes.set(job.id, scope);
       res.status(202).json({ decision: preparation.decision, job });
     } catch (err) {
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err));
     }
   });
 
@@ -617,11 +657,11 @@ export function registerDesignSystemRoutes(
         req.params.id,
       );
       if (!revisions) {
-        return res.status(404).json({ error: 'editable design system not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'editable design system not found');
       }
       res.json({ revisions });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -637,11 +677,11 @@ export function registerDesignSystemRoutes(
       // even after the UI stopped showing it as editable.
       const storage = resolveDesignSystemStorage(req, req.params.id);
       if (!(await canMutateUserDesignSystem(storage.root, req.params.id, req))) {
-        return res.status(403).json({ error: 'WORKSPACE_RESOURCE_MANAGE_DENIED' });
+        return sendScopeError(res, 403, 'WORKSPACE_RESOURCE_MANAGE_DENIED', 'workspace design_system manage is not allowed');
       }
       const status = typeof req.body?.status === 'string' ? req.body.status : '';
       if (status !== 'accepted' && status !== 'rejected') {
-        return res.status(400).json({ error: 'status must be accepted or rejected' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'status must be accepted or rejected');
       }
       const revision = await updateUserDesignSystemRevisionStatus(
         storage.root,
@@ -650,11 +690,11 @@ export function registerDesignSystemRoutes(
         status,
       );
       if (!revision) {
-        return res.status(404).json({ error: 'design system revision not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'design system revision not found');
       }
       res.json({ revision });
     } catch (err) {
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err));
     }
   });
 
@@ -677,7 +717,7 @@ export function registerDesignSystemRoutes(
         exactTeam: storage.exactTeam,
       });
       if (body === null || !summary) {
-        return res.status(404).json({ error: 'design system not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'design system not found');
       }
       const packageInfo = await readAvailableDesignSystemPackageInfo(req.params.id, {
         workspaceId,
@@ -701,7 +741,7 @@ export function registerDesignSystemRoutes(
       const detail = { ...summary, body, canMutate, ...(packageInfo ? { packageInfo } : {}) };
       res.json({ ...detail, designSystem: detail });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -814,11 +854,11 @@ export function registerDesignSystemRoutes(
           : undefined,
       );
       if (!workspace) {
-        return res.status(404).json({ error: 'editable design system not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'editable design system not found');
       }
       res.status(201).json(workspace);
     } catch (err) {
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err));
     }
   });
 
@@ -828,11 +868,11 @@ export function registerDesignSystemRoutes(
       const storage = resolveDesignSystemStorage(req, req.params.id);
       const files = await listUserDesignSystemFiles(storage.root, req.params.id);
       if (!files) {
-        return res.status(404).json({ error: 'editable design system not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'editable design system not found');
       }
       res.json({ files });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -846,10 +886,10 @@ export function registerDesignSystemRoutes(
         req.params.id,
         requestedPath,
       );
-      if (!file) return res.status(404).json({ error: 'design system file not found' });
+      if (!file) return sendApiError(res, 404, 'NOT_FOUND', 'design system file not found');
       res.json({ file });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -864,7 +904,7 @@ export function registerDesignSystemRoutes(
       const storage = resolveDesignSystemStorage(req, req.params.id, true);
       const archive = await buildUserDesignSystemArchive(storage.root, req.params.id);
       if (!archive) {
-        return res.status(404).json({ error: 'downloadable design system not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'downloadable design system not found');
       }
       const fileSlug = sanitizeArchiveFilename(archive.baseName) || 'design-system';
       const filename = `${fileSlug}.zip`;
@@ -879,7 +919,7 @@ export function registerDesignSystemRoutes(
       );
       res.send(archive.buffer);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -888,7 +928,7 @@ export function registerDesignSystemRoutes(
       if (!(await authorizeDesignSystemMutation(req, res, req.params.id))) return;
       const storage = resolveDesignSystemStorage(req, req.params.id);
       if (!(await canMutateUserDesignSystem(storage.root, req.params.id, req))) {
-        return res.status(403).json({ error: 'WORKSPACE_RESOURCE_MANAGE_DENIED' });
+        return sendScopeError(res, 403, 'WORKSPACE_RESOURCE_MANAGE_DENIED', 'workspace design_system manage is not allowed');
       }
       const updated = await updateUserDesignSystem(
         storage.root,
@@ -896,11 +936,11 @@ export function registerDesignSystemRoutes(
         req.body || {},
       );
       if (!updated) {
-        return res.status(404).json({ error: 'editable design system not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'editable design system not found');
       }
       res.json({ ...updated as object, designSystem: updated });
     } catch (err) {
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err));
     }
   });
 
@@ -918,7 +958,7 @@ export function registerDesignSystemRoutes(
       if (!(await authorizeDesignSystemMutation(req, res, req.params.id))) return;
       const storage = resolveDesignSystemStorage(req, req.params.id);
       if (!(await canMutateUserDesignSystem(storage.root, req.params.id, req))) {
-        return res.status(403).json({ error: 'WORKSPACE_RESOURCE_MANAGE_DENIED' });
+        return sendScopeError(res, 403, 'WORKSPACE_RESOURCE_MANAGE_DENIED', 'workspace design_system manage is not allowed');
       }
       const workspaceId = headerValue(req, 'x-od-workspace-id');
       const workspaceMemberId = headerValue(req, 'x-od-workspace-member-id');
@@ -931,7 +971,7 @@ export function registerDesignSystemRoutes(
       );
       if (!outcome.ok) {
         if (outcome.reason === 'not-found') {
-          return res.status(404).json({ error: 'editable design system not found' });
+          return sendApiError(res, 404, 'NOT_FOUND', 'editable design system not found');
         }
         // No workspace project to sync from yet — a benign no-op, not an
         // error; the trigger sites call this speculatively on every asset
@@ -940,7 +980,7 @@ export function registerDesignSystemRoutes(
       }
       res.json({ synced: outcome.synced });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -954,7 +994,7 @@ export function registerDesignSystemRoutes(
       if (!(await authorizeDesignSystemMutation(req, res, id))) return false;
       const storage = resolveDesignSystemStorage(req, id);
       if (!(await canMutateUserDesignSystem(storage.root, id, req))) {
-        res.status(403).json({ error: 'WORKSPACE_RESOURCE_MANAGE_DENIED' });
+        sendScopeError(res, 403, 'WORKSPACE_RESOURCE_MANAGE_DENIED', 'workspace design_system manage is not allowed');
         return false;
       }
       if (options.beforeDelete && !(await options.beforeDelete())) return false;
@@ -970,7 +1010,7 @@ export function registerDesignSystemRoutes(
       await unshareTeamDesignSystemIfShared(id, req);
       const ok = await deleteUserDesignSystem(storage.root, id);
       if (!ok) {
-        res.status(404).json({ error: 'editable design system not found' });
+        sendApiError(res, 404, 'NOT_FOUND', 'editable design system not found');
         return false;
       }
       // Envelope cleanup (spec 9.2): drop the `workspace_resources` binding
@@ -982,7 +1022,7 @@ export function registerDesignSystemRoutes(
       return true;
     } catch (err) {
       if (sendWorkspaceScopeError(res, err)) return false;
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
       return false;
     }
   }
@@ -1022,7 +1062,7 @@ export function registerDesignSystemRoutes(
       }
       res.json({ craft: out });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -1030,19 +1070,19 @@ export function registerDesignSystemRoutes(
     try {
       const slug = req.params.id;
       if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
-        return res.status(400).json({ error: 'invalid craft id' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'invalid craft id');
       }
       try {
         const text = await fsp.readFile(`${CRAFT_DIR}/${slug}.md`, 'utf8');
         res.json({ id: slug, body: text });
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-          return res.status(404).json({ error: 'craft section not found' });
+          return sendApiError(res, 404, 'NOT_FOUND', 'craft section not found');
         }
         throw err;
       }
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 

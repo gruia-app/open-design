@@ -96,6 +96,6 @@ it('allows headerless deletion but rejects malformed workspace metadata in works
 
   expect(malformedDeleteResponse.status).toBe(400);
   await expect(malformedDeleteResponse.json()).resolves.toMatchObject({
-    error: 'WORKSPACE_CONTEXT_REQUIRED',
+    error: { code: 'WORKSPACE_CONTEXT_REQUIRED' },
   });
 }, 60_000);

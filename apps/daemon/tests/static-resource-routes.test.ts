@@ -9,6 +9,7 @@ import type { DesignSystemTokenContractRebuildJobResponse } from '@open-design/c
 import { isLocalSameOrigin } from '../src/origin-validation.js';
 import { listDesignSystems } from '../src/design-systems/index.js';
 import { closeDatabase, openDatabase } from '../src/db.js';
+import { sendApiError } from '../src/http/api-errors.js';
 import { registerStaticResourceRoutes } from '../src/routes/static-resource.js';
 
 describe('static resource mutation routes', () => {
@@ -38,8 +39,7 @@ describe('static resource mutation routes', () => {
                 return typeof address === 'object' && address ? address.port : 0;
               },
             },
-            sendApiError: (res: express.Response, status: number, code: string, message: string) =>
-              res.status(status).json({ error: message, code }),
+            sendApiError,
             sendLiveArtifactRouteError: () => undefined,
             sendMulterError: () => undefined,
           },
@@ -124,7 +124,7 @@ describe('static resource mutation routes', () => {
     const res = await fetch(`${baseUrl}${route}`, init);
 
     expect(res.status).toBe(403);
-    expect(await res.json()).toMatchObject({ code: 'FORBIDDEN' });
+    expect(await res.json()).toMatchObject({ error: { code: 'FORBIDDEN' } });
     expect(catalogReadCount).toBe(0);
   });
 
@@ -140,7 +140,7 @@ describe('static resource mutation routes', () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toMatchObject({ code: 'BAD_REQUEST' });
+    expect(await res.json()).toMatchObject({ error: { code: 'BAD_REQUEST' } });
     expect(catalogReadCount).toBe(0);
   });
 
@@ -156,7 +156,7 @@ describe('static resource mutation routes', () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toMatchObject({ code: 'BAD_REQUEST' });
+    expect(await res.json()).toMatchObject({ error: { code: 'BAD_REQUEST' } });
     expect(catalogReadCount).toBe(0);
   });
 });
@@ -210,8 +210,7 @@ describe('design system import catalog lookup', () => {
                 return typeof address === 'object' && address ? address.port : 0;
               },
             },
-            sendApiError: (res: express.Response, status: number, code: string, message: string) =>
-              res.status(status).json({ error: message, code }),
+            sendApiError,
             sendLiveArtifactRouteError: () => undefined,
             sendMulterError: () => undefined,
           },

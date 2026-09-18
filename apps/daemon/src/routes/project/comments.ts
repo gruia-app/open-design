@@ -143,6 +143,11 @@ export interface RegisterProjectCommentRoutesDeps extends RouteDeps<'db' | 'proj
 
 export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectCommentRoutesDeps): void {
   const { db } = ctx;
+  // Production always injects the real sender; fixtures that omit it still get
+  // the same envelope shape so response bodies never depend on the harness.
+  const sendApiError: NonNullable<RegisterProjectCommentRoutesDeps['sendApiError']> =
+    ctx.sendApiError
+      ?? ((res, status, code, message) => res.status(status).json({ error: { code, message } }));
   const { updateProject, getWorkspaceProject, getWorkspaceProjectByProjectId } = ctx.projectStore;
   const {
     getConversation,
@@ -376,7 +381,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
   app.get('/api/projects/:id/conversations/:cid/comments', async (req, res) => {
     const conv = getRoutableConversation(req.params.id, req.params.cid);
     if (!conv) {
-      return res.status(404).json({ error: 'conversation not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
     }
     const workspaceResolution = await resolveReadRequestWorkspaceContext(
       req,
@@ -405,7 +410,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
   app.post('/api/projects/:id/conversations/:cid/comments', async (req, res) => {
     const conv = getRoutableConversation(req.params.id, req.params.cid);
     if (!conv) {
-      return res.status(404).json({ error: 'conversation not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
     }
     if (!await enforceCommentWorkspaceMutation(req, res, req.params.id)) return;
     const workspaceResolution = await resolveRequestWorkspaceContext(
@@ -433,12 +438,12 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           workspaceContext,
         );
         if (!existing) {
-          return res.status(404).json({ error: 'comment not found' });
+          return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
         }
         const existingAuthor = existing.authorMemberId ?? null;
         if (existingAuthor) {
           if (!authorMemberId || existingAuthor !== authorMemberId) {
-            return res.status(403).json({ error: 'not permitted' });
+            return sendApiError(res, 403, 'FORBIDDEN', 'not permitted');
           }
           body.authorMemberId = existingAuthor;
         } else if (authorMemberId) {
@@ -526,7 +531,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
       }
       res.json({ comment });
     } catch (err: any) {
-      res.status(400).json({ error: String(err?.message || err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err?.message || err));
     }
   });
 
@@ -535,7 +540,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
     async (req, res) => {
       const conv = getRoutableConversation(req.params.id, req.params.cid);
       if (!conv) {
-        return res.status(404).json({ error: 'conversation not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
       }
       if (!await enforceCommentWorkspaceMutation(req, res, req.params.id)) return;
       const workspaceResolution = await resolveRequestWorkspaceContext(
@@ -553,7 +558,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           req.params.commentId,
           workspaceContext,
         );
-        if (!existing) return res.status(404).json({ error: 'comment not found' });
+        if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
         // Status change is the send-to-agent lifecycle: allowed for the author
         // and the project owner, blocked for other members.
         if (!(await callerMayMutate(
@@ -562,7 +567,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           existing,
           workspaceContext,
         ))) {
-          return res.status(403).json({ error: 'not permitted' });
+          return sendApiError(res, 403, 'FORBIDDEN', 'not permitted');
         }
         const syncEnabled = isLocalTeamRelayCandidate(
           req.params.id,
@@ -588,10 +593,10 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           return saved;
         })();
         if (!comment)
-          return res.status(404).json({ error: 'comment not found' });
+          return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
         res.json({ comment });
       } catch (err: any) {
-        res.status(400).json({ error: String(err?.message || err) });
+        sendApiError(res, 400, 'BAD_REQUEST', String(err?.message || err));
       }
     },
   );
@@ -601,7 +606,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
     async (req, res) => {
       const conv = getRoutableConversation(req.params.id, req.params.cid);
       if (!conv) {
-        return res.status(404).json({ error: 'conversation not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
       }
       const workspaceResolution = await resolveRequestWorkspaceContext(
         req,
@@ -623,7 +628,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           req.params.commentId,
           workspaceContext,
         );
-        if (!existing) return res.status(404).json({ error: 'comment not found' });
+        if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
         const comment = updatePreviewCommentAnchor(
           db,
           req.params.id,
@@ -631,10 +636,10 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           req.params.commentId,
           req.body || {},
         );
-        if (!comment) return res.status(404).json({ error: 'comment not found' });
+        if (!comment) return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
         res.json({ comment });
       } catch (err: any) {
-        res.status(400).json({ error: String(err?.message || err) });
+        sendApiError(res, 400, 'BAD_REQUEST', String(err?.message || err));
       }
     },
   );
@@ -644,7 +649,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
     async (req, res) => {
       const conv = getRoutableConversation(req.params.id, req.params.cid);
       if (!conv) {
-        return res.status(404).json({ error: 'conversation not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
       }
       const workspaceResolution = await resolveRequestWorkspaceContext(
         req,
@@ -656,7 +661,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
       const workspaceContext = workspaceResolution.context;
       const sortKey = Number(req.body?.sortKey);
       if (!Number.isFinite(sortKey)) {
-        return res.status(400).json({ error: 'sortKey must be a finite number' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'sortKey must be a finite number');
       }
       try {
         // Sidebar display order is a per-daemon viewing preference, not a
@@ -670,7 +675,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           req.params.commentId,
           workspaceContext,
         );
-        if (!existing) return res.status(404).json({ error: 'comment not found' });
+        if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
         const comment = reorderPreviewComment(
           db,
           req.params.id,
@@ -678,10 +683,10 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           req.params.commentId,
           sortKey,
         );
-        if (!comment) return res.status(404).json({ error: 'comment not found' });
+        if (!comment) return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
         res.json({ comment });
       } catch (err: any) {
-        res.status(400).json({ error: String(err?.message || err) });
+        sendApiError(res, 400, 'BAD_REQUEST', String(err?.message || err));
       }
     },
   );
@@ -691,7 +696,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
     async (req, res) => {
       const conv = getRoutableConversation(req.params.id, req.params.cid);
       if (!conv) {
-        return res.status(404).json({ error: 'conversation not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
       }
       if (!await enforceCommentWorkspaceMutation(req, res, req.params.id)) return;
       const workspaceResolution = await resolveRequestWorkspaceContext(
@@ -709,7 +714,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
         req.params.commentId,
         workspaceContext,
       );
-      if (!existing) return res.status(404).json({ error: 'comment not found' });
+      if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
       // Delete is allowed for the comment's author and the project owner.
       if (!(await callerMayMutate(
         req,
@@ -717,7 +722,7 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
         existing,
         workspaceContext,
       ))) {
-        return res.status(403).json({ error: 'not permitted' });
+        return sendApiError(res, 403, 'FORBIDDEN', 'not permitted');
       }
       const syncEnabled = isLocalTeamRelayCandidate(
         req.params.id,
@@ -741,9 +746,9 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
           return true;
         })();
       } catch (err: any) {
-        return res.status(400).json({ error: String(err?.message || err) });
+        return sendApiError(res, 400, 'BAD_REQUEST', String(err?.message || err));
       }
-      if (!ok) return res.status(404).json({ error: 'comment not found' });
+      if (!ok) return sendApiError(res, 404, 'NOT_FOUND', 'comment not found');
       res.json({ ok: true });
     },
   );

@@ -3604,8 +3604,11 @@ export async function installDesignSystem(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
     });
+    if (!resp.ok) {
+      const { message } = await readApiErrorBody(resp);
+      return { error: message };
+    }
     const json = await resp.json();
-    if (!resp.ok) return { error: json.error ?? 'Install failed' };
     noteDesignSystemCatalogMutation();
     return json as InstallDesignSystemResponse;
   } catch {
@@ -3631,8 +3634,8 @@ export async function uninstallDesignSystem(
       noteDesignSystemCatalogMutation();
       return { ok: true };
     }
-    const json = (await resp.json().catch(() => null)) as { error?: string } | null;
-    return { error: json?.error ?? 'Uninstall failed' };
+    const { message } = await readApiErrorBody(resp);
+    return { error: message };
   } catch {
     return { error: 'Network error' };
   }

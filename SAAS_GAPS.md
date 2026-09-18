@@ -35,9 +35,16 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   y el consumer pintaba el CODE como mensaje → todo por `sendApiError` con codes
   tipados + `BRAND_EXTRACTION_STILL_STOPPING` registrado en API_ERROR_CODES +
   consumers web con lectura dual (commit `6b878c4e2`, tests 34/34).
-- [ ] D3 — ~265 sitios `{error}` crudos restantes en daemon privado (tras MCP y
-  brands). Mismo patrón por fichero; candidatos acotados siguientes:
-  `import-export-routes.ts`, `project-file-versions.ts`, rutas de collab.
+- [~] D3 — sweep envelope `{error: {code, message}}` por fichero daemon.
+  Hechos: MCP (`2cc1658f5`), brand-routes (`6b878c4e2`), memory (`072b65d02`),
+  media+xai (PR #10), collab-context, genui (`406a03aae`), comments
+  (`07d14a7b2`), static-resource (`0fa8652de`). `import-export-routes.ts`
+  verificado ya enveloped (104 sendApiError). Aparcados por tokens de
+  protocolo snake_case que clients matchean (requieren migración diseñada):
+  `collab-context.ts` parcial, `vela.ts`, `server.ts` vela-proxy.
+  Candidatos siguientes: `design-systems.ts` (su `sendWorkspaceScopeError`
+  local sigue emitiendo `{error: code, message, retryable}`),
+  `project-file-versions.ts`, rutas restantes con mensajes humanos.
   Ritmo: un fichero por iteración, consumers auditados antes de convertir.
 
 ## Coordinación

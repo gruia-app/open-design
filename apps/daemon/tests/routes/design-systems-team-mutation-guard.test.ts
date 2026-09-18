@@ -154,8 +154,8 @@ describe('design system PATCH/DELETE team-share mutation guard', () => {
     });
 
     expect(res.status).toBe(403);
-    const body = (await res.json()) as { error?: string };
-    expect(body.error).toBe('WORKSPACE_RESOURCE_MANAGE_DENIED');
+    const body = (await res.json()) as { error?: { code?: string } };
+    expect(body.error?.code).toBe('WORKSPACE_RESOURCE_MANAGE_DENIED');
     expect(updateUserDesignSystem).not.toHaveBeenCalled();
   });
 
@@ -168,8 +168,8 @@ describe('design system PATCH/DELETE team-share mutation guard', () => {
     const res = await fetch(`${baseUrl}/api/design-systems/user:teammate-ds`, { method: 'DELETE' });
 
     expect(res.status).toBe(403);
-    const body = (await res.json()) as { error?: string };
-    expect(body.error).toBe('WORKSPACE_RESOURCE_MANAGE_DENIED');
+    const body = (await res.json()) as { error?: { code?: string } };
+    expect(body.error?.code).toBe('WORKSPACE_RESOURCE_MANAGE_DENIED');
     expect(deleteUserDesignSystem).not.toHaveBeenCalled();
   });
 
@@ -259,8 +259,8 @@ describe('design system revision accept/reject team-share mutation guard', () =>
     });
 
     expect(res.status).toBe(403);
-    const body = (await res.json()) as { error?: string };
-    expect(body.error).toBe('WORKSPACE_RESOURCE_MANAGE_DENIED');
+    const body = (await res.json()) as { error?: { code?: string } };
+    expect(body.error?.code).toBe('WORKSPACE_RESOURCE_MANAGE_DENIED');
     expect(updateUserDesignSystemRevisionStatus).not.toHaveBeenCalled();
   });
 

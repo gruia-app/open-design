@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3';
 import path from 'node:path';
 import fs from 'node:fs';
 import type {
+  ApiErrorCode,
   DesignSystemTokenContractRebuildJobResponse,
   WorkspaceCollabContext,
 } from '@open-design/contracts';
@@ -65,6 +66,7 @@ import {
   type SkillInstallErrorCode,
 } from '../services/skill-installation.js';
 import type { RouteDeps } from '../server-context.js';
+import { sendApiError } from '../http/api-errors.js';
 import { findRealElementRange, HTML_TAG_PATTERNS } from '@open-design/contracts/runtime/html-injection-points';
 
 export interface RegisterAtomRoutesDeps {
@@ -99,7 +101,9 @@ export function registerAtomRoutes(app: Express, ctx: RegisterAtomRoutesDeps) {
     const id = req.params.id;
     const atom = atoms.find((a) => a.id === id);
     if (!atom) {
-      return res.status(404).json({ error: { code: 'atom-not-found', message: `Unknown atom "${id}"` } });
+      return sendApiError(res, 404, 'NOT_FOUND', `Unknown atom "${id}"`, {
+        details: { atomCode: 'atom-not-found' },
+      });
     }
     const body: Record<string, unknown> = { ...atom, taskKinds: atom.taskKinds.slice() };
     try {
@@ -111,6 +115,23 @@ export function registerAtomRoutes(app: Express, ctx: RegisterAtomRoutesDeps) {
     }
     res.json(body);
   });
+}
+
+/** Typed error code for statuses this route file computes at send time. */
+function apiErrorCodeForStatus(status: number): ApiErrorCode {
+  switch (status) {
+    case 400: return 'BAD_REQUEST';
+    case 401: return 'UNAUTHORIZED';
+    case 403: return 'FORBIDDEN';
+    case 404: return 'NOT_FOUND';
+    case 409: return 'CONFLICT';
+    case 422: return 'VALIDATION_FAILED';
+    case 502:
+    case 503:
+    case 504:
+      return 'UPSTREAM_UNAVAILABLE';
+    default: return 'INTERNAL_ERROR';
+  }
 }
 
 export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticResourceRoutesDeps) {
@@ -155,11 +176,16 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
     ) {
       return false;
     }
-    res.status(error.status).json({
-      error: error.code,
-      message: error instanceof Error ? error.message : String(error.code),
-      ...('retryable' in error && error.retryable === true ? { retryable: true } : {}),
-    });
+    // Scope/authority failures carry API-meaningful codes by construction
+    // (same family `sendCreatedProjectWorkspaceError` passes through); the
+    // `ApiErrorCode` union lags behind the emitted set, hence the cast.
+    sendApiError(
+      res,
+      error.status,
+      error.code as ApiErrorCode,
+      error instanceof Error ? error.message : String(error.code),
+      'retryable' in error && error.retryable === true ? { retryable: true } : {},
+    );
     return true;
   };
   // Stamp a freshly imported/installed skill with the caller's workspace, the
@@ -448,7 +474,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
     try {
       config = await readAppConfig(RUNTIME_DATA_DIR);
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
       return;
     }
     const agentCliEnv = config.agentCliEnv ?? {};
@@ -458,7 +484,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         const list = await detectAgents(agentCliEnv);
         res.json({ agents: list });
       } catch (err: any) {
-        res.status(500).json({ error: String(err) });
+        sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
       }
       return;
     }
@@ -519,7 +545,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         })),
       });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -533,11 +559,11 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         workspaceMemberId: authority?.workspaceMemberId ?? null,
       });
       const skill = findSkillById(skills, req.params.id);
-      if (!skill) return res.status(404).json({ error: 'skill not found' });
+      if (!skill) return sendApiError(res, 404, 'NOT_FOUND', 'skill not found');
       const { dir: _dir, ...serializable } = skill;
       res.json(serializable);
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -555,7 +581,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         })),
       });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -563,11 +589,11 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
     try {
       const templates = await listAllDesignTemplates();
       const template = findSkillById(templates, req.params.id);
-      if (!template) return res.status(404).json({ error: 'design template not found' });
+      if (!template) return sendApiError(res, 404, 'NOT_FOUND', 'design template not found');
       const { dir: _dir, ...serializable } = template;
       res.json(serializable);
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -728,7 +754,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
       });
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -752,7 +778,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
       });
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: String((err && err.message) || err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String((err && err.message) || err));
     }
   });
 
@@ -862,7 +888,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
       res.json({ designSystems });
     } catch (err: any) {
       if (sendWorkspaceScopeError(res, err)) return;
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -873,7 +899,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         promptTemplates: templates.map(({ prompt: _prompt, ...rest }) => rest),
       });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -885,10 +911,10 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         req.params.id,
       );
       if (!tpl)
-        return res.status(404).json({ error: 'prompt template not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'prompt template not found');
       res.json({ promptTemplate: tpl });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -1131,12 +1157,13 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
           INTERNAL_ERROR: 500,
         };
         const code = 'code' in result ? result.code : undefined;
-        return res
-          .status((code && statusByCode[code]) || 400)
-          .json({ error: result.error, ...(code ? { code } : {}) });
+        const status = (code && statusByCode[code]) || 400;
+        return sendApiError(res, status, apiErrorCodeForStatus(status), String(result.error), {
+          ...(code ? { details: { installErrorCode: code } } : {}),
+        });
       }
       if (typeof result.dir !== 'string' || !result.dir) {
-        return res.status(500).json({ error: 'skill install did not return an installation directory' });
+        return sendApiError(res, 500, 'INTERNAL_ERROR', 'skill install did not return an installation directory');
       }
       const installedSkillId = 'id' in result && typeof result.id === 'string'
         ? result.id
@@ -1167,7 +1194,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         (candidate) => fs.realpathSync.native(candidate.dir) === installedDir,
       );
       if (!installed) {
-        return res.status(500).json({ error: `installed skill was not found in catalog: ${result.dir}` });
+        return sendApiError(res, 500, 'INTERNAL_ERROR', `installed skill was not found in catalog: ${result.dir}`);
       }
       bindImportedSkillToWorkspace(authority, installed.id);
       const scopedSkills = await listAllSkills({
@@ -1176,7 +1203,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
       });
       const skill = findSkillById(scopedSkills, installed.id);
       if (!skill) {
-        return res.status(500).json({ error: 'installed skill was not found in scoped catalog' });
+        return sendApiError(res, 500, 'INTERNAL_ERROR', 'installed skill was not found in scoped catalog');
       }
       res.json({
         skill: {
@@ -1187,7 +1214,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         },
       });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -1214,7 +1241,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
       if (denyTeamSkillMutation(res, authority, skill.id, skill.teamSynced === true)) return;
       if (!await enforceSkillWorkspaceMutation(req, res, req.params.id, 'delete')) return;
       const result = await uninstallById(req.params.id, USER_SKILLS_DIR, SKILLS_DIR, 'skill');
-      if (!result.ok) return res.status(result.status || 400).json({ error: result.error });
+      if (!result.ok) return sendApiError(res, result.status || 400, apiErrorCodeForStatus(result.status || 400), String(result.error));
       // Clean up the binding row too — `workspace_resources` has no
       // FOREIGN KEY ... ON DELETE CASCADE (see db.ts's doc comment on the
       // table), so skipping this would leave an orphan binding that
@@ -1224,7 +1251,7 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
       deleteWorkspaceResourceByResourceId(db, 'skill', req.params.id);
       res.json({ ok: true });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -1251,21 +1278,21 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         );
       }
       const result = await installFromTarget(req.body, USER_DESIGN_SYSTEMS_DIR, 'design-system');
-      if (!result.ok) return res.status(400).json({ error: result.error });
+      if (!result.ok) return sendApiError(res, 400, 'BAD_REQUEST', result.error);
       if (typeof result.dir !== 'string' || !result.dir) {
-        return res.status(500).json({ error: 'design system install did not return an installation directory' });
+        return sendApiError(res, 500, 'INTERNAL_ERROR', 'design system install did not return an installation directory');
       }
       const designSystemId = path.basename(fs.realpathSync.native(result.dir));
       await claimImportedDesignSystem(designSystemId, workspaceContext);
       const systems = await listAllDesignSystems();
       const designSystem = findUserDesignSystemInCatalog(systems, designSystemId);
       if (!designSystem) {
-        return res.status(500).json({ error: `installed design system was not found in catalog: ${result.dir}` });
+        return sendApiError(res, 500, 'INTERNAL_ERROR', `installed design system was not found in catalog: ${result.dir}`);
       }
       res.json({ designSystem });
     } catch (err: any) {
       if (sendWorkspaceScopeError(res, err)) return;
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -1450,10 +1477,10 @@ export function registerStaticResourceRoutes(app: Express, ctx: RegisterStaticRe
         DESIGN_SYSTEMS_DIR,
         'design-system',
       );
-      if (!result.ok) return res.status(result.status || 400).json({ error: result.error });
+      if (!result.ok) return sendApiError(res, result.status || 400, apiErrorCodeForStatus(result.status || 400), String(result.error));
       res.json({ ok: true });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 

@@ -1,7 +1,7 @@
 {
   "app": "design",
-  "updated_at": "2026-09-18T18:25:00Z",
-  "current": {"item": "D3 envelope sweep — siguiente fichero daemon (brand-routes hecho)", "state": "in_progress", "branch": "fleet/brand-envelope"},
+  "updated_at": "2026-09-18T19:10:00Z",
+  "current": {"item": "D3 envelope sweep — siguiente candidato design-systems.ts (sendWorkspaceScopeError propio)", "state": "in_progress", "branch": "fleet/envelope-batch-2"},
   "done": [
     {"item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado", "commit": "n/a", "deploy": "n/a"},
     {"item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5", "commit": "2cc1658f5", "deploy": "pending", "note": "upstream PR #8262"},
@@ -10,20 +10,26 @@
     {"item": "D1 batch 3: pack/serve/release quoting+validation", "commit": "8089972db", "deploy": "pending", "pr": 7},
     {"item": "D1 batch 4: web resilience, envelopes, timeouts", "commit": "6384ae519", "deploy": "pending", "pr": 8},
     {"item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n", "commit": "adefce32f", "deploy": "pending", "pr": 9},
-    {"item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING", "commit": "6b878c4e2", "deploy": "pending"}
+    {"item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING", "commit": "6b878c4e2", "deploy": "pending"},
+    {"item": "D3 sweep: memory (072b65d02), media+xai, collab-context — PR #10 squash 9b3ef04ec", "commit": "9b3ef04ec", "deploy": "pending", "pr": 10},
+    {"item": "D3: envelope en genui route errors (14 sitios, import directo)", "commit": "406a03aae", "deploy": "pending"},
+    {"item": "D3: envelope en comment route errors (24 sitios, ctx.sendApiError + fallback)", "commit": "07d14a7b2", "deploy": "pending"},
+    {"item": "D3: envelope en static-resource (28 sitios + sendWorkspaceScopeError local; atom/install codes en details; fixtures con sender real; bootstrap-regression al día)", "commit": "0fa8652de", "deploy": "pending"}
   ],
   "blocked": [
     {"item": "G3 timer de barrido periódico de sesiones", "reason": "decisión de diseño — G1 sweep-on-write lo hace opcional"},
     {"item": "G4 bucket rate-limit por IP", "reason": "decisión — depende de si gateway será multi-instancia"},
     {"item": "G6 métricas/observabilidad gateway", "reason": "decisión de diseño"},
-    {"item": "G7 auditoría de logins (auth_audit)", "reason": "decisión — requiere schema+retención"}
+    {"item": "G7 auditoría de logins (auth_audit)", "reason": "decisión — requiere schema+retención"},
+    {"item": "collab-context/vela/server.ts vela-proxy envelope", "reason": "tokens snake_case de protocolo que clients matchean — requiere migración diseñada de ~10 consumers"}
   ],
   "prs_open": [{"repo": "nexu-io/open-design", "pr": 8262, "note": "contribution upstream; no auto-merge posible"}],
   "deploys_pending": [
     "2cc1658f5 (upstream PR #8262)",
     "PR #4 squash (gateway G1+G2+G9)",
     "73b37548f (PR #6)", "8089972db (PR #7)", "6384ae519 (PR #8)", "adefce32f (PR #9)",
-    "6b878c4e2 (fleet/brand-envelope, sin PR aún)"
+    "9b3ef04ec (PR #10)",
+    "406a03aae + 07d14a7b2 + 0fa8652de (fleet/envelope-batch-2, sin PR aún — 3/5 commits)"
   ],
-  "notes": "bucle en repo privado gruia-app/design. Paridad upstream D1 cerrada. Siguiente: D3 (sweep envelope por fichero) — import-export-routes candidato."
+  "notes": "bucle en repo privado gruia-app/design. Paridad upstream D1 cerrada. D3 en curso: un fichero por iteración. Siguiente candidato: design-systems.ts (sendWorkspaceScopeError propio, ejercido por explicit-workspace-scope tests vía registerDesignSystemRoutes)."
 }

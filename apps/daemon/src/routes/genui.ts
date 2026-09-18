@@ -12,6 +12,7 @@ import {
   revokeProjectSurface,
 } from '../genui/index.js';
 import { resolveProjectDir } from '../projects.js';
+import { sendApiError } from '../http/api-errors.js';
 import type { AuthorizeProjectRequest } from '../collab/project-request-authority.js';
 
 export interface RegisterGenuiRoutesDeps {
@@ -37,7 +38,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
   ) => {
     const run = design.runs.get(req.params.runId);
     if (!run) {
-      res.status(404).json({ error: 'run not found' });
+      sendApiError(res, 404, 'NOT_FOUND', 'run not found');
       return false;
     }
     if (!run.projectId) return true;
@@ -50,7 +51,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       const surfaces = listSurfacesForRun(db, req.params.runId);
       res.json({ runId: req.params.runId, surfaces });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -65,7 +66,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       const surfaces = listSurfacesForProject(db, req.params.projectId);
       res.json({ projectId: req.params.projectId, surfaces });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -89,7 +90,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       );
       const row = stmt.get(req.params.runId, req.params.surfaceId) as { id?: string } | undefined;
       if (!row?.id) {
-        return res.status(404).json({ error: 'no pending surface for runId/surfaceId' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'no pending surface for runId/surfaceId');
       }
       const updated = respondSurfaceRow(db, {
         runId: req.params.runId,
@@ -128,7 +129,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       if (diffReviewBridge) responsePayload.diffReviewBridge = diffReviewBridge;
       res.json(responsePayload);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -146,7 +147,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       });
       res.json({ ok: true, invalidated: changed });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -168,7 +169,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
         ? body.kind
         : 'confirmation';
       if (!snapshotId || !surfaceId) {
-        return res.status(400).json({ error: 'snapshotId and surfaceId are required' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'snapshotId and surfaceId are required');
       }
       const row = prefillProjectSurface(db, {
         projectId: req.params.projectId,
@@ -182,7 +183,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       });
       res.json({ ok: true, surface: row });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -194,9 +195,9 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
           WHERE run_id = ? AND surface_id = ?
           ORDER BY requested_at DESC LIMIT 1`,
       ).get(req.params.runId, req.params.surfaceId) as { id?: string } | undefined;
-      if (!row?.id) return res.status(404).json({ error: 'surface not found' });
+      if (!row?.id) return sendApiError(res, 404, 'NOT_FOUND', 'surface not found');
       const surface = getSurface(db, row.id);
-      if (!surface) return res.status(404).json({ error: 'surface not found' });
+      if (!surface) return sendApiError(res, 404, 'NOT_FOUND', 'surface not found');
       let spec = null;
       if (surface.pluginSnapshotId) {
         const snap = getSnapshot(db, surface.pluginSnapshotId);
@@ -206,7 +207,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       }
       res.json({ ...surface, spec });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -216,7 +217,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       const iterations = listIterationsForRun(db, req.params.runId);
       res.json({ runId: req.params.runId, iterations });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -232,7 +233,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
         });
       }
       const snapshot = getSnapshot(db, snapshotId);
-      if (!snapshot) return res.status(404).json({ error: 'snapshot not found' });
+      if (!snapshot) return sendApiError(res, 404, 'NOT_FOUND', 'snapshot not found');
       res.json({
         ok: true,
         runId: req.params.runId,
@@ -247,7 +248,7 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
         },
       });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 }

@@ -321,9 +321,11 @@ describe('DELETE /api/design-systems/:id unshares from the team hub first', () =
 
     expect(res.status).toBe(503);
     await expect(res.json()).resolves.toEqual({
-      error: 'WORKSPACE_RESOURCE_AUTHORITY_UNAVAILABLE',
-      message: 'team resource authority is temporarily unavailable',
-      retryable: true,
+      error: {
+        code: 'WORKSPACE_RESOURCE_AUTHORITY_UNAVAILABLE',
+        message: 'team resource authority is temporarily unavailable',
+        retryable: true,
+      },
     });
     expect(deleteUserDesignSystem).not.toHaveBeenCalled();
   });

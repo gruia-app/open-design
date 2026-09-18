@@ -346,16 +346,24 @@ describe('bootstrap route regressions', () => {
     expect(await velaProxyUnknownPath.json()).toEqual({ error: 'unknown_amr_api_proxy_path' });
 
     expect(genuiRunList.status).toBe(404);
-    expect(await genuiRunList.json()).toEqual({ error: 'run not found' });
+    expect(await genuiRunList.json()).toEqual({
+      error: { code: 'NOT_FOUND', message: 'run not found' },
+    });
 
     expect(genuiRunSurfaceMissing.status).toBe(404);
-    expect(await genuiRunSurfaceMissing.json()).toEqual({ error: 'run not found' });
+    expect(await genuiRunSurfaceMissing.json()).toEqual({
+      error: { code: 'NOT_FOUND', message: 'run not found' },
+    });
 
     expect(devloopIterations.status).toBe(404);
-    expect(await devloopIterations.json()).toEqual({ error: 'run not found' });
+    expect(await devloopIterations.json()).toEqual({
+      error: { code: 'NOT_FOUND', message: 'run not found' },
+    });
 
     expect(replayMissingSnapshot.status).toBe(404);
-    expect(await replayMissingSnapshot.json()).toEqual({ error: 'run not found' });
+    expect(await replayMissingSnapshot.json()).toEqual({
+      error: { code: 'NOT_FOUND', message: 'run not found' },
+    });
   });
 
   it('keeps extracted design-system and template example responses stable', async () => {

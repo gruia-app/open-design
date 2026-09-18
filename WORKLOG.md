@@ -44,3 +44,30 @@
   consumers web con lectura dual (legacy + envelope).
 - Verificación: brand-routes.test.ts 34/34 (3 aserciones migradas al envelope),
   typecheck daemon + web verdes. Commit `6b878c4e2`.
+
+## D3 batch 2 — envelope sweep (rama fleet/envelope-batch-2)
+
+- `routes/genui.ts` (`406a03aae`): 14 sitios raw → `sendApiError` (import
+  directo; registrar no tiene ctx.http). Consumers verificados (prop de
+  componente). Typecheck verde.
+- `routes/project/comments.ts` (`07d14a7b2`): 24 sitios raw → `ctx.sendApiError`
+  con fallback que emite envelope en fixtures sin la dep. Tests
+  comment-workspace-gate 23/23 + permissions 16/16. Typecheck verde.
+- `routes/static-resource.ts` (`0fa8652de`): 28 sitios raw +
+  `sendWorkspaceScopeError` local (`{error: code, message, retryable}`) →
+  envelope vía `ctx.http.sendApiError`. Scope errors pasan su code con cast
+  justificado (ApiErrorCode union va por detrás del set emitido;
+  `sendCreatedProjectWorkspaceError` hace lo mismo). Atom 404 conserva
+  `atom-not-found` en `details.atomCode`; skill-install conserva su código en
+  `details.installErrorCode`. `text/plain` en endpoints de assets intacto
+  (sirven contenido, no JSON API). Fixtures de tests ahora usan el sender real.
+- Hallazgo colateral: `server-bootstrap-regression.test.ts` tenía aserciones
+  viejas (`{error: 'run not found'}`) de los commits genui/runs — migradas al
+  envelope en el mismo commit.
+- Verificación: static-resource-routes 12/12, explicit-workspace-scope 12/12,
+  workspace-resource-read-authority 2/2, skill-navigation 4/4,
+  skills-workspace-scope 21/21, skill-url-install 30/30, team-resource 6/6,
+  workspaceless-delete 1/1, bootstrap-regression 7/7. Typecheck daemon verde.
+- `design-systems.ts` tiene SU PROPIO `sendWorkspaceScopeError` con shape viejo
+  → siguiente candidato D3 (las aserciones 604-607 del test explicit-scope lo
+  ejercen vía `registerDesignSystemRoutes`).
