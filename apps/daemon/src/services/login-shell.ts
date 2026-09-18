@@ -35,11 +35,11 @@ function buildGhShellCommand(args: readonly string[]): string {
   return ['gh', ...args].map(quotePosixShellArg).join(' ');
 }
 
-function buildCommandShellCommand(command: string, args: readonly string[]): string {
+export function buildCommandShellCommand(command: string, args: readonly string[]): string {
   return [command, ...args].map(quotePosixShellArg).join(' ');
 }
 
-function buildLoginShellCommand(innerCommand: string): string {
+export function buildLoginShellCommand(innerCommand: string): string {
   // Use a non-login shell and re-export PATH so test fakes and agent wrappers
   // remain visible; login shells often reset PATH from profile scripts. When
   // the daemon itself has no PATH, skip the export entirely — `export PATH=''`

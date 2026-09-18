@@ -1,0 +1,258 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido principal" [ref=e2] [cursor=pointer]:
+    - /url: "#vista"
+  - generic [ref=e3]:
+    - complementary "Navegación principal" [ref=e4]:
+      - generic [ref=e5]: Pulso Planta Planta Norte · L2
+      - navigation [ref=e10]:
+        - paragraph [ref=e11]: Operación
+        - button "Tablero de planta 1" [ref=e12] [cursor=pointer]:
+          - generic [ref=e15]: Tablero de planta
+          - generic [ref=e16]: "1"
+        - button "Secuenciador 16" [ref=e17] [cursor=pointer]:
+          - generic [ref=e21]: Secuenciador
+          - generic [ref=e22]: "16"
+        - button "Órdenes de trabajo 16" [ref=e23] [cursor=pointer]:
+          - generic [ref=e27]: Órdenes de trabajo
+          - generic [ref=e28]: "16"
+        - paragraph [ref=e29]: Activos
+        - button "Máquinas 1" [ref=e30] [cursor=pointer]:
+          - generic [ref=e34]: Máquinas
+          - generic [ref=e35]: "1"
+        - button "Mantenimiento 6" [ref=e36] [cursor=pointer]:
+          - generic [ref=e39]: Mantenimiento
+          - generic [ref=e40]: "6"
+        - paragraph [ref=e41]: Control
+        - button "Calidad 2" [ref=e42] [cursor=pointer]:
+          - generic [ref=e46]: Calidad
+          - generic [ref=e47]: "2"
+        - button "Inventario !" [ref=e48] [cursor=pointer]:
+          - generic [ref=e52]: Inventario
+          - generic [ref=e53]: "!"
+        - button "Turnos 3" [ref=e54] [cursor=pointer]:
+          - generic [ref=e58]: Turnos
+          - generic [ref=e59]: "3"
+        - paragraph [ref=e60]: Sistema
+        - button "Configuración" [ref=e61] [cursor=pointer]
+      - generic [ref=e66]:
+        - paragraph [ref=e67]: Datos simulados
+        - paragraph [ref=e69]: Sin conexión a MES ni ERP reales.
+    - generic [ref=e70]:
+      - banner [ref=e71]:
+        - generic [ref=e72]:
+          - heading "Tablero de planta" [level=1] [ref=e73]
+          - paragraph [ref=e74]: Turno A · 06:00–14:00 · línea L2 · datos simulados
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e77]: Filtrar por turno
+            - combobox "Filtrar por turno" [ref=e78]:
+              - option "Turno A · 06:00–14:00" [selected]
+              - option "Turno B · 14:00–22:00"
+              - option "Turno C · 22:00–06:00"
+              - option "Todos los turnos"
+          - generic "Última ejecución del simulador" [ref=e79]: sim · 07:37:38
+      - main [ref=e82]:
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - paragraph [ref=e86]: OEE de planta
+            - paragraph [ref=e87]: 69,3 %
+            - paragraph [ref=e88]: Bajo objetivo (75 %)
+          - generic [ref=e92]:
+            - paragraph [ref=e93]: Disponibilidad
+            - paragraph [ref=e94]: 78,8 %
+            - paragraph [ref=e95]: 1892 de 2400 min operativos
+          - generic [ref=e98]:
+            - paragraph [ref=e99]: Rendimiento
+            - paragraph [ref=e100]: 90,4 %
+            - paragraph [ref=e101]: 1730 min de carga programada
+          - generic [ref=e104]:
+            - paragraph [ref=e105]: Calidad
+            - paragraph [ref=e106]: 97,2 %
+            - paragraph [ref=e107]: 131 ud de merma sobre 4730
+          - generic [ref=e110]:
+            - paragraph [ref=e111]: Cuello de botella
+            - paragraph [ref=e112]: EST-03
+            - paragraph [ref=e113]: Soldadura robotizada · util. 106 %
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - heading "Flujo de la línea L2" [level=2] [ref=e119]
+              - paragraph [ref=e120]: Grosor del trazo = piezas buenas estimadas · barra = utilización frente a tiempo operativo
+            - generic [ref=e121]: Turno A · 06:00–14:00
+          - img "Diagrama de flujo de la línea. EST-01 Corte láser, OEE 82 por ciento, utilización 90 por ciento. EST-02 Estampado, OEE 66 por ciento, utilización 90 por ciento. EST-03 Soldadura robotizada, OEE 68 por ciento, utilización 106 por ciento. EST-04 Mecanizado CNC, OEE 55 por ciento, utilización 87 por ciento. EST-05 Ensamble final, OEE 76 por ciento, utilización 86 por ciento. Cuello de botella en EST-03." [ref=e122]:
+            - generic [ref=e124]: 1253 ud
+            - generic [ref=e126]: 1236 ud
+            - generic [ref=e128]: 687 ud
+            - generic [ref=e130]: 675 ud
+            - generic [ref=e131]:
+              - generic [ref=e133]: EST-01
+              - generic [ref=e134]: 82%
+              - generic [ref=e135]: Corte láser
+              - generic [ref=e138]: util. 90%
+            - generic [ref=e139]:
+              - generic [ref=e141]: EST-02
+              - generic [ref=e142]: 66%
+              - generic [ref=e143]: Estampado
+              - generic [ref=e146]: util. 90%
+            - generic [ref=e147]:
+              - generic [ref=e149]: EST-03
+              - generic [ref=e150]: 68%
+              - generic [ref=e151]: Soldadura robotizada
+              - generic [ref=e154]: util. 106%
+              - generic [ref=e155]: cuello
+            - generic [ref=e156]:
+              - generic [ref=e158]: EST-04
+              - generic [ref=e159]: 55%
+              - generic [ref=e160]: Mecanizado CNC
+              - generic [ref=e163]: util. 87%
+            - generic [ref=e164]:
+              - generic [ref=e166]: EST-05
+              - generic [ref=e167]: 76%
+              - generic [ref=e168]: Ensamble final
+              - generic [ref=e171]: util. 86%
+        - generic [ref=e172]:
+          - generic [ref=e173]:
+            - generic [ref=e175]:
+              - heading "OEE simulado por franja" [level=2] [ref=e176]
+              - paragraph [ref=e177]: Perfil horario determinista aplicado al OEE calculado
+            - img "Curva simulada de OEE por franja horaria. Objetivo 75 por ciento. Valores de 62 a 73 por ciento." [ref=e178]:
+              - generic [ref=e193]: objetivo 75%
+              - generic [ref=e194]: "0"
+              - generic [ref=e195]: "25"
+              - generic [ref=e196]: "50"
+              - generic [ref=e197]: "75"
+              - generic [ref=e198]: "100"
+              - generic [ref=e199]: "06"
+              - generic [ref=e200]: "07"
+              - generic [ref=e201]: "08"
+              - generic [ref=e202]: "09"
+              - generic [ref=e203]: "10"
+              - generic [ref=e204]: "11"
+              - generic [ref=e205]: "12"
+              - generic [ref=e206]: "13"
+              - generic [ref=e207]: "14"
+              - generic [ref=e208]: "15"
+              - generic [ref=e209]: "16"
+              - generic [ref=e210]: "17"
+            - generic [ref=e211]:
+              - generic [ref=e212]: OEE simulado
+              - generic [ref=e214]: Objetivo 75 %
+          - generic [ref=e216]:
+            - heading "Descomposición" [level=2] [ref=e218]
+            - generic [ref=e219]:
+              - generic [ref=e220]: Disponibilidad
+              - generic [ref=e223]: 78,8 %
+            - generic [ref=e224]:
+              - generic [ref=e225]: Rendimiento
+              - generic [ref=e228]: 90,4 %
+            - generic [ref=e229]:
+              - generic [ref=e230]: Calidad
+              - generic [ref=e233]: 97,2 %
+            - separator [ref=e234]
+            - generic [ref=e235]:
+              - term [ref=e236]: Piezas planificadas
+              - definition [ref=e237]: "4730"
+              - term [ref=e238]: Piezas buenas
+              - definition [ref=e239]: "4599"
+              - term [ref=e240]: Merma estimada
+              - definition [ref=e241]: 131 ud
+              - term [ref=e242]: Paro acumulado
+              - definition [ref=e243]: 508 min
+        - generic [ref=e244]:
+          - generic [ref=e245]:
+            - generic [ref=e246]:
+              - heading "Estado de máquinas" [level=2] [ref=e247]
+              - button "Ver módulo" [ref=e248] [cursor=pointer]
+            - generic [ref=e249]:
+              - button "CL-6000 Operando Cortadora láser CL-6000 EST-01 · Corte láser" [ref=e250] [cursor=pointer]:
+                - generic [ref=e251]:
+                  - generic [ref=e252]: CL-6000
+                  - generic [ref=e253]: Operando
+                - generic [ref=e255]: Cortadora láser CL-6000
+                - generic [ref=e256]: EST-01 · Corte láser
+              - button "CL-6100 Ralentí Cortadora láser CL-6100 EST-01 · Corte láser" [ref=e260] [cursor=pointer]:
+                - generic [ref=e261]:
+                  - generic [ref=e262]: CL-6100
+                  - generic [ref=e263]: Ralentí
+                - generic [ref=e265]: Cortadora láser CL-6100
+                - generic [ref=e266]: EST-01 · Corte láser
+              - button "PE-400 Operando Prensa estampadora PE-400 EST-02 · Estampado" [ref=e270] [cursor=pointer]:
+                - generic [ref=e271]:
+                  - generic [ref=e272]: PE-400
+                  - generic [ref=e273]: Operando
+                - generic [ref=e275]: Prensa estampadora PE-400
+                - generic [ref=e276]: EST-02 · Estampado
+              - button "PE-250 Mantenimiento Prensa estampadora PE-250 EST-02 · Estampado" [ref=e280] [cursor=pointer]:
+                - generic [ref=e281]:
+                  - generic [ref=e282]: PE-250
+                  - generic [ref=e283]: Mantenimiento
+                - generic [ref=e285]: Prensa estampadora PE-250
+                - generic [ref=e286]: EST-02 · Estampado
+              - button "SR-12 Alarma Celda de soldadura SR-12 EST-03 · Soldadura robotizada" [ref=e290] [cursor=pointer]:
+                - generic [ref=e291]:
+                  - generic [ref=e292]: SR-12
+                  - generic [ref=e293]: Alarma
+                - generic [ref=e295]: Celda de soldadura SR-12
+                - generic [ref=e296]: EST-03 · Soldadura robotizada
+              - button "SR-14 Operando Celda de soldadura SR-14 EST-03 · Soldadura robotizada" [ref=e300] [cursor=pointer]:
+                - generic [ref=e301]:
+                  - generic [ref=e302]: SR-14
+                  - generic [ref=e303]: Operando
+                - generic [ref=e305]: Celda de soldadura SR-14
+                - generic [ref=e306]: EST-03 · Soldadura robotizada
+              - button "MX-500 Operando Centro CNC MX-500 EST-04 · Mecanizado CNC" [ref=e310] [cursor=pointer]:
+                - generic [ref=e311]:
+                  - generic [ref=e312]: MX-500
+                  - generic [ref=e313]: Operando
+                - generic [ref=e315]: Centro CNC MX-500
+                - generic [ref=e316]: EST-04 · Mecanizado CNC
+              - button "MX-520 Operando Centro CNC MX-520 EST-04 · Mecanizado CNC" [ref=e320] [cursor=pointer]:
+                - generic [ref=e321]:
+                  - generic [ref=e322]: MX-520
+                  - generic [ref=e323]: Operando
+                - generic [ref=e325]: Centro CNC MX-520
+                - generic [ref=e326]: EST-04 · Mecanizado CNC
+              - button "TC-300 Parada Torno CNC TC-300 EST-04 · Mecanizado CNC" [ref=e330] [cursor=pointer]:
+                - generic [ref=e331]:
+                  - generic [ref=e332]: TC-300
+                  - generic [ref=e333]: Parada
+                - generic [ref=e335]: Torno CNC TC-300
+                - generic [ref=e336]: EST-04 · Mecanizado CNC
+              - button "LE-1 Operando Línea de ensamble LE-1 EST-05 · Ensamble final" [ref=e340] [cursor=pointer]:
+                - generic [ref=e341]:
+                  - generic [ref=e342]: LE-1
+                  - generic [ref=e343]: Operando
+                - generic [ref=e345]: Línea de ensamble LE-1
+                - generic [ref=e346]: EST-05 · Ensamble final
+              - button "PT-2 Ralentí Estación de par PT-2 EST-05 · Ensamble final" [ref=e350] [cursor=pointer]:
+                - generic [ref=e351]:
+                  - generic [ref=e352]: PT-2
+                  - generic [ref=e353]: Ralentí
+                - generic [ref=e355]: Estación de par PT-2
+                - generic [ref=e356]: EST-05 · Ensamble final
+              - button "BP-9 Sin datos Banco de prueba BP-9 EST-05 · Ensamble final" [ref=e360] [cursor=pointer]:
+                - generic [ref=e361]:
+                  - generic [ref=e362]: BP-9
+                  - generic [ref=e363]: Sin datos
+                - generic [ref=e365]: Banco de prueba BP-9
+                - generic [ref=e366]: EST-05 · Ensamble final
+          - generic [ref=e370]:
+            - heading "Avisos del turno" [level=2] [ref=e372]
+            - list [ref=e373]:
+              - listitem [ref=e374]:
+                - generic [ref=e376]: "SR-12Alarma E-207 en antorcha 2: temperatura de boquilla fuera de rango."
+                - generic [ref=e377]: 11:42
+              - listitem [ref=e378]:
+                - generic [ref=e380]: EST-03Utilización por encima de la capacidad del turno. Revisar secuencia.
+                - generic [ref=e381]: 11:15
+              - listitem [ref=e382]:
+                - generic [ref=e384]: MP-JT-0912Junta nitrilo 60 mm por debajo del punto de pedido.
+                - generic [ref=e385]: 10:58
+              - listitem [ref=e386]:
+                - generic [ref=e388]: PE-250Mantenimiento programado iniciado. Estación al 50 % de capacidad.
+                - generic [ref=e389]: 09:30
+              - listitem [ref=e390]:
+                - generic [ref=e392]: BP-9Sin telemetría desde las 08:12. Métricas del banco no disponibles.
+                - generic [ref=e393]: 08:12
+  - status [ref=e394]: Pulso Planta cargado. OEE de planta 69,3 %.
+  - paragraph [ref=e395]: Tarjeta de orden movible. Flechas izquierda y derecha para cambiar de estación, arriba y abajo para reordenar, Intro para abrir el detalle.
