@@ -5232,7 +5232,7 @@ GitHub API as a last resort. It never publishes to placeholder owners.`);
   await run('git add', 'git', ['add', '-A'], { cwd: workdir });
   const status = flags['dry-run']
     ? { stdout: 'dry-run' }
-    : await execFileBuffered('git', ['status', '--porcelain'], { cwd: workdir });
+    : await execFileBuffered('git', ['status', '--porcelain'], { cwd: workdir, timeout: 30_000 });
   if (status.stdout.trim().length > 0 || !exists) {
     const commitMessage = exists
       ? `Update: ${manifest.name} v${manifest.version ?? '0.0.0'}`
@@ -5241,7 +5241,7 @@ GitHub API as a last resort. It never publishes to placeholder owners.`);
   }
   const tag = `v${manifest.version ?? '0.0.0'}`;
   if (!flags['dry-run']) {
-    const localTag = await execFileBuffered('git', ['rev-parse', '-q', '--verify', `refs/tags/${tag}`], { cwd: workdir });
+    const localTag = await execFileBuffered('git', ['rev-parse', '-q', '--verify', `refs/tags/${tag}`], { cwd: workdir, timeout: 30_000 });
     if (!localTag.ok) await run('git tag', 'git', ['tag', tag], { cwd: workdir });
   }
 

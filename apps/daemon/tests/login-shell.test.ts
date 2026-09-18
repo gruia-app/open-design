@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { describe, test } from 'vitest';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, test } from 'vitest';
 import { execCommandViaLoginShell } from '../src/services/login-shell.js';
 
 // quotePosixShellArg is the injection boundary for every POSIX gh/CLI call the
@@ -10,10 +13,15 @@ import { execCommandViaLoginShell } from '../src/services/login-shell.js';
 const posixOnly = process.platform === 'win32' ? describe.skip : describe;
 
 posixOnly('execCommandViaLoginShell quoting', () => {
+  // Sentinel paths live under a per-run mkdtemp so a leftover from a crashed
+  // run or a shared CI runner can never produce a spurious pass/fail.
+  const sentinelDir = mkdtempSync(join(tmpdir(), 'od-quoting-'));
+  afterAll(() => rmSync(sentinelDir, { recursive: true, force: true }));
+  const sentinel = (name: string) => join(sentinelDir, name);
   const hostileArgs = [
     "it's",
-    "'$(touch /tmp/od-quoting-pwned)'",
-    '`touch /tmp/od-quoting-pwned2`',
+    `'$(touch ${sentinel('pwned')})'`,
+    `\`touch ${sentinel('pwned2')}\``,
     'a b\tc\nd',
     '"; echo hi',
     '\\',
@@ -33,9 +41,9 @@ posixOnly('execCommandViaLoginShell quoting', () => {
   }
 
   test('no stray files from command substitution attempts', async () => {
-    await execCommandViaLoginShell('printf', ['%s', '$(touch /tmp/od-quoting-pwned)']);
-    const { existsSync } = await import('node:fs');
-    assert.equal(existsSync('/tmp/od-quoting-pwned'), false);
+    const target = sentinel('pwned');
+    await execCommandViaLoginShell('printf', ['%s', `$(touch ${target})`]);
+    assert.equal(existsSync(target), false);
   });
 });
 

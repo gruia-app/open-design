@@ -197,8 +197,9 @@ export function currentModelFromSessionResult(result: JsonObject): string | null
 /**
  * Probes a running ACP binary by spawning it, performing the
  * `initialize` → `session/new` handshake, and reading the model list from the
- * session result. The child is killed with `SIGTERM` once the list is
- * extracted or the timeout expires.
+ * session result. The child is killed once the list is extracted or the
+ * timeout expires — `SIGTERM` first, escalating to `SIGKILL` after a short
+ * grace period so an uncooperative probe cannot linger as an orphan.
  *
  * Used by runtime adapter definitions to populate the model-selection dropdown
  * without waiting for an actual prompt run.

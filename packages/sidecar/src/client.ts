@@ -96,8 +96,13 @@ export function normalizeSupervisorHandoffRequest(request: unknown): SidecarGene
   if (value.cwd != null && (typeof value.cwd !== "string" || value.cwd.length === 0)) {
     throw new Error("sidecar generation handoff cwd must be a non-empty string");
   }
-  if (value.env != null && (typeof value.env !== "object" || Array.isArray(value.env))) {
-    throw new Error("sidecar generation handoff env must be an object");
+  if (
+    value.env != null &&
+    (typeof value.env !== "object" ||
+      Array.isArray(value.env) ||
+      !Object.values(value.env as Record<string, unknown>).every((v) => typeof v === "string"))
+  ) {
+    throw new Error("sidecar generation handoff env must be an object with string values");
   }
   return value as SidecarGenerationHandoffRequest;
 }

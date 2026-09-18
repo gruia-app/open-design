@@ -516,6 +516,14 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
         ? String(req.body.locale)
         : undefined;
     try {
+      // Preview writes rendered files into the backing project — same
+      // workspace gate as the other brand mutation routes.
+      if (projectId && deps.authorizeProjectRequest) {
+        if (!(await deps.authorizeProjectRequest(req, res, projectId, {
+          mode: 'write',
+          capability: 'writeFiles',
+        }))) return;
+      }
       const renderOptions: Parameters<typeof renderBrandPreviewIntoProject>[0] = {
         id,
         brandsRoot,
@@ -547,6 +555,14 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
         ? String(req.body.locale)
         : undefined;
     try {
+      // Finalize registers a design system and marks the brand ready — same
+      // workspace gate as the other brand mutation routes.
+      if (projectId && deps.authorizeProjectRequest) {
+        if (!(await deps.authorizeProjectRequest(req, res, projectId, {
+          mode: 'write',
+          capability: 'writeFiles',
+        }))) return;
+      }
       const finalizeOptions: Parameters<typeof finalizeBrand>[0] = {
         id,
         brandsRoot,

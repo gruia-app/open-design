@@ -454,3 +454,56 @@ typecheck web verde.
 
 - Custodia daemon-side de la clave BYOK (ver "Revisados" arriba): requiere
   endpoint nuevo + migración; decisión de diseño pendiente.
+
+## Ítem 22 — Follow-ups del review delegado (slices daemon/packages + tools)
+
+Review delegado `wf_4a1aa9b9ae034030` (3 slices, glm-5.3-flash, $0):
+completado ~18min, 12.8K output tokens. Veredictos: web slice ya actuado
+(ítem 21); tools slice limpio con un gemelo confirmado; daemon/packages
+slice con 1 medio confirmado + 5 lows.
+
+Accionado:
+
+- **[medio] Envelope de error en `/api/import/claude-design`:** el cambio a
+  `sendApiError` devolvía `{error:{code,message}}` pero el consumer web
+  (`projects.ts`) solo leía `error` string → mensaje genérico y pérdida del
+  motivo real (unzip failures). El consumer ahora acepta ambas formas; test
+  de regresión añade el caso envelope (`projects.test.ts` 90/90).
+- **[low] Gate de workspace en `brands/:id/preview` y `:id/finalize`:**
+  ambas mutan (preview escribe previews en el proyecto backing; finalize
+  registra el design system `user:<id>`) con `projectId` del body sin
+  `authorizeProjectRequest`. Misma guarda `{mode:'write',
+  capability:'writeFiles'}` que el resto de rutas de marca.
+- **[low] `RELEASE_VERSION` en release-note/{publish,prepare,verify}:**
+  gemelo del ítem 15 — mismos `parseReleaseVersion` fail-fast antes de
+  interpolar en `versionPrefix`.
+- **[low] JSDoc obsoleto de `detectAcpModels`:** decía "killed with
+  SIGTERM"; ahora describe la escalada SIGTERM→SIGKILL.
+- **[low] `execFileBuffered` default 30s→120s en `cli.ts`:** el dedup al
+  helper compartido cambió el timeout implícito de `git status`/`rev-parse`;
+  pasado `timeout: 30_000` explícito para preservar el comportamiento.
+- **[low] Sentinels fijos `/tmp/od-quoting-pwned*` en login-shell.test:**
+  migrados a `mkdtemp` por run + `afterAll` cleanup (evita falsos fallos en
+  runners compartidos).
+- **[low] `env` del handoff supervisor sin validar valores:** ahora exige
+  `Object.values(env).every(string)` — un objeto anidado se serializaba a
+  `"[object Object]"` en la respawn.
+- **[low] `PROJECT_DIR_UNAVAILABLE` registrado en `API_ERROR_CODES`**
+  (`contracts/errors.ts`): ya se emitía desde `server.ts` y
+  `collab-sync.ts` fuera de la unión compartida.
+
+**Verificación:** `projects.test.ts` 90/90; `login-shell.test.ts` 14/14;
+sidecar 55/55; contracts 508/508; brand-routes 33/33; typecheck
+daemon+web+tools-release verdes; tools-release tests 82/82.
+
+No accionado del review:
+
+- Doble escape `escapeNsisString` en `createNsisLangString` (latente, no
+  alcanzable con constantes actuales — la convención ya estaba; refactor
+  mayor fuera de scope).
+- Convención `$APPDATA` live-token solo en `nsis.ts` (maintainability).
+- `verify-metadata` rechaza invocaciones locales antes toleradas (intent).
+- Sin cobertura de `--path` en los 4 senders screenshot (gap, bajo impacto).
+- Bind wildcard `0.0.0.0` en test fixture (especulativo, sandbox-dependiente).
+- `error?.code` → `'code' in error` en execFileBuffered (equivalente para
+  errores execFile).
