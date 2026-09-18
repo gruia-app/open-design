@@ -26,7 +26,12 @@ import {
   listProjectsAwaitingInput,
   type insertProject,
 } from './db.js';
-import type { CreatedProjectWorkspaceResolver } from './collab/created-project-workspace.js';
+import {
+  CreatedProjectWorkspaceResolutionError,
+  sendCreatedProjectWorkspaceError,
+  type CreatedProjectWorkspaceResolver,
+} from './collab/created-project-workspace.js';
+import { sendApiError } from './http/api-errors.js';
 import type { AuthorizeProjectRequest } from './collab/project-request-authority.js';
 import type { WorkspaceResourceContext } from './collab/workspace-resource-mutation.js';
 import type { DesignSystemSummary, UserDesignSystemInput } from './design-systems/index.js';
@@ -45,7 +50,7 @@ import {
   startBrandExtraction,
 } from './brands/index.js';
 import { patchMeta } from './brands/store.js';
-import type { BrandDetailResponse, BrandMeta, BrandSummary } from '@open-design/contracts';
+import type { ApiErrorCode, BrandDetailResponse, BrandMeta, BrandSummary } from '@open-design/contracts';
 
 export interface BrandRoutesDeps {
   /** `<dataDir>/brands` — root of all brand directories. */
@@ -139,24 +144,28 @@ type ActiveProgrammaticBrandExtraction = {
 
 type ProgrammaticExtractionAbortResult = 'none' | 'settled' | 'timeout';
 
+/** Typed error code for the handful of computed statuses in this route file. */
+function apiErrorCodeForStatus(status: number): ApiErrorCode {
+  switch (status) {
+    case 400: return 'BAD_REQUEST';
+    case 404: return 'NOT_FOUND';
+    case 409: return 'CONFLICT';
+    case 422: return 'VALIDATION_FAILED';
+    default: return 'INTERNAL_ERROR';
+  }
+}
+
 export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): void {
   const { brandsRoot, userDesignSystemsRoot, projectsRoot, skillsRoot, dataDir, db, randomId } = deps;
   const activeProgrammaticBrandExtractions = new Map<string, ActiveProgrammaticBrandExtraction>();
   const sendWorkspaceScopeError = (res: Response, error: unknown): boolean => {
-    if (
-      !error
-      || typeof error !== 'object'
-      || !('status' in error)
-      || (error.status !== 400 && error.status !== 403 && error.status !== 503)
-      || !('code' in error)
-      || typeof error.code !== 'string'
-    ) {
-      return false;
-    }
-    res.status(error.status).json({
-      error: error.code,
-      message: error instanceof Error ? error.message : String(error.code),
-      ...('retryable' in error && error.retryable === true ? { retryable: true } : {}),
+    if (!(error instanceof CreatedProjectWorkspaceResolutionError)) return false;
+    sendCreatedProjectWorkspaceError(res, {
+      ok: false,
+      status: error.status,
+      code: error.code,
+      message: error.message,
+      ...(error.retryable ? { retryable: true } : {}),
     });
     return true;
   };
@@ -320,7 +329,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
         ),
       });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -333,7 +342,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
     const designMd = typeof req.body?.designMd === 'string' ? req.body.designMd : '';
     const locale = typeof req.body?.locale === 'string' ? req.body.locale : '';
     if (!url.trim() && !designMd.trim()) {
-      res.status(400).json({ error: 'url or designMd is required' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'url or designMd is required');
       return;
     }
     try {
@@ -389,7 +398,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
       const message = err instanceof Error ? err.message : String(err);
       // A bad URL is the only expected throw; everything else is a 500.
       const status = /valid http/i.test(message) ? 400 : 500;
-      res.status(status).json({ error: message });
+      sendApiError(res, status, apiErrorCodeForStatus(status), message);
     }
   });
 
@@ -434,7 +443,8 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
       res.json(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      res.status(/not found/i.test(message) ? 404 : 500).json({ error: message });
+      const status = /not found/i.test(message) ? 404 : 500;
+      sendApiError(res, status, apiErrorCodeForStatus(status), message);
     }
   });
 
@@ -447,7 +457,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
     try {
       const detail = readBrandDetail(brandsRoot, id);
       if (!detail) {
-        res.status(404).json({ error: 'brand not found' });
+        sendApiError(res, 404, 'NOT_FOUND', 'brand not found');
         return;
       }
       if (detail.meta.projectId && deps.authorizeProjectRequest) {
@@ -498,7 +508,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
       const next = readBrandDetail(brandsRoot, id)?.meta ?? currentMeta;
       res.json({ ok: true, status: next.status });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -540,7 +550,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const status = /not found/i.test(message) ? 404 : 500;
-      res.status(status).json({ error: message });
+      sendApiError(res, status, apiErrorCodeForStatus(status), message);
     }
   });
 
@@ -588,7 +598,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
       if (sendWorkspaceScopeError(res, err)) return;
       const message = err instanceof Error ? err.message : String(err);
       const status = /not found/i.test(message) ? 404 : 422;
-      res.status(status).json({ error: message });
+      sendApiError(res, status, apiErrorCodeForStatus(status), message);
     }
   });
 
@@ -602,13 +612,13 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
     const css = typeof req.body?.css === 'string' ? req.body.css : '';
     const baseUrl = typeof req.body?.baseUrl === 'string' ? req.body.baseUrl : '';
     if (!html.trim()) {
-      res.status(400).json({ error: 'html is required' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'html is required');
       return;
     }
     try {
       const meta = readBrandDetail(brandsRoot, id)?.meta;
       if (!meta) {
-        res.status(404).json({ error: 'brand not found' });
+        sendApiError(res, 404, 'NOT_FOUND', 'brand not found');
         return;
       }
       if (meta.projectId && deps.authorizeProjectRequest) {
@@ -638,17 +648,18 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
       });
       if (!result) {
         await markBrowserHtmlExtractionUnresolved(id, meta);
-        res.status(422).json({ error: BROWSER_HTML_EXTRACTION_ERROR });
+        sendApiError(res, 422, 'VALIDATION_FAILED', BROWSER_HTML_EXTRACTION_ERROR);
         return;
       }
       res.json(result);
     } catch (err) {
       if (isProgrammaticExtractionAbortError(err)) {
-        res.status(409).json({ error: PROGRAMMATIC_CANCEL_ERROR });
+        sendApiError(res, 409, 'CONFLICT', PROGRAMMATIC_CANCEL_ERROR);
         return;
       }
       const message = err instanceof Error ? err.message : String(err);
-      res.status(/not found/i.test(message) ? 404 : 500).json({ error: message });
+      const status = /not found/i.test(message) ? 404 : 500;
+      sendApiError(res, status, apiErrorCodeForStatus(status), message);
     }
   });
 
@@ -657,12 +668,12 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
     try {
       const detail = readBrandDetail(brandsRoot, String(req.params.id));
       if (!detail) {
-        res.status(404).json({ error: 'brand not found' });
+        sendApiError(res, 404, 'NOT_FOUND', 'brand not found');
         return;
       }
       res.json(reconcileBrandDetailStatus(brandsRoot, detail, createBrandStatusContext(deps)));
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -691,11 +702,13 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
                 settleTimeoutMs: PROGRAMMATIC_ABORT_SETTLE_GRACE_MS,
               });
               if (abortResult !== 'timeout') return true;
-              res.status(409).json({
-                error: 'BRAND_EXTRACTION_STILL_STOPPING',
-                message: 'brand extraction is still stopping; retry deletion',
-                retryable: true,
-              });
+              sendApiError(
+                res,
+                409,
+                'BRAND_EXTRACTION_STILL_STOPPING',
+                'brand extraction is still stopping; retry deletion',
+                { retryable: true },
+              );
               return false;
             },
           },
@@ -711,7 +724,7 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
       );
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -749,17 +762,17 @@ export function registerBrandRoutes(app: Application, deps: BrandRoutesDeps): vo
         }
       }
       if (!logoPath) {
-        res.status(404).json({ error: 'logo not found' });
+        sendApiError(res, 404, 'NOT_FOUND', 'logo not found');
         return;
       }
       res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(logoPath, { dotfiles: 'allow' }, (err) => {
         if (err && !res.headersSent) {
-          res.status(404).json({ error: 'logo not found' });
+          sendApiError(res, 404, 'NOT_FOUND', 'logo not found');
         }
       });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 }

@@ -126,8 +126,18 @@ export function useBrandExtract(): UseBrandExtract {
     if (!resp.ok) {
       let message = `Extraction request failed (${resp.status})`;
       try {
-        const body = (await resp.json()) as { error?: string };
-        if (body?.error) message = body.error;
+        const body = (await resp.json()) as { error?: unknown };
+        const parsed = body?.error;
+        // Legacy `{ error: '...' }` or the `{ error: { code, message } }`
+        // envelope the daemon's sendApiError emits.
+        if (typeof parsed === 'string') message = parsed;
+        else if (
+          parsed
+          && typeof parsed === 'object'
+          && typeof (parsed as { message?: unknown }).message === 'string'
+        ) {
+          message = (parsed as { message: string }).message;
+        }
       } catch {
         // Non-JSON error body; keep the status-based message.
       }

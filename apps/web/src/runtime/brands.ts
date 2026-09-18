@@ -49,6 +49,18 @@ export function takeDesignSystemFocus(): string | null {
   }
 }
 
+/** Pull the human message out of a daemon error body — accepts both the
+ *  legacy `{ error: '...' }` shape and the `{ error: { code, message } }`
+ *  envelope `sendApiError` emits. */
+function apiErrorBodyMessage(body: unknown): string | null {
+  const error = (body as { error?: unknown } | null)?.error;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && typeof (error as { message?: unknown }).message === 'string') {
+    return (error as { message: string }).message;
+  }
+  return null;
+}
+
 export type ExtractBrandFromHtmlOutcome =
   | { ok: true; result: BrandFinalizeResponse }
   | { ok: false; error: string };
@@ -72,8 +84,7 @@ export async function finalizeBrandProject(
     if (!resp.ok) {
       let error = `Brand finalize failed (${resp.status})`;
       try {
-        const data = (await resp.json()) as { error?: string };
-        if (data?.error) error = data.error;
+        error = apiErrorBodyMessage(await resp.json()) ?? error;
       } catch {
         // Non-JSON error body — keep the status-based message.
       }
@@ -106,8 +117,7 @@ export async function extractBrandFromHtml(
     if (!resp.ok) {
       let error = `Extraction failed (${resp.status})`;
       try {
-        const data = (await resp.json()) as { error?: string };
-        if (data?.error) error = data.error;
+        error = apiErrorBodyMessage(await resp.json()) ?? error;
       } catch {
         // Non-JSON error body — keep the status-based message.
       }

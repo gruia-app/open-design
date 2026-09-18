@@ -46,6 +46,18 @@ async function fetchStatus(): Promise<XaiAuthStatus | null> {
   }
 }
 
+/** Pull the human message out of a daemon error body — accepts both the
+ *  legacy `{ error: '...' }` shape and the `{ error: { code, message } }`
+ *  envelope `sendApiError` emits. */
+function apiErrorBodyMessage(body: unknown): string | null {
+  const error = (body as { error?: unknown } | null)?.error;
+  if (typeof error === 'string' && error) return error;
+  if (error && typeof error === 'object' && typeof (error as { message?: unknown }).message === 'string') {
+    return (error as { message: string }).message;
+  }
+  return null;
+}
+
 async function startOAuth(): Promise<
   { ok: true; response: StartResponse } | { ok: false; message: string }
 > {
@@ -58,11 +70,7 @@ async function startOAuth(): Promise<
     });
     const body = await r.json().catch(() => ({}));
     if (!r.ok) {
-      const message =
-        typeof body?.error === 'string' && body.error
-          ? body.error
-          : `daemon returned HTTP ${r.status}`;
-      return { ok: false, message };
+      return { ok: false, message: apiErrorBodyMessage(body) ?? `daemon returned HTTP ${r.status}` };
     }
     return { ok: true, response: body as StartResponse };
   } catch (err) {
@@ -112,11 +120,7 @@ async function completeOAuthManual(
     });
     const body = await r.json().catch(() => ({}));
     if (!r.ok) {
-      const message =
-        typeof body?.error === 'string' && body.error
-          ? body.error
-          : `daemon returned HTTP ${r.status}`;
-      return { ok: false, message };
+      return { ok: false, message: apiErrorBodyMessage(body) ?? `daemon returned HTTP ${r.status}` };
     }
     return { ok: true };
   } catch (err) {

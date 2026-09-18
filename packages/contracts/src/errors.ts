@@ -169,6 +169,10 @@ export const API_ERROR_CODES = [
   // so a client can attach to it instead of starting another. Not retryable
   // while that run is active; ordinary chat turns are never gated by this.
   'DESIGN_SYSTEM_ENRICHMENT_IN_PROGRESS',
+  // A brand DELETE raced an in-flight programmatic extraction abort: the stop
+  // was requested but had not settled within the grace window. Transient —
+  // the client should retry the delete shortly (409, `retryable: true`).
+  'BRAND_EXTRACTION_STILL_STOPPING',
   'INTERNAL_ERROR',
 ] as const;
 

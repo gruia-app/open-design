@@ -26,7 +26,11 @@ async function readLookupErrorDetail(response: Response): Promise<string> {
     try {
       const payload = await response.clone().json() as unknown;
       if (isRecord(payload)) {
+        // Legacy `{ error: '...' }` and the `{ error: { code, message } }`
+        // envelope the daemon's sendApiError emits.
+        const nested = isRecord(payload.error) ? payload.error : undefined;
         const message = readString(payload.error)
+          || (nested ? readString(nested.message) : '')
           || readString(payload.message)
           || readString(payload.detail);
         if (message) return message;

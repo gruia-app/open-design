@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import type { Express } from 'express';
 import type {
+  ApiErrorCode,
   HyperFramesScaffoldRequest,
   HyperFramesScaffoldResponse,
   MediaExecutionPolicy,
@@ -34,6 +35,23 @@ import { scaffoldHyperFramesComposition } from '../media/hyperframes-scaffold.js
 import { normalizePersistedAutomationWorkspaceScope } from '../automations/workspace-scope.js';
 
 const LONG_MEDIA_PROXY_TIMEOUT_MS = 10 * 60 * 1000;
+
+/** Typed error code for statuses this route file computes at send time. */
+function apiErrorCodeForStatus(status: number): ApiErrorCode {
+  switch (status) {
+    case 400: return 'BAD_REQUEST';
+    case 401: return 'UNAUTHORIZED';
+    case 403: return 'FORBIDDEN';
+    case 404: return 'NOT_FOUND';
+    case 409: return 'CONFLICT';
+    case 422: return 'VALIDATION_FAILED';
+    case 502:
+    case 503:
+    case 504:
+      return 'UPSTREAM_UNAVAILABLE';
+    default: return 'INTERNAL_ERROR';
+  }
+}
 
 function mediaProviderId(model: string): string | undefined {
   const registered = findMediaModel(model)?.provider;
@@ -197,7 +215,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
   ) => {
     const projectId = options.projectId;
     const project = getProject(db, projectId);
-    if (!project) return res.status(404).json({ error: 'project not found' });
+    if (!project) return sendApiError(res, 404, 'NOT_FOUND', 'project not found');
 
     const surface = req.body?.surface;
     if (surface !== 'image' && surface !== 'video' && surface !== 'audio') {
@@ -483,7 +501,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
   // on upstream failure so a transient blip doesn't empty the picker.
   app.get('/api/media/providers/aihubmix/models', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const raw = req.query.type;
     const type: AIHubMixCatalogType =
@@ -539,9 +557,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       const cfg = await readMaskedConfig(PROJECT_ROOT);
       res.json(cfg);
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
@@ -551,15 +567,13 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       res.json(cfg);
     } catch (err: any) {
       const status = typeof err?.status === 'number' ? err.status : 400;
-      res
-        .status(status)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, status, apiErrorCodeForStatus(status), String(err && err.message ? err.message : err));
     }
   });
 
   app.get('/api/media/providers/elevenlabs/voices', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const rawLimit = Number(req.query.limit);
@@ -577,27 +591,25 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
     } catch (err: any) {
       const message = String(err && err.message ? err.message : err);
       const status = message.includes('no ElevenLabs API key') ? 400 : 502;
-      res.status(status).json({ error: message });
+      sendApiError(res, status, status === 400 ? 'BAD_REQUEST' : 'UPSTREAM_UNAVAILABLE', message);
     }
   });
 
   app.get('/api/app-config', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const config = await readAppConfig(RUNTIME_DATA_DIR);
       res.json({ config });
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
   app.put('/api/app-config', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const currentConfig = await readAppConfig(RUNTIME_DATA_DIR);
@@ -662,7 +674,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
   // composer re-checks on focus / picker-open, so deletions reflect live).
   app.post('/api/dir-exists', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const dir = typeof req.body?.path === 'string' ? req.body.path : '';
     let exists = false;
@@ -682,7 +694,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
   // "recent folders" never offers a path that no longer resolves.
   app.get('/api/recent-dirs', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const config = await readAppConfig(RUNTIME_DATA_DIR);
@@ -703,28 +715,24 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       const body = { dirs: existing };
       res.json(body);
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
   app.get('/api/orbit/status', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       res.json(await orbitService.status());
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
   app.post('/api/orbit/run', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const locale = typeof req.body?.locale === 'string' ? req.body.locale : null;
@@ -745,7 +753,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
 
   app.post('/api/system/open-external', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
@@ -770,15 +778,13 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
   // Native OS folder picker dialog. Returns { path: string | null }.
   app.post('/api/dialog/open-folder', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const selected = await openNativeFolderDialog();
       res.json({ path: selected });
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
@@ -938,7 +944,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
 
   app.post('/api/media/tasks/:id/wait', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const authorizationHeader = req.get('authorization');
     // Once a caller chooses the tool-token lane, invalid, expired, or
@@ -965,7 +971,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
     // before task lookup; cloud availability is irrelevant to this local wait.
     const taskId = req.params.id;
     const task = getLiveMediaTask(taskId);
-    if (!task) return res.status(404).json({ error: 'task not found' });
+    if (!task) return sendApiError(res, 404, 'NOT_FOUND', 'task not found');
     if (toolGrant) {
       if (requestProjectOverride(task.projectId, toolGrant.projectId)) {
         return sendApiError(
@@ -1019,7 +1025,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
 
   app.get('/api/projects/:id/media/tasks', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const projectId = req.params.id;
     if (!getProject(db, projectId)) {

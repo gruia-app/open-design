@@ -107,7 +107,7 @@ function isExtractionProvider(value: unknown): value is MemoryExtractionProvider
 
 export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps) {
   const { RUNTIME_DATA_DIR, PROJECT_ROOT, PROJECTS_DIR } = ctx.paths;
-  const { createSseResponse, requireLocalDaemonRequest } = ctx.http;
+  const { createSseResponse, requireLocalDaemonRequest, sendApiError } = ctx.http;
   const { readAppConfig } = ctx.appConfig;
 
   // ----- Memory store -----------------------------------------------------
@@ -133,7 +133,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
         extraction: maskMemoryExtractionConfig(config.extraction),
       });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -152,7 +152,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
         tree,
       });
     } catch (err) {
-      res.status(500).json({ error: errorMessage(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', errorMessage(err));
     }
   });
 
@@ -168,7 +168,8 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       res.json({ entry, tree });
     } catch (err) {
       const message = errorMessage(err);
-      res.status(message === 'memory not found' ? 404 : 400).json({ error: message });
+      const status = message === 'memory not found' ? 404 : 400;
+      sendApiError(res, status, status === 404 ? 'NOT_FOUND' : 'BAD_REQUEST', message);
     }
   });
 
@@ -179,7 +180,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       await writeMemoryIndex(RUNTIME_DATA_DIR, index, undefined);
       res.json({ index });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -271,7 +272,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
         extraction: maskMemoryExtractionConfig(next.extraction),
       });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -317,7 +318,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
     try {
       res.json({ extractions: listMemoryExtractions() });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -329,7 +330,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       const removed = clearMemoryExtractions();
       res.json({ removed });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -338,7 +339,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       const removed = removeMemoryExtraction(req.params.id);
       res.json({ removed });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -350,7 +351,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
     try {
       res.json({ verifications: listMemoryVerifications() });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -361,7 +362,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       const removed = clearMemoryVerifications();
       res.json({ removed });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -370,7 +371,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       const removed = removeMemoryVerification(req.params.id);
       res.json({ removed });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -425,7 +426,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       );
       res.json(result);
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -473,7 +474,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       const result = await suggestMemoryFromConnectors(RUNTIME_DATA_DIR, options);
       res.json(result);
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -521,7 +522,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       const result = await extractMemoryFromConnectors(RUNTIME_DATA_DIR, options);
       res.json(result);
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -614,7 +615,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       }
       res.json({ changed, attemptedLLM });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -631,7 +632,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       const body = await composeMemoryBody(RUNTIME_DATA_DIR);
       res.json({ body });
     } catch (err) {
-      res.status(500).json({ error: errorMessage(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', errorMessage(err));
     }
   });
 
@@ -648,17 +649,17 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       );
       res.json({ entry });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
   app.get('/api/memory/:id', async (req, res) => {
     try {
       const entry = await readMemoryEntry(RUNTIME_DATA_DIR, req.params.id);
-      if (!entry) return res.status(404).json({ error: 'memory not found' });
+      if (!entry) return sendApiError(res, 404, 'NOT_FOUND', 'memory not found');
       res.json({ entry });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -678,7 +679,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       );
       res.json({ entry });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 
@@ -687,7 +688,7 @@ export function registerMemoryRoutes(app: Express, ctx: RegisterMemoryRoutesDeps
       await deleteMemoryEntry(RUNTIME_DATA_DIR, req.params.id);
       res.json({ ok: true });
     } catch (err) {
-      res.status(400).json({ error: errorMessage(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', errorMessage(err));
     }
   });
 

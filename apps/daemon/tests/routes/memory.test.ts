@@ -207,8 +207,9 @@ describe('memory routes', () => {
     });
 
     expect(res.status).toBe(400);
-    const json = await res.json() as { error: string };
-    expect(json.error).toContain('memory entry requires');
+    const json = await res.json() as { error: { code: string; message: string } };
+    expect(json.error.code).toBe('BAD_REQUEST');
+    expect(json.error.message).toContain('memory entry requires');
   });
 
   it('saves the memory index and returns it from the list payload', async () => {
@@ -492,8 +493,8 @@ describe('memory routes', () => {
     const res = await fetch(`${baseUrl}/api/memory/user_missing_note`);
 
     expect(res.status).toBe(404);
-    const json = await res.json() as { error: string };
-    expect(json.error).toBe('memory not found');
+    const json = await res.json() as { error: { code: string; message: string } };
+    expect(json.error).toEqual({ code: 'NOT_FOUND', message: 'memory not found' });
   });
 
   it('distils annotations into heuristic rule proposals (THREAD 1)', async () => {

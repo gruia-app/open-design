@@ -7451,7 +7451,7 @@ export async function startServer({
   teamResourcesPollTimer.unref?.();
 
   registerMemoryRoutes(app, {
-    http: { createSseResponse, requireLocalDaemonRequest },
+    http: { createSseResponse, requireLocalDaemonRequest, sendApiError },
     paths: { RUNTIME_DATA_DIR, PROJECT_ROOT, PROJECTS_DIR },
     appConfig: { readAppConfig },
   });

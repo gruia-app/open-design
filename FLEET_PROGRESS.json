@@ -1,13 +1,29 @@
 {
   "app": "design",
-  "updated_at": "2026-09-18T17:35:00Z",
-  "current": {"item": "G1+G2 gateway hardening en rama fleet/gateway-hardening", "state": "in_progress"},
+  "updated_at": "2026-09-18T18:25:00Z",
+  "current": {"item": "D3 envelope sweep — siguiente fichero daemon (brand-routes hecho)", "state": "in_progress", "branch": "fleet/brand-envelope"},
   "done": [
     {"item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado", "commit": "n/a", "deploy": "n/a"},
-    {"item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5", "commit": "2cc1658f5", "deploy": "pending"}
+    {"item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5", "commit": "2cc1658f5", "deploy": "pending", "note": "upstream PR #8262"},
+    {"item": "gateway G1+G2+G9: sweep sesiones, anti-framing, sessionTtl config", "commit": "squash via PR #4", "deploy": "pending"},
+    {"item": "D1 batch 2: sidecar IPC, records, resilience", "commit": "73b37548f", "deploy": "pending", "pr": 6},
+    {"item": "D1 batch 3: pack/serve/release quoting+validation", "commit": "8089972db", "deploy": "pending", "pr": 7},
+    {"item": "D1 batch 4: web resilience, envelopes, timeouts", "commit": "6384ae519", "deploy": "pending", "pr": 8},
+    {"item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n", "commit": "adefce32f", "deploy": "pending", "pr": 9},
+    {"item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING", "commit": "6b878c4e2", "deploy": "pending"}
   ],
-  "blocked": [],
+  "blocked": [
+    {"item": "G3 timer de barrido periódico de sesiones", "reason": "decisión de diseño — G1 sweep-on-write lo hace opcional"},
+    {"item": "G4 bucket rate-limit por IP", "reason": "decisión — depende de si gateway será multi-instancia"},
+    {"item": "G6 métricas/observabilidad gateway", "reason": "decisión de diseño"},
+    {"item": "G7 auditoría de logins (auth_audit)", "reason": "decisión — requiere schema+retención"}
+  ],
   "prs_open": [{"repo": "nexu-io/open-design", "pr": 8262, "note": "contribution upstream; no auto-merge posible"}],
-  "deploys_pending": ["2cc1658f5 (upstream PR #8262)"],
-  "notes": "revision escéptica OK; bucle en repo privado gruia-app/design, rama fleet/gateway-hardening"
+  "deploys_pending": [
+    "2cc1658f5 (upstream PR #8262)",
+    "PR #4 squash (gateway G1+G2+G9)",
+    "73b37548f (PR #6)", "8089972db (PR #7)", "6384ae519 (PR #8)", "adefce32f (PR #9)",
+    "6b878c4e2 (fleet/brand-envelope, sin PR aún)"
+  ],
+  "notes": "bucle en repo privado gruia-app/design. Paridad upstream D1 cerrada. Siguiente: D3 (sweep envelope por fichero) — import-export-routes candidato."
 }

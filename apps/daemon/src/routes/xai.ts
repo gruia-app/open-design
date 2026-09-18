@@ -52,7 +52,7 @@ function fetchWithRequestInit(
 }
 
 export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
-  const { isLocalSameOrigin, resolvedPortRef } = ctx.http;
+  const { isLocalSameOrigin, resolvedPortRef, sendApiError } = ctx.http;
   const { PROJECT_ROOT } = ctx.paths;
   const getResolvedPort = () => resolvedPortRef.current;
 
@@ -113,7 +113,7 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
 
   app.post('/api/xai/oauth/start', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     // Only one OAuth dance can be in flight at a time — :56121 is
     // singleton. Stop any prior listener (e.g. user closed the browser
@@ -143,22 +143,20 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[xai-oauth] start failed:', msg);
       await stopActiveListener();
-      res.status(502).json({ error: msg });
+      sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', msg);
     }
   });
 
   app.post('/api/xai/oauth/complete', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const state =
       typeof req.body?.state === 'string' ? req.body.state.trim() : '';
     const code =
       typeof req.body?.code === 'string' ? req.body.code.trim() : '';
     if (!state || !code) {
-      return res
-        .status(400)
-        .json({ error: 'state and code are required' });
+      return sendApiError(res, 400, 'BAD_REQUEST', 'state and code are required');
     }
     const proxyDispatcher = proxyDispatcherRequestInit(process.env);
     try {
@@ -190,7 +188,7 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[xai-oauth] manual complete failed:', msg);
-      res.status(400).json({ error: msg });
+      sendApiError(res, 400, 'BAD_REQUEST', msg);
     } finally {
       await proxyDispatcher.close();
     }
@@ -198,7 +196,7 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
 
   app.get('/api/xai/auth/status', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const tok = await getXAIToken(mediaConfigDir(PROJECT_ROOT));
@@ -214,13 +212,13 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      res.status(500).json({ error: msg });
+      sendApiError(res, 500, 'INTERNAL_ERROR', msg);
     }
   });
 
   app.post('/api/xai/oauth/cancel', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     // Cancel only stops the in-flight loopback listener. It must NOT
     // wipe the stored token — a user clicking Cancel mid-Reconnect
@@ -232,13 +230,13 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
       res.json({ ok: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      res.status(500).json({ error: msg });
+      sendApiError(res, 500, 'INTERNAL_ERROR', msg);
     }
   });
 
   app.post('/api/xai/oauth/disconnect', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       await stopActiveListener();
@@ -246,18 +244,18 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
       res.json({ ok: true });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      res.status(500).json({ error: msg });
+      sendApiError(res, 500, 'INTERNAL_ERROR', msg);
     }
   });
 
   app.post('/api/xai/search', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const body = (req.body || {}) as Partial<XaiSearchRequest>;
     const query = typeof body.query === 'string' ? body.query.trim() : '';
     if (!query) {
-      return res.status(400).json({ error: 'query is required' });
+      return sendApiError(res, 400, 'BAD_REQUEST', 'query is required');
     }
 
     // Reuse media-config's credential chain so the search endpoint sees
@@ -326,21 +324,24 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
       text = await resp.text();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      return res.status(502).json({ error: `xAI request failed: ${msg}` });
+      return sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', `xAI request failed: ${msg}`);
     } finally {
       await proxyDispatcher.close();
     }
 
     if (!resp.ok) {
-      return res
-        .status(502)
-        .json({ error: `xAI ${resp.status}: ${text.slice(0, 240)}` });
+      return sendApiError(
+        res,
+        502,
+        'UPSTREAM_UNAVAILABLE',
+        `xAI ${resp.status}: ${text.slice(0, 240)}`,
+      );
     }
     let data: unknown;
     try {
       data = JSON.parse(text);
     } catch {
-      return res.status(502).json({ error: 'xAI returned non-JSON response' });
+      return sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', 'xAI returned non-JSON response');
     }
     res.json({
       answer: extractAnswerText(data),

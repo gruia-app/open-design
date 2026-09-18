@@ -273,7 +273,9 @@ describe('brand routes', () => {
 
     expect(response.status).toBe(404);
     expect(response.contentType).toContain('application/json');
-    expect(JSON.parse(response.body)).toEqual({ error: 'logo not found' });
+    expect(JSON.parse(response.body)).toEqual({
+      error: { code: 'NOT_FOUND', message: 'logo not found' },
+    });
   });
 
   it('falls back to the backing project logo when the brand copy is missing', async () => {
@@ -1216,7 +1218,10 @@ describe('brand routes', () => {
       // toast message — but the brand stays RECOVERABLE, not terminal.
       expect(extracted.status).toBe(422);
       expect(extracted.body).toEqual({
-        error: 'Could not extract a design system from the provided page.',
+        error: {
+          code: 'VALIDATION_FAILED',
+          message: 'Could not extract a design system from the provided page.',
+        },
       });
 
       const meta = JSON.parse(
@@ -1639,7 +1644,10 @@ describe('brand routes', () => {
       const extracted = await extraction;
       expect(extracted.status).toBe(409);
       expect(extracted.body).toEqual({
-        error: 'Programmatic extraction stopped by the user.',
+        error: {
+          code: 'CONFLICT',
+          message: 'Programmatic extraction stopped by the user.',
+        },
       });
 
       const finalMeta = JSON.parse(
