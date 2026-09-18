@@ -671,3 +671,25 @@ automation-templates 3/3.
   `connectors-routes` 45/45 verdes — el suite que fallaba con 33
   hook-timeouts ahora pasa completo; confirma que el fix de timeouts
   (ítem 25) resuelve la clase de flake sin tocar producción.
+
+## Scans finales sin hallazgo (06:30-06:35)
+
+- `Math.random` en contextos sensibles: solo ids no-seguridad
+  (analytics, pins).
+- Handlers async sin try: Express 5.2.1 los captura — no es bug class.
+- `JSON.parse(readFile)` sin guarda: los 8 sitios revisados ya
+  retornan null/default en catch (collation de pulls, package.json de
+  imports, manifests).
+- `dangerouslySetInnerHTML` (6 usos): shiki escapado,
+  `renderMarkdownToSafeHtml` por contrato, excalidraw `exportToSvg`
+  generado, blocklist en iframe pool — todos defendidos.
+- Cache de assets de plugins: blob atómico + meta sidecar self-healing
+  (miss en read) — sin acción.
+
+## Estado final — 06:35
+
+- 39 commits sobre main, todos pusheados; PR 8262 OPEN y sincronizado.
+- Auditoría inicial + review delegado `wf_4a1aa9b9ae034030` + late
+  review `wf_93e78204f3e445a2`: todos los hallazgos accionables
+  implementados con regresión o documentados con rationale.
+- Suites de apoyo re-verificados con carga normalizada.
