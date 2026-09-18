@@ -90,7 +90,7 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
 
   app.get('/api/mcp/install-info', (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const now = Date.now();
     const webPort = process.env[SIDECAR_ENV.WEB_PORT] ?? null;
@@ -114,7 +114,7 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
 
   app.get('/api/mcp/install/codex/status', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const status = await probeCodexInstall(CODEX_MCP_NAME);
@@ -126,7 +126,7 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
 
   app.post('/api/mcp/install/codex', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const payload = computeInstallPayload();
     if (!payload.cliExists || !payload.nodeExists) {
@@ -147,7 +147,7 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
 
   app.delete('/api/mcp/install/codex', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       await uninstallCodexMcp(CODEX_MCP_NAME);
@@ -163,29 +163,25 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
   // can render the "Add MCP server" picker without a second round-trip.
   app.get('/api/mcp/servers', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const cfg = await readMcpConfig(RUNTIME_DATA_DIR);
       res.json({ servers: cfg.servers, templates: MCP_TEMPLATES });
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
   app.put('/api/mcp/servers', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     try {
       const cfg = await writeMcpConfig(RUNTIME_DATA_DIR, req.body);
       res.json({ servers: cfg.servers, templates: MCP_TEMPLATES });
     } catch (err: any) {
-      res
-        .status(400)
-        .json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err && err.message ? err.message : err));
     }
   });
 
@@ -202,31 +198,27 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
 
   app.post('/api/mcp/oauth/start', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const serverId =
       typeof req.body?.serverId === 'string' ? req.body.serverId.trim() : '';
     if (!serverId) {
-      return res.status(400).json({ error: 'serverId is required' });
+      return sendApiError(res, 400, 'BAD_REQUEST', 'serverId is required');
     }
     try {
       const cfg = await readMcpConfig(RUNTIME_DATA_DIR);
       const server = cfg.servers.find((s) => s.id === serverId);
       if (!server) {
-        return res.status(404).json({ error: `unknown serverId ${serverId}` });
+        return sendApiError(res, 404, 'NOT_FOUND', `unknown serverId ${serverId}`);
       }
       if (server.transport !== 'http' && server.transport !== 'sse') {
-        return res
-          .status(400)
-          .json({ error: 'OAuth flow only applies to http/sse transports' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'OAuth flow only applies to http/sse transports');
       }
       if (!server.url) {
-        return res.status(400).json({ error: 'server has no URL configured' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'server has no URL configured');
       }
       if (server.authMode === 'none') {
-        return res
-          .status(400)
-          .json({ error: 'server is configured for no managed OAuth' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'server is configured for no managed OAuth');
       }
       const redirectUri = mcpOAuthCallbackUrl(req);
       console.log(
@@ -251,7 +243,7 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
     } catch (err: any) {
       const msg = err && err.message ? err.message : String(err);
       console.error(`[mcp-oauth] start failed serverId=${serverId}:`, msg);
-      res.status(502).json({ error: msg });
+      sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', msg);
     }
   });
 
@@ -332,11 +324,11 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
 
   app.get('/api/mcp/oauth/status', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const serverId =
       typeof req.query.serverId === 'string' ? req.query.serverId.trim() : '';
-    if (!serverId) return res.status(400).json({ error: 'serverId is required' });
+    if (!serverId) return sendApiError(res, 400, 'BAD_REQUEST', 'serverId is required');
     try {
       const tok = await getToken(RUNTIME_DATA_DIR, serverId);
       if (!tok) return res.json({ connected: false });
@@ -347,22 +339,22 @@ export function registerMcpRoutes(app: Express, ctx: RegisterMcpRoutesDeps) {
         savedAt: tok.savedAt,
       });
     } catch (err: any) {
-      res.status(500).json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
   app.post('/api/mcp/oauth/disconnect', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const serverId =
       typeof req.body?.serverId === 'string' ? req.body.serverId.trim() : '';
-    if (!serverId) return res.status(400).json({ error: 'serverId is required' });
+    if (!serverId) return sendApiError(res, 400, 'BAD_REQUEST', 'serverId is required');
     try {
       await clearToken(RUNTIME_DATA_DIR, serverId);
       res.json({ ok: true });
     } catch (err: any) {
-      res.status(500).json({ error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
