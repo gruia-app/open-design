@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T23:53:44.787556+00:00",
+ "updated_at": "2026-09-18T23:56:10.937360+00:00",
  "current": {
-  "item": "auditoría de superficies privadas restantes (mocks/, systemd, docs)",
-  "state": "in_progress"
+  "item": "converged — private surfaces audited (G1-G20), upstream queue exhausted",
+  "state": "done"
  },
  "done": [
   {
@@ -459,12 +459,14 @@
  ],
  "blocked": [
   {
-   "item": "G6 — métricas/observabilidad gateway",
-   "needs": "decisión operador: /metrics vs logs estructurados"
+   "item": "G6 — observabilidad gateway (/metrics vs logs estructurados)",
+   "reason": "decisión de diseño",
+   "needs": "decision"
   },
   {
-   "item": "proxyAmrApiRequest flat tokens",
-   "needs": "verificación parsing errores binario vela (ELF compilado, no introspectable) — mantener flat"
+   "item": "proxyAmrApiRequest — 6 tokens planos",
+   "reason": "binario vela ELF compilado; parsing de errores no verificable desde fuente/strings",
+   "needs": "decision"
   }
  ],
  "prs_open": [
@@ -551,5 +553,5 @@
   "PR #27 / 9937e7e34 (gateway org_not_admitted)",
   "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)"
  ],
- "notes": "PR #30 merged (4e336c2c0) — G20 + doc sync. gh requiere --repo + head con namespace."
+ "notes": "PRs #28-31 merged. Convergencia: upstream 142 commits triageados (resto requiere maquinaria ausente), superficie privada auditada completa."
 }

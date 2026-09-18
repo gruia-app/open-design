@@ -343,3 +343,14 @@
 - Auditoría completa de `deploy/gruia/` (Dockerfiles, scripts, systemd,
   Caddyfile, campaign tooling): endurecido salvo los dos gaps corregidos
   (HSTS G18 en lote 15, pin sha256 G19).
+
+## Cierre de sesión — convergencia
+
+- Superficies privadas auditadas completas: gateway (G1-G20), deploy/gruia
+  (Dockerfiles, Caddy, scripts, systemd, campaign publisher/runner/verifier),
+  componentes web Gruia/AMR, mocks, docs, ci/app.yml.
+- Upstream: 142 commits triageados; todo lo restante depende de maquinaria
+  ausente (ChatPanel rebuild, CMS, codex-app-server, prerelease-progress-card,
+  deliverable-syntax, scroll-freeze, media-task contract).
+- Bloqueados por decisión humana: G6 (observabilidad), proxyAmrApiRequest
+  (tokens planos — binario vela no verificable).
