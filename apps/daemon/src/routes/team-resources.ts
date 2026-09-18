@@ -11,6 +11,7 @@ import type {
   TeamResourceKey,
   TeamResourceStateProvider,
 } from '../collab/team-resource-state.js';
+import { sendApiError } from '../http/api-errors.js';
 
 export interface RegisterTeamResourceRoutesDeps {
   teamResources: TeamResourceStateProvider;
@@ -37,14 +38,14 @@ export function registerTeamResourceRoutes(app: Express, deps: RegisterTeamResou
 
   app.get('/api/workspace/resources/:kind/:id/state', async (req, res) => {
     const key = readKey(req.params);
-    if (!key) return res.status(400).json({ error: 'invalid resource key' });
+    if (!key) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid resource key');
     res.json(await teamResources.resolve(key));
   });
 
   // Enforce the AC-9 copy red-line for a resource about to be copied to personal.
   app.post('/api/workspace/resources/:kind/:id/copy-check', async (req, res) => {
     const key = readKey(req.params);
-    if (!key) return res.status(400).json({ error: 'invalid resource key' });
+    if (!key) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid resource key');
     const target = await teamResources.resolve(key);
     try {
       assertTeamResourceCopyAllowed(target);
@@ -61,8 +62,8 @@ export function registerTeamResourceRoutes(app: Express, deps: RegisterTeamResou
   // provider omits `set`, so this 404s in production instead of spoofing state).
   app.put('/api/workspace/resources/:kind/:id/state', (req, res) => {
     const key = readKey(req.params);
-    if (!key) return res.status(400).json({ error: 'invalid resource key' });
-    if (!teamResources.set) return res.status(404).json({ error: 'resource state is not settable' });
+    if (!key) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid resource key');
+    if (!teamResources.set) return sendApiError(res, 404, 'NOT_FOUND', 'resource state is not settable');
     const body = (req.body ?? {}) as { scope?: unknown; state?: unknown };
     if (body.scope === 'personal') {
       teamResources.set(key, { scope: 'personal' });
@@ -72,6 +73,6 @@ export function registerTeamResourceRoutes(app: Express, deps: RegisterTeamResou
       teamResources.set(key, { scope: 'team', state: body.state as TeamResourceState });
       return res.json({ scope: 'team', state: body.state });
     }
-    res.status(400).json({ error: 'invalid resource state' });
+    sendApiError(res, 400, 'BAD_REQUEST', 'invalid resource state');
   });
 }

@@ -38,13 +38,18 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
 - [~] D3 — sweep envelope `{error: {code, message}}` por fichero daemon.
   Hechos: MCP (`2cc1658f5`), brand-routes (`6b878c4e2`), memory (`072b65d02`),
   media+xai (PR #10), collab-context, genui (`406a03aae`), comments
-  (`07d14a7b2`), static-resource (`0fa8652de`). `import-export-routes.ts`
-  verificado ya enveloped (104 sendApiError). Aparcados por tokens de
-  protocolo snake_case que clients matchean (requieren migración diseñada):
-  `collab-context.ts` parcial, `vela.ts`, `server.ts` vela-proxy.
-  Candidatos siguientes: `design-systems.ts` (su `sendWorkspaceScopeError`
-  local sigue emitiendo `{error: code, message, retryable}`),
-  `project-file-versions.ts`, rutas restantes con mensajes humanos.
+  (`07d14a7b2`), static-resource (`0fa8652de`), design-systems (PR #11
+  `74fcd820e`), automation + routine + team-resources + team-resource-share
+  (`0202c835b`). `import-export-routes.ts` verificado ya enveloped.
+  Helper web compartido `utils/apiErrors.ts` (apiErrorMessage) para
+  lectura dual legacy/envelope; 10 sitios consumer migrados.
+  Aparcados por tokens de protocolo snake_case que clients matchean
+  (requieren migración diseñada): `collab-context.ts` parcial, `vela.ts`,
+  `server.ts` vela-proxy.
+  Candidatos siguientes: `plugins/index.ts` (38 sitios — mixto: tokens
+  `missing_inputs`, códigos kebab, metadata `warning`/`fields`; requiere
+  auditoría de protocolo), `project/*`, collab-*, `daemon.ts`,
+  `connectors/routes.ts` y resto con mensajes humanos.
   Ritmo: un fichero por iteración, consumers auditados antes de convertir.
 
 ## Coordinación

@@ -78,7 +78,7 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
 
   app.get('/api/projects/:id/conversations', async (req, res) => {
     if (!getProject(db, req.params.id)) {
-      return res.status(404).json({ error: 'project not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'project not found');
     }
     if (!await authorizeProjectRequest(req, res, req.params.id, { mode: 'read' })) return;
     res.json({ conversations: listConversations(db, req.params.id) });
@@ -86,7 +86,7 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
 
   app.post('/api/projects/:id/conversations', async (req, res) => {
     if (!getProject(db, req.params.id)) {
-      return res.status(404).json({ error: 'project not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'project not found');
     }
     if (!await authorizeProjectRequest(
       req,
@@ -152,10 +152,10 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
         const forkIndex = seedMessages.findIndex((message) => message.id === requestedForkMessageId);
         if (forkIndex < 0) {
           if (clientForkFallbackMessage?.id !== requestedForkMessageId) {
-            return res.status(404).json({ error: 'fork message not found' });
+            return sendApiError(res, 404, 'NOT_FOUND', 'fork message not found');
           }
           if (clientForkFallbackPredecessorMessageId === undefined) {
-            return res.status(400).json({ error: 'fork fallback predecessor is required' });
+            return sendApiError(res, 400, 'BAD_REQUEST', 'fork fallback predecessor is required');
           }
           if (clientForkFallbackPredecessorMessageId === null) {
             seedMessages = [];
@@ -164,7 +164,7 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
               (message) => message.id === clientForkFallbackPredecessorMessageId,
             );
             if (predecessorIndex < 0) {
-              return res.status(404).json({ error: 'fork fallback predecessor not found' });
+              return sendApiError(res, 404, 'NOT_FOUND', 'fork fallback predecessor not found');
             }
             seedMessages = seedMessages.slice(0, predecessorIndex + 1);
           }
@@ -174,7 +174,7 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
         }
       }
     } else if (requestedForkMessageId) {
-      return res.status(404).json({ error: 'fork source conversation not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'fork source conversation not found');
     }
     const sessionMode =
       hasExplicitSessionMode
@@ -227,7 +227,7 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
     )) return;
     const conv = getRoutableConversation(req.params.id, req.params.cid);
     if (!conv) {
-      return res.status(404).json({ error: 'not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'not found');
     }
     if (
       req.body &&
@@ -249,7 +249,7 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
     )) return;
     const conv = getRoutableConversation(req.params.id, req.params.cid);
     if (!conv) {
-      return res.status(404).json({ error: 'not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'not found');
     }
     // Stop any live agent run for this conversation before the row is gone,
     // otherwise the CLI subprocess is orphaned and keeps billing (#5468).
@@ -264,7 +264,7 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
     if (!await authorizeProjectRequest(req, res, req.params.id, { mode: 'read' })) return;
     const conv = getRoutableConversation(req.params.id, req.params.cid);
     if (!conv) {
-      return res.status(404).json({ error: 'conversation not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
     }
     const project = getProject(db, req.params.id);
     // COUNT(*) rather than listMessages(...).length: the backfill only needs to
@@ -564,18 +564,18 @@ export function registerProjectConversationRoutes(app: Express, ctx: RegisterPro
     )) return;
     const conv = getRoutableConversation(req.params.id, req.params.cid);
     if (!conv) {
-      return res.status(404).json({ error: 'conversation not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'conversation not found');
     }
     const m = req.body || {};
     if (m.id && m.id !== req.params.mid) {
-      return res.status(400).json({ error: 'id mismatch' });
+      return sendApiError(res, 400, 'BAD_REQUEST', 'id mismatch');
     }
     // Scope the stored lookup to the conversation authorized by the route. If a
     // message with this id exists in ANOTHER conversation, reject rather than
     // rewrite the wrong row through this endpoint (looper review on #6418).
     const existing = getMessage(db, req.params.mid, req.params.cid);
     if (existing === null && getMessage(db, req.params.mid) !== null) {
-      return res.status(404).json({ error: 'message not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'message not found');
     }
     // A create-only write claims the row exactly once. The client asking for
     // it owns a payload whose identity is decided before the send (an inline

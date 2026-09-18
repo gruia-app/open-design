@@ -2741,7 +2741,7 @@ export async function applyPlugin(
 async function readErrorMessage(resp: Response): Promise<string> {
   try {
     const json = (await resp.json()) as {
-      error?: string | { message?: string; data?: { errors?: unknown } };
+      error?: string | { message?: string; data?: { errors?: unknown }; details?: { errors?: unknown } };
       errors?: unknown;
       message?: string;
     };
@@ -2749,7 +2749,7 @@ async function readErrorMessage(resp: Response): Promise<string> {
       json.message ??
       (typeof json.error === 'string' ? json.error : json.error?.message);
     const details = extractErrorDetails(
-      typeof json.error === 'object' ? json.error.data?.errors : undefined,
+      typeof json.error === 'object' ? json.error.data?.errors ?? json.error.details?.errors : undefined,
       json.errors,
     );
     if (message && details.length > 0) return `${message}: ${details.join('; ')}`;

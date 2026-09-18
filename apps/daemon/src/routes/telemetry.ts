@@ -1,3 +1,4 @@
+import { sendApiError } from '../http/api-errors.js';
 import express, { type Express } from 'express';
 import { SIDECAR_DEFAULTS } from '@open-design/sidecar-proto';
 import { randomUUID } from 'node:crypto';
@@ -168,7 +169,7 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
       'mcp_tool_finished',
     ]);
     if (typeof body.event !== 'string' || !allowedEvents.has(body.event)) {
-      res.status(400).json({ error: 'invalid MCP analytics event' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'invalid MCP analytics event');
       return;
     }
     if (
@@ -176,13 +177,13 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
       || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu
         .test(body.eventId)
     ) {
-      res.status(400).json({ error: 'invalid MCP analytics event id' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'invalid MCP analytics event id');
       return;
     }
     const occurredAt =
       typeof body.occurredAt === 'string' ? new Date(body.occurredAt) : null;
     if (!occurredAt || !Number.isFinite(occurredAt.getTime())) {
-      res.status(400).json({ error: 'invalid MCP analytics event time' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'invalid MCP analytics event time');
       return;
     }
     const eventAgeMs = Date.now() - occurredAt.getTime();
@@ -190,7 +191,7 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
       eventAgeMs < -5 * 60 * 1000
       || eventAgeMs > 24 * 60 * 60 * 1000
     ) {
-      res.status(400).json({ error: 'MCP analytics event time is out of range' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'MCP analytics event time is out of range');
       return;
     }
     const context = await resolveTrustedMcpEventContext(
@@ -198,7 +199,7 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
       readAnalyticsContext(req),
     );
     if (!context) {
-      res.status(400).json({ error: 'missing external MCP analytics context' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'missing external MCP analytics context');
       return;
     }
     let validatedProperties: Record<string, string | number | boolean>;
@@ -233,7 +234,7 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
     const body = (req.body ?? {}) as Partial<ObservabilityEventRequest>;
     const eventName = typeof body.event === 'string' ? body.event.trim() : '';
     if (!eventName) {
-      res.status(400).json({ error: 'missing or invalid `event` field' });
+      sendApiError(res, 400, 'BAD_REQUEST', 'missing or invalid `event` field');
       return;
     }
     const properties =

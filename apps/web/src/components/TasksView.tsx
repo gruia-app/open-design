@@ -36,6 +36,7 @@ import {
   workspaceProjectHeaders,
 } from '../collab/workspace-identity';
 import type { WorkspaceCollabContext } from '@open-design/contracts';
+import { apiErrorMessage } from '../utils/apiErrors';
 
 type ProjectSummary = { id: string; name: string };
 type TemplateFilter =
@@ -580,7 +581,7 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `${action} failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `${action} failed: ${res.status}`));
       }
       await refresh();
     } catch (err) {
@@ -600,7 +601,7 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
       });
       if (!res.ok && res.status !== 202) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `run failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `run failed: ${res.status}`));
       }
       const j = await res.json().catch(() => null);
       if (j?.projectId) {
@@ -632,7 +633,7 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `crystallize failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `crystallize failed: ${res.status}`));
       }
       const json = (await res.json()) as RoutineRunCrystallizeResponse;
       const createdProposals = Array.isArray(json.proposals) ? json.proposals : [];
@@ -669,7 +670,7 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `update failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `update failed: ${res.status}`));
       }
       void refresh();
     } catch (err) {
@@ -690,7 +691,7 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `delete failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `delete failed: ${res.status}`));
       }
       if (expandedId === id) setExpandedId(null);
       void refresh();

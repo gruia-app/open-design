@@ -67,7 +67,7 @@ export function registerDaemonRoutes(app: Express, deps: RegisterDaemonRoutesDep
       const report = await inspectSqliteDatabase({ db, file });
       res.json(report);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err instanceof Error ? err.message : err));
     }
   });
 
@@ -128,7 +128,7 @@ export function registerDaemonRoutes(app: Express, deps: RegisterDaemonRoutesDep
       const report = verifySqliteIntegrity({ db, quick: quick === '1' || quick === 'true' });
       res.json(report);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err instanceof Error ? err.message : err));
     }
   });
 
@@ -149,7 +149,7 @@ export function registerDaemonRoutes(app: Express, deps: RegisterDaemonRoutesDep
         elapsedMs,
       });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err instanceof Error ? err.message : err));
     }
   });
 

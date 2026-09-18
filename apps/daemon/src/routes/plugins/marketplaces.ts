@@ -1,4 +1,6 @@
 import type { Express, Request } from 'express';
+import type { ApiErrorCode, JsonValue } from '@open-design/contracts';
+import { sendApiError } from '../../http/api-errors.js';
 import type * as BetterSqlite3 from 'better-sqlite3';
 
 type MarketplaceTrust = 'trusted' | 'restricted' | 'official';
@@ -48,14 +50,14 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
       const { listMarketplaces } = await import('../../plugins/marketplaces.js');
       res.json({ marketplaces: listMarketplaces(db) });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
   app.post('/api/marketplaces', async (req, res) => {
     try {
       const body = readBody(req);
       const url = typeof body.url === 'string' ? body.url : '';
-      if (!url) return res.status(400).json({ error: 'url is required' });
+      if (!url) return sendApiError(res, 400, 'BAD_REQUEST', 'url is required');
       const trust = body.trust === 'trusted' || body.trust === 'official' ? body.trust : 'restricted';
       const { addMarketplace } = await import('../../plugins/marketplaces.js');
       const result = await addMarketplace(db, {
@@ -63,27 +65,27 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
         trust,
         fetcher: createMarketplaceFetcher(marketplaceRegistryIdFromUrl(url), bundledMarketplaceEntries),
       }) as MarketplaceMutationResult;
-      if (!result.ok) return res.status(result.status).json({ error: { code: 'marketplace-add-failed', message: result.message, data: { errors: result.errors ?? [] } } });
+      if (!result.ok) return sendApiError(res, result.status, 'marketplace-add-failed' as ApiErrorCode, result.message, { details: { errors: (result.errors ?? []) as JsonValue } });
       res.status(201).json(result.row);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
   app.get('/api/marketplaces/:id', async (req, res) => {
     try {
       const { getMarketplace } = await import('../../plugins/marketplaces.js');
       const row = getMarketplace(db, req.params.id) as MarketplaceRow | null;
-      if (!row) return res.status(404).json({ error: 'marketplace not found' });
+      if (!row) return sendApiError(res, 404, 'NOT_FOUND', 'marketplace not found');
       res.json(row);
-    } catch (err) { res.status(500).json({ error: String(err) }); }
+    } catch (err) { sendApiError(res, 500, 'INTERNAL_ERROR', String(err)); }
   });
   app.delete('/api/marketplaces/:id', async (req, res) => {
     try {
       const { removeMarketplace } = await import('../../plugins/marketplaces.js');
       const ok = removeMarketplace(db, req.params.id);
-      if (!ok) return res.status(404).json({ error: 'marketplace not found' });
+      if (!ok) return sendApiError(res, 404, 'NOT_FOUND', 'marketplace not found');
       res.json({ ok: true });
-    } catch (err) { res.status(500).json({ error: String(err) }); }
+    } catch (err) { sendApiError(res, 500, 'INTERNAL_ERROR', String(err)); }
   });
   app.post('/api/marketplaces/:id/refresh', async (req, res) => {
     try {
@@ -91,31 +93,31 @@ export function registerPluginMarketplaceRoutes(app: Express, deps: RegisterPlug
       const row = getMarketplace(db, req.params.id) as MarketplaceRow | null;
       const seedId = row ? marketplaceRegistryIdFromUrl(row.url) ?? req.params.id : req.params.id;
       const result = await refreshMarketplace(db, req.params.id, createMarketplaceFetcher(seedId, bundledMarketplaceEntries)) as MarketplaceMutationResult;
-      if (!result.ok) return res.status(result.status).json({ error: { code: 'marketplace-refresh-failed', message: result.message, data: { errors: result.errors ?? [] } } });
+      if (!result.ok) return sendApiError(res, result.status, 'marketplace-refresh-failed' as ApiErrorCode, result.message, { details: { errors: (result.errors ?? []) as JsonValue } });
       try {
         const { recordPluginEvent } = await import('../../plugins/events.js');
         recordPluginEvent({ kind: 'plugin.marketplace-refreshed', pluginId: '', details: { marketplaceId: req.params.id, marketplaceVersion: result.row.version, specVersion: result.row.specVersion } });
       } catch {}
       res.json(result.row);
-    } catch (err) { res.status(500).json({ error: String(err) }); }
+    } catch (err) { sendApiError(res, 500, 'INTERNAL_ERROR', String(err)); }
   });
   app.post('/api/marketplaces/:id/trust', async (req, res) => {
     try {
       const body = readBody(req);
       const trust = body.trust === 'trusted' || body.trust === 'restricted' || body.trust === 'official' ? body.trust : null;
-      if (!trust) return res.status(400).json({ error: 'trust must be one of: trusted, restricted, official' });
+      if (!trust) return sendApiError(res, 400, 'BAD_REQUEST', 'trust must be one of: trusted, restricted, official');
       const { setMarketplaceTrust } = await import('../../plugins/marketplaces.js');
       const row = setMarketplaceTrust(db, req.params.id, trust) as MarketplaceRow | null;
-      if (!row) return res.status(404).json({ error: 'marketplace not found' });
+      if (!row) return sendApiError(res, 404, 'NOT_FOUND', 'marketplace not found');
       res.json(row);
-    } catch (err) { res.status(500).json({ error: String(err) }); }
+    } catch (err) { sendApiError(res, 500, 'INTERNAL_ERROR', String(err)); }
   });
   app.get('/api/marketplaces/:id/plugins', async (req, res) => {
     try {
       const { getMarketplace } = await import('../../plugins/marketplaces.js');
       const row = getMarketplace(db, req.params.id) as MarketplaceRow | null;
-      if (!row) return res.status(404).json({ error: 'marketplace not found' });
+      if (!row) return sendApiError(res, 404, 'NOT_FOUND', 'marketplace not found');
       res.json({ plugins: row.manifest.plugins ?? [] });
-    } catch (err) { res.status(500).json({ error: String(err) }); }
+    } catch (err) { sendApiError(res, 500, 'INTERNAL_ERROR', String(err)); }
   });
 }

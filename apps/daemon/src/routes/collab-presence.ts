@@ -1,3 +1,5 @@
+import type { ApiErrorCode } from '@open-design/contracts';
+import { sendApiError } from '../http/api-errors.js';
 import type { Express, Request, Response } from 'express';
 import type {
   CollabPresenceMember,
@@ -555,9 +557,10 @@ function sendWorkspaceVerificationFailure(
   res: Response,
   verification: Exclude<PresenceWorkspaceVerification, { ok: true }>,
 ) {
-  return res.status(verification.status).json({
-    error: verification.code,
-    message: verification.message,
+  // Workspace authority codes are emitted on the wire but are not yet in the
+  // ApiErrorCode union — preserve them verbatim (same pattern as the other
+  // workspace-scope senders).
+  return sendApiError(res, verification.status, verification.code as ApiErrorCode, verification.message, {
     ...(verification.retryable ? { retryable: true } : {}),
   });
 }
@@ -828,7 +831,7 @@ export function registerCollabPresenceRoutes(
 
   app.post('/api/projects/:id/presence/heartbeat', async (req, res) => {
     const heartbeat = readHeartbeat(req.body);
-    if (!heartbeat) return res.status(400).json({ error: 'memberId required' });
+    if (!heartbeat) return sendApiError(res, 400, 'BAD_REQUEST', 'memberId required');
     const verification = await verifiedContext(req, req.params.id, 'heartbeat');
     if (cloud && !verification.ok) {
       return sendWorkspaceVerificationFailure(res, verification);
@@ -843,7 +846,7 @@ export function registerCollabPresenceRoutes(
         || heartbeat.member.memberId !== context.workspaceMemberId
       )
     ) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_PRESENCE_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_PRESENCE_DENIED' as ApiErrorCode, 'project presence denied by workspace authority');
     }
     const heartbeatFence = presenceSessions.beginHeartbeat({
       projectId: req.params.id,
@@ -929,7 +932,7 @@ export function registerCollabPresenceRoutes(
 
   app.post('/api/projects/:id/presence/leave', async (req, res) => {
     const leave = readLeave(req.body);
-    if (!leave) return res.status(400).json({ error: 'memberId required' });
+    if (!leave) return sendApiError(res, 400, 'BAD_REQUEST', 'memberId required');
     const verification = await verifiedContext(req, req.params.id, 'leave');
     if (cloud && !verification.ok) {
       return sendWorkspaceVerificationFailure(res, verification);
@@ -940,7 +943,7 @@ export function registerCollabPresenceRoutes(
       && (deps.verifyWorkspaceLeaveRequest ?? deps.verifyWorkspaceRequest)
       && (!verification.ok || !context || leave.memberId !== context.workspaceMemberId)
     ) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_PRESENCE_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_PRESENCE_DENIED' as ApiErrorCode, 'project presence denied by workspace authority');
     }
     const leaveAccepted = presenceSessions.close({
       projectId: req.params.id,

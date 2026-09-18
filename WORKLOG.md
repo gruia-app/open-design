@@ -71,3 +71,26 @@
 - `design-systems.ts` tiene SU PROPIO `sendWorkspaceScopeError` con shape viejo
   → siguiente candidato D3 (las aserciones 604-607 del test explicit-scope lo
   ejercen vía `registerDesignSystemRoutes`).
+
+## D3 batch 3 — automation/routine/team-resource (rama fleet/envelope-batch-3)
+
+- `routes/automation.ts`: 21 sitios raw → sendApiError (status dinámico
+  404/400 mapeado a NOT_FOUND/BAD_REQUEST).
+- `routes/routine.ts`: sitios raw + `sendRoutineError` (cuarta forma
+  `{error: msg, code?, retryable?}`) → envelope; códigos workspace de
+  AutomationWorkspaceScopeError preservados con cast documentado.
+- `routes/team-resources.ts`: 5 sitios → sendApiError (403 copy-check ya usaba
+  createApiErrorResponse).
+- `routes/team-resource-share.ts`: resolveScope + share/unshare → envelope;
+  WORKSPACE_RESOURCE_SHARE/UNSHARE_DENIED y WORKSPACE_AUTHORITY_UNAVAILABLE
+  preservados verbatim, retryable intacto.
+- Web: nuevo `utils/apiErrors.ts` (`apiErrorMessage`) — lectura dual de
+  `{error: string}`, `{error: 'CODE', message}` y `{error: {code,message}}`.
+  10 sitios en TasksView/RoutinesSection/NewAutomationModal que hacían
+  `j.error || fallback` (habrían stringificado el envelope) migrados.
+- Verificación: routine-routes 26/26, team-resource-share 22/22 (+cache,
+  resync, routes, automation suites — 118/118 total), apiErrors.test 4/4,
+  typecheck daemon + web verdes. Commit `0202c835b`.
+- Nota: `plugins/index.ts` (38 sitios) evaluado y aplazado — mezcla tokens de
+  protocolo (`missing_inputs`+fields), códigos kebab (`plugin-not-found`) y
+  metadata (`warning`); requiere migración diseñada como collab-context.

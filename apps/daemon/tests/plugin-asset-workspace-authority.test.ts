@@ -168,7 +168,7 @@ describe('Plugin preview and asset Workspace authority', () => {
       );
 
       expect(response.status).toBe(404);
-      expect(await response.json()).toMatchObject({ error: 'plugin not found' });
+      expect(await response.json()).toMatchObject({ error: { code: 'NOT_FOUND', message: 'plugin not found' } });
     },
   );
 

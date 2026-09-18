@@ -1,3 +1,4 @@
+import { sendApiError } from '../http/api-errors.js';
 import express, { type Express, type Request } from 'express';
 import {
   ATTRIBUTION_CLAIM_PATH,
@@ -220,7 +221,7 @@ export function registerAttributionRoutes(app: Express, deps: RegisterAttributio
   const service = createAttributionService(deps);
   app.post(ATTRIBUTION_CLAIM_PATH, express.json({ limit: '16kb' }), async (req, res) => {
     if (!deps.http.isLocalSameOrigin(req, deps.http.resolvedPortRef.current)) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const parsed = parseClaimRequest(req.body);
     if (!parsed) {
@@ -229,17 +230,17 @@ export function registerAttributionRoutes(app: Express, deps: RegisterAttributio
     try {
       res.json(await service.claim(parsed));
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', err instanceof Error ? err.message : String(err));
     }
   });
   app.post('/api/attribution/bridge-url', express.json({ limit: '8kb' }), async (req, res) => {
     if (!deps.http.isLocalSameOrigin(req, deps.http.resolvedPortRef.current)) {
-      return res.status(403).json({ error: 'cross-origin request rejected' });
+      return sendApiError(res, 403, 'FORBIDDEN', 'cross-origin request rejected');
     }
     const url = req.body && typeof req.body === 'object' && typeof req.body.url === 'string'
       ? req.body.url
       : null;
-    if (!url) return res.status(400).json({ error: 'invalid_url' });
+    if (!url) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid_url', { details: { originalCode: 'invalid_url' } });
     res.json({ url: await service.bridgeUrl(url) });
   });
   return service;

@@ -25,6 +25,7 @@ import { localizePluginDescription, localizePluginTitle } from './plugins-home/l
 import { describeRoutineSchedule, describeRoutineScheduleParts } from './routineScheduleLabels';
 import { useWorkspaceContext } from '../collab/useWorkspaceContext';
 import { workspaceProjectHeaders } from '../collab/workspace-identity';
+import { apiErrorMessage } from '../utils/apiErrors';
 
 type ProjectSummary = { id: string; name: string };
 type ScheduleKind = RoutineSchedule['kind'];
@@ -503,7 +504,7 @@ export function NewAutomationModal({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `${isEdit ? 'update' : 'create'} failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `${isEdit ? 'update' : 'create'} failed: ${res.status}`));
       }
       const json = await res.json();
       onSaved(json.routine);

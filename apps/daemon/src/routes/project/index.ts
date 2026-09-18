@@ -5371,7 +5371,7 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
 
   app.get('/api/projects/:id/tabs', async (req, res) => {
     if (!getProject(db, req.params.id)) {
-      return res.status(404).json({ error: 'project not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'project not found');
     }
     if (!await authorizeProjectRequest(req, res, req.params.id, { mode: 'read' })) return;
     res.json(listTabs(db, req.params.id));
@@ -5379,7 +5379,7 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
 
   app.put('/api/projects/:id/tabs', async (req, res) => {
     if (!getProject(db, req.params.id)) {
-      return res.status(404).json({ error: 'project not found' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'project not found');
     }
     if (!await enforceWorkspaceProjectMutation(
       req,
@@ -5393,10 +5393,10 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
     )) return;
     const { tabs = [], active = null, browserTabs = [] } = req.body || {};
     if (!Array.isArray(tabs) || !tabs.every((t) => typeof t === 'string')) {
-      return res.status(400).json({ error: 'tabs must be string[]' });
+      return sendApiError(res, 400, 'BAD_REQUEST', 'tabs must be string[]');
     }
     if (!Array.isArray(browserTabs)) {
-      return res.status(400).json({ error: 'browserTabs must be an array' });
+      return sendApiError(res, 400, 'BAD_REQUEST', 'browserTabs must be an array');
     }
     const result = setTabs(
       db,
@@ -5423,7 +5423,7 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
 
   app.get('/api/templates/:id', (req, res) => {
     const t = getTemplate(db, req.params.id);
-    if (!t) return res.status(404).json({ error: 'not found' });
+    if (!t) return sendApiError(res, 404, 'NOT_FOUND', 'not found');
     res.json({ template: t });
   });
 
@@ -5431,17 +5431,17 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
     try {
       const { name, description, sourceProjectId } = req.body || {};
       if (typeof name !== 'string' || !name.trim()) {
-        return res.status(400).json({ error: 'name required' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'name required');
       }
       if (name.length > 100) {
-        return res.status(400).json({ error: 'name must be 100 characters or fewer' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'name must be 100 characters or fewer');
       }
       if (typeof sourceProjectId !== 'string') {
-        return res.status(400).json({ error: 'sourceProjectId required' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'sourceProjectId required');
       }
       const sourceProject = getProject(db, sourceProjectId);
       if (!sourceProject) {
-        return res.status(404).json({ error: 'source project not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'source project not found');
       }
       // Snapshot every HTML / sketch / text file in the source project.
       // We deliberately skip binary uploads — templates are about the
@@ -5487,7 +5487,7 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
       }
       res.json({ template: t });
     } catch (err: any) {
-      res.status(400).json({ error: String(err) });
+      sendApiError(res, 400, 'BAD_REQUEST', String(err instanceof Error ? err.message : err));
     }
   });
 
@@ -5501,6 +5501,7 @@ export function registerProjectRoutes(app: Express, ctx: RegisterProjectRoutesDe
 export interface RegisterProjectArtifactRoutesDeps extends RouteDeps<'http' | 'uploads' | 'paths' | 'node' | 'artifacts'> {}
 
 export function registerProjectArtifactRoutes(app: Express, ctx: RegisterProjectArtifactRoutesDeps) {
+  const { sendApiError } = ctx.http;
   const { upload } = ctx.uploads;
   const { ARTIFACTS_DIR } = ctx.paths;
   const { path, fs } = ctx.node;
@@ -5523,7 +5524,7 @@ export function registerProjectArtifactRoutes(app: Express, ctx: RegisterProject
     try {
       const { identifier, title, html } = req.body || {};
       if (typeof html !== 'string' || html.length === 0) {
-        return res.status(400).json({ error: 'html required' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'html required');
       }
       const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19);
       const slug = sanitizeSlug(identifier || title || 'artifact');
@@ -5538,7 +5539,7 @@ export function registerProjectArtifactRoutes(app: Express, ctx: RegisterProject
         lint: findings,
       });
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err instanceof Error ? err.message : err));
     }
   });
 
@@ -5551,7 +5552,7 @@ export function registerProjectArtifactRoutes(app: Express, ctx: RegisterProject
     try {
       const { html } = (req.body ?? {}) as Partial<LintArtifactRequest>;
       if (typeof html !== 'string' || html.length === 0) {
-        return res.status(400).json({ error: 'html required' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'html required');
       }
       const findings = lintArtifact(html);
       const payload: LintArtifactResponse = {
@@ -5560,7 +5561,7 @@ export function registerProjectArtifactRoutes(app: Express, ctx: RegisterProject
       };
       res.json(payload);
     } catch (err: any) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err instanceof Error ? err.message : err));
     }
   });
 

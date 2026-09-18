@@ -340,7 +340,9 @@ describe('bootstrap route regressions', () => {
     expect(await automationList.json()).toEqual({ packets: [] });
 
     expect(automationMissing.status).toBe(404);
-    expect(await automationMissing.json()).toEqual({ error: 'automation source packet not found' });
+    expect(await automationMissing.json()).toEqual({
+      error: { code: 'NOT_FOUND', message: 'automation source packet not found' },
+    });
 
     expect(velaProxyUnknownPath.status).toBe(404);
     expect(await velaProxyUnknownPath.json()).toEqual({ error: 'unknown_amr_api_proxy_path' });

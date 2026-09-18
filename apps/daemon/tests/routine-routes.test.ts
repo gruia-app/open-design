@@ -771,8 +771,8 @@ describe('routine routes', () => {
       });
 
       expect(patchRes.status).toBe(400);
-      const json = await patchRes.json() as { error: string };
-      expect(json.error).toContain('target project missing-project not found');
+      const json = await patchRes.json() as { error: { message: string } };
+      expect(json.error.message).toContain('target project missing-project not found');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -918,8 +918,8 @@ describe('routine routes', () => {
         { method: 'POST' },
       );
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toBe('only succeeded routine runs can be crystallized');
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toBe('only succeeded routine runs can be crystallized');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1017,8 +1017,8 @@ describe('routine routes', () => {
         method: 'POST',
       });
       expect(runRes.status).toBe(500);
-      const json = await runRes.json() as { error: string };
-      expect(json.error).toContain('agent unavailable');
+      const json = await runRes.json() as { error: { message: string } };
+      expect(json.error.message).toContain('agent unavailable');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1046,8 +1046,8 @@ describe('routine routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toContain('target project missing-project not found');
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toContain('target project missing-project not found');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1070,8 +1070,8 @@ describe('routine routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toContain('Unsupported routine target mode');
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toContain('Unsupported routine target mode');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1113,8 +1113,8 @@ describe('routine routes', () => {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/api/routines/missing/runs?limit=10`);
       expect(res.status).toBe(404);
-      const json = await res.json() as { error: string };
-      expect(json.error).toBe('routine not found');
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toBe('routine not found');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1137,8 +1137,8 @@ describe('routine routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toContain('minute');
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toContain('minute');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1161,8 +1161,8 @@ describe('routine routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toContain('Invalid timezone');
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toContain('Invalid timezone');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1190,8 +1190,8 @@ describe('routine routes', () => {
       });
 
       expect(res.status).toBe(400);
-      const json = await res.json() as { error: string };
-      expect(json.error).toContain('weekly.weekday');
+      const json = await res.json() as { error: { message: string } };
+      expect(json.error.message).toContain('weekly.weekday');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -1223,8 +1223,8 @@ describe('routine routes', () => {
       });
 
       expect(patchRes.status).toBe(400);
-      const json = await patchRes.json() as { error: string };
-      expect(json.error).toContain('Invalid time');
+      const json = await patchRes.json() as { error: { message: string } };
+      expect(json.error.message).toContain('Invalid time');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

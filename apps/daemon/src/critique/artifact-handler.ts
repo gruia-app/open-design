@@ -1,3 +1,4 @@
+import { sendApiError } from '../http/api-errors.js';
 import { promises as fs, constants as fsConstants } from 'node:fs';
 import * as path from 'node:path';
 import type { Request, Response } from 'express';
@@ -68,9 +69,7 @@ export function handleCritiqueArtifact(
         : '';
 
     if (!projectId || !runId) {
-      res
-        .status(HTTP_BAD_REQUEST)
-        .json({ error: { code: 'BAD_REQUEST', message: 'projectId and runId are required' } });
+      sendApiError(res, HTTP_BAD_REQUEST, 'BAD_REQUEST', 'projectId and runId are required');
       return;
     }
 
@@ -80,9 +79,7 @@ export function handleCritiqueArtifact(
     // reveal that runId actually lives in p2. 404 (not 403) so the
     // existence of other projects' runs is not leaked.
     if (row === null || row.projectId !== projectId) {
-      res
-        .status(HTTP_NOT_FOUND)
-        .json({ error: { code: 'NOT_FOUND', message: 'critique run not found' } });
+      sendApiError(res, HTTP_NOT_FOUND, 'NOT_FOUND', 'critique run not found');
       return;
     }
 
@@ -116,9 +113,7 @@ export function handleCritiqueArtifact(
       || path.isAbsolute(relToRoot)
       || relToRoot === ''
     ) {
-      res
-        .status(HTTP_NOT_FOUND)
-        .json({ error: { code: 'NOT_FOUND', message: 'critique artifact not found' } });
+      sendApiError(res, HTTP_NOT_FOUND, 'NOT_FOUND', 'critique artifact not found');
       return;
     }
 
@@ -144,9 +139,7 @@ export function handleCritiqueArtifact(
       fileHandle = await fs.open(resolvedArtifactPath, openFlags);
     } catch {
       // ELOOP from O_NOFOLLOW (symlink), ENOENT (vanished), EACCES, etc.
-      res
-        .status(HTTP_NOT_FOUND)
-        .json({ error: { code: 'NOT_FOUND', message: 'critique artifact not found' } });
+      sendApiError(res, HTTP_NOT_FOUND, 'NOT_FOUND', 'critique artifact not found');
       return;
     }
 
@@ -154,18 +147,12 @@ export function handleCritiqueArtifact(
       const stat = await fileHandle.stat();
       if (!stat.isFile()) {
         await fileHandle.close();
-        res
-          .status(HTTP_NOT_FOUND)
-          .json({ error: { code: 'NOT_FOUND', message: 'critique artifact not found' } });
+        sendApiError(res, HTTP_NOT_FOUND, 'NOT_FOUND', 'critique artifact not found');
         return;
       }
       if (stat.size > responseCapBytes) {
         await fileHandle.close();
-        res
-          .status(HTTP_NOT_FOUND)
-          .json({
-            error: { code: 'NOT_FOUND', message: 'critique artifact exceeds response cap' },
-          });
+        sendApiError(res, HTTP_NOT_FOUND, 'NOT_FOUND', 'critique artifact exceeds response cap');
         return;
       }
 
@@ -207,9 +194,7 @@ export function handleCritiqueArtifact(
       // wired up: close the fd so it does not leak, then surface 404.
       await fileHandle.close().catch(() => {});
       if (!res.headersSent) {
-        res
-          .status(HTTP_NOT_FOUND)
-          .json({ error: { code: 'NOT_FOUND', message: 'critique artifact not found' } });
+        sendApiError(res, HTTP_NOT_FOUND, 'NOT_FOUND', 'critique artifact not found');
       } else {
         res.destroy(err instanceof Error ? err : undefined);
       }

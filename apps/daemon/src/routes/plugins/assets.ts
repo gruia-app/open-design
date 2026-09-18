@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from 'express';
+import { sendApiError } from '../../http/api-errors.js';
 import type * as BetterSqlite3 from 'better-sqlite3';
 import path from 'node:path';
 import type { WorkspaceCollabContext } from '@open-design/contracts';
@@ -130,7 +131,7 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
       const authority = await resolveWorkspaceAuthority(req, res);
       if (authority === undefined) return;
       const plugin = await resolvePlugin(routeParam(req.params.id), authority);
-      if (!plugin) return res.status(404).json({ error: 'plugin not found' });
+      if (!plugin) return sendApiError(res, 404, 'NOT_FOUND', 'plugin not found');
       const candidates = (await pickCandidates(plugin)).filter((p): p is string => typeof p === 'string' && p.length > 0);
       const fsp = await import('node:fs/promises');
       const root = path.resolve(plugin.fsPath) + path.sep;
@@ -144,13 +145,13 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
           const st = await fsp.stat(full);
           const lst = await fsp.lstat(full);
           if (lst.isSymbolicLink() || !st.isFile()) continue;
-          if (st.size > 5 * 1024 * 1024) return res.status(413).json({ error: 'preview asset too large' });
+          if (st.size > 5 * 1024 * 1024) return sendApiError(res, 413, 'PAYLOAD_TOO_LARGE', 'preview asset too large');
           resolved = full;
           resolvedRel = rel;
           break;
         } catch {}
       }
-      if (!resolved) return res.status(404).json({ error: 'preview not found' });
+      if (!resolved) return sendApiError(res, 404, 'NOT_FOUND', 'preview not found');
       let contentPath = resolved;
       let contentRel = resolvedRel;
       let buf = await fsp.readFile(resolved);
@@ -210,7 +211,7 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
       }
       res.send(buf);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   }
 
@@ -316,7 +317,7 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
   });
   app.get('/api/plugins/:id/example/:name', async (req, res) => {
     const name = String(req.params.name ?? '');
-    if (!name || /[\\/\0]|\.\./.test(name)) return res.status(400).json({ error: 'invalid example name' });
+    if (!name || /[\\/\0]|\.\./.test(name)) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid example name');
     await servePluginSandboxedHtml(req, res, async (plugin) => {
       const examples = plugin.manifest?.od?.useCase?.exampleOutputs ?? [];
       const match = examples.find((e: PluginExampleOutput) => {
@@ -338,38 +339,38 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
       const authority = await resolveWorkspaceAuthority(req, res);
       if (authority === undefined) return;
       const plugin = await resolvePlugin(routeParam(req.params.id), authority);
-      if (!plugin) return res.status(404).json({ error: 'plugin not found' });
+      if (!plugin) return sendApiError(res, 404, 'NOT_FOUND', 'plugin not found');
       const splatParam = req.params.splat;
       const relpath = Array.isArray(splatParam) ? splatParam.join('/') : String(splatParam ?? '');
-      if (!relpath || relpath.includes('..') || relpath.startsWith('/') || relpath.includes('\0')) return res.status(400).json({ error: 'invalid asset path' });
+      if (!relpath || relpath.includes('..') || relpath.startsWith('/') || relpath.includes('\0')) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid asset path');
       const fsp = await import('node:fs/promises');
       const resolved = path.resolve(plugin.fsPath, relpath);
       const root = path.resolve(plugin.fsPath);
       const rootWithSep = root.endsWith(path.sep) ? root : `${root}${path.sep}`;
-      if (!(resolved + path.sep).startsWith(rootWithSep) && resolved !== root) return res.status(400).json({ error: 'asset escape rejected' });
+      if (!(resolved + path.sep).startsWith(rootWithSep) && resolved !== root) return sendApiError(res, 400, 'BAD_REQUEST', 'asset escape rejected');
       const relativeSegments = path.relative(root, resolved).split(path.sep).filter(Boolean);
       let current = root;
       try {
         const rootStat = await fsp.lstat(current);
-        if (rootStat.isSymbolicLink()) return res.status(404).json({ error: 'asset not found' });
+        if (rootStat.isSymbolicLink()) return sendApiError(res, 404, 'NOT_FOUND', 'asset not found');
         for (const segment of relativeSegments) {
           current = path.join(current, segment);
           const stat = await fsp.lstat(current);
-          if (stat.isSymbolicLink()) return res.status(404).json({ error: 'asset not found' });
+          if (stat.isSymbolicLink()) return sendApiError(res, 404, 'NOT_FOUND', 'asset not found');
         }
       } catch {
-        return res.status(404).json({ error: 'asset not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'asset not found');
       }
       try {
         const rootReal = await fsp.realpath(plugin.fsPath);
         const resolvedReal = await fsp.realpath(resolved);
         const rootRealWithSep = rootReal.endsWith(path.sep) ? rootReal : `${rootReal}${path.sep}`;
-        if (resolvedReal !== rootReal && !resolvedReal.startsWith(rootRealWithSep)) return res.status(400).json({ error: 'asset escape rejected' });
+        if (resolvedReal !== rootReal && !resolvedReal.startsWith(rootRealWithSep)) return sendApiError(res, 400, 'BAD_REQUEST', 'asset escape rejected');
       } catch {
-        return res.status(404).json({ error: 'asset not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'asset not found');
       }
       let buf;
-      try { buf = await fsp.readFile(resolved); } catch { return res.status(404).json({ error: 'asset not found' }); }
+      try { buf = await fsp.readFile(resolved); } catch { return sendApiError(res, 404, 'NOT_FOUND', 'asset not found'); }
       res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data: blob:; media-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'none'; frame-ancestors 'self'");
       res.setHeader('X-Content-Type-Options', 'nosniff');
       const ext = path.extname(resolved).toLowerCase();
@@ -377,12 +378,12 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
       res.setHeader('Content-Type', ct);
       res.send(buf);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
   app.get('/api/asset-cache', async (req, res) => {
     const rawUrl = typeof req.query.url === 'string' ? req.query.url : Array.isArray(req.query.url) && typeof req.query.url[0] === 'string' ? req.query.url[0] : '';
-    if (!rawUrl) return res.status(400).json({ error: 'missing url query parameter' });
+    if (!rawUrl) return sendApiError(res, 400, 'BAD_REQUEST', 'missing url query parameter');
     try {
       const { buf, contentType } = await pluginAssetCache.get(rawUrl);
       res.setHeader('Content-Type', contentType);
@@ -392,7 +393,12 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
       return res.send(buf);
     } catch (err) {
       const status = err instanceof AssetCacheError ? err.status : 502;
-      return res.status(status).json({ error: err instanceof Error ? err.message : String(err) });
+      return sendApiError(
+        res,
+        status,
+        status === 502 ? 'UPSTREAM_UNAVAILABLE' : 'BAD_REQUEST',
+        err instanceof Error ? err.message : String(err),
+      );
     }
   });
 }

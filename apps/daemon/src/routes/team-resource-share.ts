@@ -1,4 +1,6 @@
 import type { Express, Request, Response } from 'express';
+import type { ApiErrorCode } from '@open-design/contracts';
+import { sendApiError } from '../http/api-errors.js';
 import {
   TeamResourceAuthorityUnavailableError,
   TeamResourceShareForbiddenError,
@@ -103,17 +105,20 @@ export function registerTeamResourceShareRoutes(
     try {
       resolution = await deps.resolveScope(req);
     } catch {
-      res.status(503).json({
-        error: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
-        message: 'workspace membership authority is temporarily unavailable',
-        retryable: true,
-      });
+      // Workspace authority codes are emitted on the wire but are not yet in
+      // the ApiErrorCode union — preserve them verbatim (same pattern as the
+      // other workspace-scope senders).
+      sendApiError(
+        res,
+        503,
+        'WORKSPACE_AUTHORITY_UNAVAILABLE' as ApiErrorCode,
+        'workspace membership authority is temporarily unavailable',
+        { retryable: true },
+      );
       return null;
     }
     if (resolution.ok) return resolution.scope;
-    res.status(resolution.status).json({
-      error: resolution.code,
-      message: resolution.message,
+    sendApiError(res, resolution.status, resolution.code as ApiErrorCode, resolution.message, {
       ...(resolution.retryable ? { retryable: true } : {}),
     });
     return null;
@@ -137,12 +142,12 @@ export function registerTeamResourceShareRoutes(
   // Share a personal resource to the team.
   app.post(`${root}/:id/share`, async (req, res) => {
     const id = typeof req.params.id === 'string' ? decodeURIComponent(req.params.id) : '';
-    if (!id) return res.status(400).json({ error: 'invalid resource id' });
+    if (!id) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid resource id');
     const scope = await resolveScope(req, res);
     if (!scope) return;
     try {
       if (deps.authorizeShare && !await deps.authorizeShare(id, scope)) {
-        return res.status(403).json({ error: 'WORKSPACE_RESOURCE_SHARE_DENIED' });
+        return sendApiError(res, 403, 'WORKSPACE_RESOURCE_SHARE_DENIED' as ApiErrorCode, 'share to team denied by workspace authority');
       }
       const result = await share.share(id, scope);
       if (!result) return res.json({ shared: false });
@@ -156,9 +161,9 @@ export function registerTeamResourceShareRoutes(
       res.json({ shared: true, version: result.version });
     } catch (error) {
       if (error instanceof TeamResourceShareForbiddenError) {
-        return res.status(403).json({ error: 'WORKSPACE_RESOURCE_SHARE_DENIED' });
+        return sendApiError(res, 403, 'WORKSPACE_RESOURCE_SHARE_DENIED' as ApiErrorCode, 'share to team denied by workspace authority');
       }
-      res.status(500).json({ error: error instanceof Error ? error.message : 'share failed' });
+      sendApiError(res, 500, 'INTERNAL_ERROR', error instanceof Error ? error.message : 'share failed');
     }
   });
 
@@ -166,7 +171,7 @@ export function registerTeamResourceShareRoutes(
   // truth: only the resource owner can edit/remove the shared resource.
   app.delete(`${root}/:id/share`, async (req, res) => {
     const id = typeof req.params.id === 'string' ? decodeURIComponent(req.params.id) : '';
-    if (!id) return res.status(400).json({ error: 'invalid resource id' });
+    if (!id) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid resource id');
     const scope = await resolveScope(req, res);
     if (!scope) return;
     try {
@@ -178,16 +183,12 @@ export function registerTeamResourceShareRoutes(
       res.json({ unshared });
     } catch (error) {
       if (error instanceof TeamResourceShareForbiddenError) {
-        return res.status(403).json({ error: 'WORKSPACE_RESOURCE_UNSHARE_DENIED' });
+        return sendApiError(res, 403, 'WORKSPACE_RESOURCE_UNSHARE_DENIED' as ApiErrorCode, 'unshare from team denied by workspace authority');
       }
       if (error instanceof TeamResourceAuthorityUnavailableError) {
-        return res.status(503).json({
-          error: error.code,
-          message: error.message,
-          retryable: true,
-        });
+        return sendApiError(res, 503, error.code as ApiErrorCode, error.message, { retryable: true });
       }
-      res.status(500).json({ error: error instanceof Error ? error.message : 'unshare failed' });
+      sendApiError(res, 500, 'INTERNAL_ERROR', error instanceof Error ? error.message : 'unshare failed');
     }
   });
 }

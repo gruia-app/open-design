@@ -118,9 +118,11 @@ describe('team resource share /team listing', () => {
 
     expect(response.status).toBe(503);
     expect(response.body).toEqual({
-      error: 'WORKSPACE_RESOURCE_AUTHORITY_UNAVAILABLE',
-      message: 'team resource authority is temporarily unavailable',
-      retryable: true,
+      error: {
+        code: 'WORKSPACE_RESOURCE_AUTHORITY_UNAVAILABLE',
+        message: 'team resource authority is temporarily unavailable',
+        retryable: true,
+      },
     });
   });
 
@@ -138,7 +140,7 @@ describe('team resource share /team listing', () => {
     });
     const response = await req.post('/api/workspace/design-systems/user%3Aprivate/share');
     expect(response.status).toBe(403);
-    expect(response.body.error).toBe('WORKSPACE_RESOURCE_SHARE_DENIED');
+    expect((response.body.error as { code: string }).code).toBe('WORKSPACE_RESOURCE_SHARE_DENIED');
     expect(shareCalls).toBe(0);
   });
 
@@ -158,7 +160,7 @@ describe('team resource share /team listing', () => {
 
     const response = await req.post('/api/workspace/plugins/private-plugin/share');
     expect(response.status).toBe(403);
-    expect(response.body.error).toBe('WORKSPACE_RESOURCE_SHARE_DENIED');
+    expect((response.body.error as { code: string }).code).toBe('WORKSPACE_RESOURCE_SHARE_DENIED');
     expect(shareCalls).toBe(0);
   });
 
@@ -259,9 +261,11 @@ describe('team resource share /team listing', () => {
     const response = await req.get('/api/workspace/plugins/team');
     expect(response.status).toBe(status);
     expect(response.body).toMatchObject({
-      error: code,
-      message: 'scope rejected',
-      ...(status === 503 ? { retryable: true } : {}),
+      error: {
+        code,
+        message: 'scope rejected',
+        ...(status === 503 ? { retryable: true } : {}),
+      },
     });
     expect(calls()).toBe(0);
   });

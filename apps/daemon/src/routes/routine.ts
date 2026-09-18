@@ -27,6 +27,8 @@ import {
   normalizePersistedAutomationWorkspaceScope,
 } from '../automations/workspace-scope.js';
 import type { PathDeps, RouteDeps } from '../server-context.js';
+import type { ApiErrorCode } from '@open-design/contracts';
+import { sendApiError } from '../http/api-errors.js';
 
 export interface RegisterRoutineRoutesDeps extends RouteDeps<'db' | 'routines'> {
   paths: Pick<PathDeps, 'RUNTIME_DATA_DIR'>;
@@ -253,15 +255,20 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
   }
 
   function sendRoutineError(res: any, err: any, fallbackStatus: number) {
-    const status = err instanceof AutomationWorkspaceScopeError
-      ? 403
-      : fallbackStatus;
-    return res.status(status).json({
-      error: String(err?.message ?? err),
-      ...(err instanceof AutomationWorkspaceScopeError
-        ? { code: err.code, ...(err.retryable ? { retryable: true } : {}) }
-        : {}),
-    });
+    const message = String(err?.message ?? err);
+    if (err instanceof AutomationWorkspaceScopeError) {
+      // Workspace scope codes are emitted on the wire but are not yet in the
+      // ApiErrorCode union — preserve them verbatim.
+      return sendApiError(res, 403, err.code as ApiErrorCode, message, {
+        ...(err.retryable ? { retryable: true } : {}),
+      });
+    }
+    return sendApiError(
+      res,
+      fallbackStatus,
+      fallbackStatus >= 500 ? 'INTERNAL_ERROR' : 'BAD_REQUEST',
+      message,
+    );
   }
 
   app.get('/api/automation-templates', async (_req, res) => {
@@ -270,7 +277,7 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
         templates: await listAllAutomationTemplates(ctx.paths.RUNTIME_DATA_DIR),
       });
     } catch (err: any) {
-      res.status(500).json({ error: String(err?.message ?? err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err?.message ?? err));
     }
   });
 
@@ -280,10 +287,10 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
         ctx.paths.RUNTIME_DATA_DIR,
         req.params.id,
       );
-      if (!template) return res.status(404).json({ error: 'automation template not found' });
+      if (!template) return sendApiError(res, 404, 'NOT_FOUND', 'automation template not found');
       res.json({ template });
     } catch (err: any) {
-      res.status(500).json({ error: String(err?.message ?? err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err?.message ?? err));
     }
   });
 
@@ -402,22 +409,14 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
         routine: exposeRoutineWorkspaceScope(routine!, createdScope),
       });
     } catch (err: any) {
-      const status = err instanceof AutomationWorkspaceScopeError
-        ? 403
-        : 400;
-      res.status(status).json({
-        error: String(err?.message ?? err),
-        ...(err instanceof AutomationWorkspaceScopeError
-          ? { code: err.code, ...(err.retryable ? { retryable: true } : {}) }
-          : {}),
-      });
+      sendRoutineError(res, err, 400);
     }
   });
 
   app.get('/api/routines/:id', async (req, res) => {
     try {
       const row = getRoutine(db, req.params.id);
-      if (!row) return res.status(404).json({ error: 'routine not found' });
+      if (!row) return sendApiError(res, 404, 'NOT_FOUND', 'routine not found');
       const scope = await authorizeRoutineRecord(req, row);
       res.json({
         routine: exposeRoutineWorkspaceScope(routineFromDb(req.params.id)!, scope),
@@ -430,7 +429,7 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
   app.patch('/api/routines/:id', async (req, res) => {
     try {
       const existing = getRoutine(db, req.params.id);
-      if (!existing) return res.status(404).json({ error: 'routine not found' });
+      if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'routine not found');
       const existingScope = await authorizeRoutineRecord(req, existing);
       let resultingScope = existingScope;
       const body = req.body || {};
@@ -502,7 +501,7 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
   app.delete('/api/routines/:id', async (req, res) => {
     try {
       const existing = getRoutine(db, req.params.id);
-      if (!existing) return res.status(404).json({ error: 'routine not found' });
+      if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'routine not found');
       await authorizeRoutineRecord(req, existing);
       routineService?.unschedule(req.params.id);
       dbDeleteRoutine(db, req.params.id);
@@ -515,7 +514,7 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
   app.post('/api/routines/:id/run', async (req, res) => {
     try {
       const existing = getRoutine(db, req.params.id);
-      if (!existing) return res.status(404).json({ error: 'routine not found' });
+      if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'routine not found');
       // Execution is not a local membership decision. The routine/project
       // already persists its exact Workspace billing address; start the run
       // with that address and let the authenticated Vela backend make the
@@ -538,7 +537,7 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
   app.get('/api/routines/:id/runs', async (req, res) => {
     try {
       const existing = getRoutine(db, req.params.id);
-      if (!existing) return res.status(404).json({ error: 'routine not found' });
+      if (!existing) return sendApiError(res, 404, 'NOT_FOUND', 'routine not found');
       await authorizeRoutineRecord(req, existing);
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
       res.json({ runs: listRoutineRuns(db, req.params.id, limit) });
@@ -550,14 +549,14 @@ export function registerRoutineRoutes(app: Express, ctx: RegisterRoutineRoutesDe
   app.post('/api/routines/:id/runs/:runId/crystallize', async (req, res) => {
     try {
       const routine = getRoutine(db, req.params.id);
-      if (!routine) return res.status(404).json({ error: 'routine not found' });
+      if (!routine) return sendApiError(res, 404, 'NOT_FOUND', 'routine not found');
       await authorizeRoutineRecord(req, routine);
       const run = getRoutineRun(db, req.params.runId);
       if (!run || run.routineId !== req.params.id) {
-        return res.status(404).json({ error: 'routine run not found' });
+        return sendApiError(res, 404, 'NOT_FOUND', 'routine run not found');
       }
       if (run.status !== 'succeeded') {
-        return res.status(400).json({ error: 'only succeeded routine runs can be crystallized' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'only succeeded routine runs can be crystallized');
       }
       const bodyMarkdown = [
         `# ${routine.name} reusable workflow`,

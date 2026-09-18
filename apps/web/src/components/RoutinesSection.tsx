@@ -19,6 +19,7 @@ import { trackAutomationsClick } from '../analytics/events';
 import { useWorkspaceContext } from '../collab/useWorkspaceContext';
 import { workspaceProjectHeaders } from '../collab/workspace-identity';
 import { listProjects } from '../state/projects';
+import { apiErrorMessage } from '../utils/apiErrors';
 
 // Shared translator signature: every sub-component in this file is module-scoped,
 // so `t` from `useT()` is threaded down as a prop rather than re-hooked.
@@ -651,7 +652,7 @@ export function RoutinesSection({ onClose }: RoutinesSectionProps) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `${isEdit ? 'update' : 'create'} failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `${isEdit ? 'update' : 'create'} failed: ${res.status}`));
       }
       setShowForm(false);
       setEditingId(null);
@@ -674,7 +675,7 @@ export function RoutinesSection({ onClose }: RoutinesSectionProps) {
       });
       if (!res.ok && res.status !== 202) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `run failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `run failed: ${res.status}`));
       }
       void refresh();
       setExpandedId(routine.id);
@@ -699,7 +700,7 @@ export function RoutinesSection({ onClose }: RoutinesSectionProps) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `update failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `update failed: ${res.status}`));
       }
       void refresh();
     } catch (err) {
@@ -719,7 +720,7 @@ export function RoutinesSection({ onClose }: RoutinesSectionProps) {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `delete failed: ${res.status}`);
+        throw new Error(apiErrorMessage(j, `delete failed: ${res.status}`));
       }
       if (expandedId === routine.id) setExpandedId(null);
       void refresh();

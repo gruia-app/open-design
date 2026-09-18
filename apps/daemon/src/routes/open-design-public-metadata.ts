@@ -1,3 +1,4 @@
+import { sendApiError } from '../http/api-errors.js';
 import type { Express } from 'express';
 import type {
   OpenDesignDiscordPresenceResponse,
@@ -35,7 +36,7 @@ export function registerOpenDesignPublicMetadataRoutes(
       };
       res.json(payload);
     } catch (error) {
-      res.status(502).json({ error: errorMessage(error) });
+      sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', errorMessage(error));
     }
   });
 
@@ -51,7 +52,7 @@ export function registerOpenDesignPublicMetadataRoutes(
       };
       res.json(payload);
     } catch (error) {
-      res.status(502).json({ error: errorMessage(error) });
+      sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', errorMessage(error));
     }
   });
 
@@ -68,7 +69,7 @@ export function registerOpenDesignPublicMetadataRoutes(
       };
       res.json(payload);
     } catch (error) {
-      res.status(502).json({ error: errorMessage(error) });
+      sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', errorMessage(error));
     }
   });
 }

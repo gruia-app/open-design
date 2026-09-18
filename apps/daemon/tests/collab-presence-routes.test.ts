@@ -1173,8 +1173,10 @@ describe('collab presence routes', () => {
     for (const response of responses) {
       expect(response.status).toBe(503);
       expect(response.body).toMatchObject({
-        error: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
-        retryable: true,
+        error: {
+          code: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
+          retryable: true,
+        },
       });
     }
     expect(isProjectShared).not.toHaveBeenCalled();

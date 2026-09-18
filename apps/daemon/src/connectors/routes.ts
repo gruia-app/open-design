@@ -249,10 +249,10 @@ async function fetchComposioLogo(slug: string, theme: 'light' | 'dark'): Promise
   return promise;
 }
 
-async function proxyComposioLogo(req: Request, res: Response): Promise<void> {
+async function proxyComposioLogo(req: Request, res: Response, sendApiError: ConnectorApiErrorSender): Promise<void> {
   const slug = parseConnectorLogoSlug(req.params.slug);
   if (!slug) {
-    res.status(400).json({ error: 'logo slug is required' });
+    sendApiError(res, 400, 'BAD_REQUEST', 'logo slug is required');
     return;
   }
   const theme = parseConnectorLogoTheme(req.query.theme);
@@ -587,7 +587,7 @@ export function registerConnectorRoutes(app: Express, options: RegisterConnector
 
   app.get('/api/connectors/logos/:slug', async (req: Request, res: Response) => {
     try {
-      await proxyComposioLogo(req, res);
+      await proxyComposioLogo(req, res, options.sendApiError);
     } catch (err) {
       sendConnectorRouteError(res, err, options.sendApiError);
     }
@@ -597,7 +597,7 @@ export function registerConnectorRoutes(app: Express, options: RegisterConnector
     try {
       res.json(readPublicComposioConfig());
     } catch (err) {
-      res.status(500).json({ error: String(err instanceof Error ? err.message : err) });
+      options.sendApiError(res, 500, 'CONNECTOR_EXECUTION_FAILED', String(err instanceof Error ? err.message : err));
     }
   });
 
@@ -612,7 +612,7 @@ export function registerConnectorRoutes(app: Express, options: RegisterConnector
       }
       res.json(cfg);
     } catch (err) {
-      res.status(400).json({ error: String(err instanceof Error ? err.message : err) });
+      options.sendApiError(res, 400, 'BAD_REQUEST', String(err instanceof Error ? err.message : err));
     }
   });
 
