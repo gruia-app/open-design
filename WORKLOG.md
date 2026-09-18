@@ -107,6 +107,39 @@ tests/components/App.workspace-switch-project-list.test.tsx` — 11/11;
 estricto (un remount incidental lo rompía); reescrito con la implementación real
 de `listProjects` + HTTP 500, asertando solo el comportamiento visible.
 
+## Ítem 5 — Hardening del runtime de agentes (cwd, credenciales, probes ACP)
+
+**Hecho** (hallazgos leaf-1 de la auditoría delegada):
+
+- `apps/daemon/src/server.ts` (~10647): si `ensureProject` falla con un error
+  no-sandbox, el run de proyecto se demovía silenciosamente a
+  `cwd=null → PROJECT_ROOT` (el install dir del daemon, escribible en dev) y
+  el baseline de artefactos se saltaba. Ahora `failRun('PROJECT_DIR_UNAVAILABLE')`.
+  Los runs sin proyecto (`projectId` falsy) conservan el fallback intencional.
+- `server.ts` (~12415): `.mcp.json` con bearer tokens OAuth y env secrets de
+  MCP se escribía con mode por defecto (0644) en el cwd del proyecto. Ahora
+  `mode: 0o600` + `chmod` para endurecer ficheros escritos por versiones
+  anteriores. Mismo bound que `runtimes/prompt-file.ts`/`runs.ts`.
+- `apps/daemon/src/agent-protocol/acp/models.ts`: `detectAcpModels` usaba
+  `process.cwd()` del daemon como cwd default del probe — un CLI bun-based
+  podía hacer `bun install` sobre el workspace (caso documentado en
+  `runtimes/invocation.ts`) y `session/new` filtraba el path de instalación a
+  CLIs de terceros. Default ahora `os.tmpdir()`, igual que `execAgentFile`.
+- `models.ts`: teardown de probes era SIGTERM-only; un CLI que lo trapee
+  quedaba huérfano de por vida del daemon. Nueva escalación SIGKILL a los 2s
+  (unref'd), espejando `killSignal: 'SIGKILL'` de `execAgentFile`.
+
+**Verificación:** nuevo `tests/acp-detect-probe.test.ts` — probe real registra
+su cwd (== `os.tmpdir()`, ≠ `process.cwd()`) y probe que trapa SIGTERM muere
+por SIGKILL tras timeout (2/2 verdes); regresión: `acp-timeout-env`,
+`acp-handshake-failure`, `amr-acp-integration`, `runtimes/trae-cli` — 119/119;
+`pnpm --filter @open-design/daemon typecheck` verde.
+
+**Pendiente:** `.mcp.json` sigue persistiendo en el proyecto durante el run
+(lo lee el CLI hijo); unlink post-run queda como follow-up si se quiere
+residual cero. El path de `server.ts` (failRun/writeFile) no tiene test seam
+barato — verificado por typecheck + revisión, sin suite nueva.
+
 ## Bloqueados
 
 - Ninguno todavía.
