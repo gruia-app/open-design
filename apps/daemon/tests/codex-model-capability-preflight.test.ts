@@ -117,6 +117,9 @@ describe('Codex configured-model capability preflight', () => {
     );
 
     isolateExternalProcessEnv();
+    // The preflight fixture emits a plain reply without the OD Next task protocol.
+    process.env.OD_NEXT_STRATEGY_ROLLOUT = 'off';
+
     started = (await startServer({ port: 0, returnServer: true })) as StartedServer;
     await putConfig(started.url, {
       agentId: 'codex',

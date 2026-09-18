@@ -1,6 +1,6 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T22:10:38.947637+00:00",
+ "updated_at": "2026-09-18T22:35:28.430068+00:00",
  "current": {
   "item": "paridad upstream lote 6 — rama fleet/parity-6",
   "state": "in_progress",
@@ -291,6 +291,31 @@
    "item": "D1 paridad: OD Next clarifications resumable after restart (upstream #7575)",
    "commit": "0520f3f08",
    "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: AMR compaction continuation sin replay (upstream #7958; conflicto resuelto — sin hasDaemonTimeoutVerdict de #7884)",
+   "commit": "a51751d27",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: request_id + token usage por request en claude_code (upstream #4620)",
+   "commit": "04192a480",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: fail blocked OD Next runs antes de finalization (upstream #7942; conflictos test resueltos — sin OD_CODEX_TRANSPORT)",
+   "commit": "6fd3453d5",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs Rescan rename (upstream #7907)",
+   "commit": "e69489ab1",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: Thursday patch cut gate (upstream #7977)",
+   "commit": "c3513c9d9",
+   "deploy": "pending"
   }
  ],
  "blocked": [
@@ -384,5 +409,5 @@
   "194286537 (PR #18)",
   "38abb6aee (PR #19)"
  ],
- "notes": "fleet/parity-7: 5 picks limpios (Novita catalog, Vela 0.0.38, launcher payload cleanup, ACP failed tool results, clarification resume). Descartados por divergencia: 11943a400 (amr-guidance web), b9c05695f (cover.ts borrado en fork)."
+ "notes": "fleet/parity-8: 5 picks (2 con conflicto resuelto a mano). Descartados: 810cbe058 (suppression arch ausente), 6801f25c0 (depende de deliverable-syntax #7801), d465086b2 (depende de domain cutover #7880), 07170f8d2 (fichero borrado), 712b0db97 (prompt machinery divergida)."
 }

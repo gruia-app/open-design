@@ -230,3 +230,23 @@
   source Run snapshot (71/71).
 - Descartados por divergencia de fork: `11943a400` (amr-guidance web),
   `b9c05695f` (cover.ts borrado en fork — conflicto DU).
+
+## Paridad upstream — lote 8 (rama fleet/parity-8)
+
+- `a51751d27` (#7958): AMR compaction continuation sin replay — conflicto en
+  `run-failure-classification.ts` resuelto manteniendo solo el check
+  `AMR_CONTINUATION_ERROR_CODE` (upstream asumía `hasDaemonTimeoutVerdict` de
+  #7884, no portado).
+- `04192a480` (#4620): request_id + token usage por request en runs
+  claude_code (25/25).
+- `6fd3453d5` (#7942): runs bloqueados por OD Next fallan antes de
+  finalization — conflictos de test resueltos manteniendo
+  `OD_NEXT_STRATEGY_ROLLOUT=off` y descartando `OD_CODEX_TRANSPORT` (no existe
+  en el fork); `beforeEach` import añadido.
+- `e69489ab1` (#7907): docs Rescan rename.
+- `c3513c9d9` (#7977): patch cut gate sobre el patch previo (18/18 + 80/80
+  topology).
+- Descartados por dependencias ausentes: `810cbe058`, `6801f25c0`,
+  `d465086b2`, `07170f8d2`, `712b0db97`, `11943a400`, `875d0b95a`.
+- run-retry-runtime: 2 fallos iniciales clasificados como flakes de carga —
+  ambos pasan aislados en HEAD y en el padre.

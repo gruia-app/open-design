@@ -1,3 +1,4 @@
+import { asObject } from './agent-protocol/acp/json.js';
 import type {
   TrackingRunCancelOrigin,
   TrackingRunFailureCategory,
@@ -14,6 +15,7 @@ import type {
   TrackingRunTerminalTrigger,
 } from '@open-design/contracts/analytics';
 import {
+  AMR_CONTINUATION_ERROR_CODE,
   isMembershipConcurrencyLimitFailure,
   isModelWindowLimitFailure,
 } from '@open-design/contracts';
@@ -860,11 +862,33 @@ function classifyRunFailureBase(
   }
 
   const errorCode = normalizeCode(input.errorCode ?? input.status.errorCode);
+  if (errorCode === 'OD_NEXT_TASK_BLOCKED') {
+    // The host rejected completion, but this does not establish why the model
+    // failed to satisfy the task contract. Do not infer a provider fault or a
+    // child crash from the blocked reason text (the process may exit zero).
+    return {
+      ...classification('process_exit', 'execution_failed', 'finalize', false, 'none', {
+        evidenceLevel: 'structured_code',
+      }),
+      failure_mechanism: 'unknown',
+      failure_domain: 'unknown',
+      repair_owner: 'unknown',
+    };
+  }
   const text = collectFailureText({ ...input, events });
   const retryableHint = latestRetryable(events);
   // Compute once; used both for the early empty_output guard below and for the
   // fatal_rpc_error promotion later in this function.
   const runtimeCloseReason = readRuntimeCloseReason(events);
+  if (input.agentId === 'amr' && events.some((event) => {
+    if (event.event !== 'error') return false;
+    const data = asObject(event.data);
+    const details = asObject(asObject(data?.error)?.details);
+    return details?.code === AMR_CONTINUATION_ERROR_CODE;
+  })) {
+    return classification('process_exit', 'continuation_incomplete',
+      inferFailureStageFromEvents(events, 'post_tool_resume'), false, 'none');
+  }
   const amrFailure = classifyAmrAccountFailure(text);
   const byokOpenCodeProviderNotFound = isByokOpenCodeProviderNotFoundText(
     input.agentId,
