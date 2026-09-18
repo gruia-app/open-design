@@ -1,6 +1,6 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T23:53:18.435189+00:00",
+ "updated_at": "2026-09-18T23:53:44.787556+00:00",
  "current": {
   "item": "auditoría de superficies privadas restantes (mocks/, systemd, docs)",
   "state": "in_progress"
@@ -551,5 +551,5 @@
   "PR #27 / 9937e7e34 (gateway org_not_admitted)",
   "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)"
  ],
- "notes": "PR #29 merged (543f080a3) — G17-G19. gh pr create requiere --repo gruia-app/design (3 remotes)."
+ "notes": "PR #30 merged (4e336c2c0) — G20 + doc sync. gh requiere --repo + head con namespace."
 }
