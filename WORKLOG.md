@@ -159,3 +159,14 @@
   AmrLoginPill, EntryNavRail) + 24/24 MessageCenter re-run.
 - Corrección menor: dos aserciones `body.error.code` en
   workspace-switch-warms-caches necesitaban cast (`Record<string,unknown>`).
+
+## Gateway G3 — barrido periódico de sesiones (rama fleet/next-gap-3)
+
+- `d12f06f71`: `SqliteSessionStore` gana `sweepExpired()` + intervalo
+  `unref()` de 15min (desactivable con `sweepIntervalMs=0`); cubre orgs
+  sin actividad que sweep-on-write no alcanzaba. Reapa
+  `password_sessions` + `login_csrf` expirados y aplica la ventana de
+  retención de `auth_audit`. `close()` limpia el timer (tests lo llaman
+  en afterEach). Tests 30/30 + typecheck verdes.
+- Cherry-pick descartado: `441ab84b0` (od-card JSON parse) — los ficheros
+  no existen en el fork (refactor ChatPanel eliminó `runtime/chat/`).

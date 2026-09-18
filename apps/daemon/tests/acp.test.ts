@@ -7,6 +7,7 @@ import path from 'node:path';
 import { expect, test, vi } from 'vitest';
 import { attachAcpSession, buildAcpSessionNewParams, createJsonLineStream, normalizeModels } from '../src/agent-protocol/index.js';
 import {
+  acpArtifactWritePathRanked,
   acpTelemetryToolCallId,
   acpToolName,
   isAcpPartialRedactToolName,
@@ -3835,4 +3836,21 @@ test('createJsonLineStream still assembles a legitimate multiline JSON response'
   parser.feed('{\n  "id": 5,\n  "result":\n  {}\n}\n');
 
   assert.deepEqual(received.map((message) => message.id), [5]);
+});
+
+test('acpArtifactWritePathRanked excludes URLs from title path inference', () => {
+  // Regression for upstream #8063: a loopback URL in the tool title used to
+  // yield `//127.0.0.1` as a fake artifact path.
+  assert.equal(acpArtifactWritePathRanked({ title: 'curl http://127.0.0.1:8788/api' }), null);
+  assert.equal(acpArtifactWritePathRanked({ title: 'fetch https://example.com/app.js' }), null);
+  // A real filename elsewhere in the title still wins.
+  assert.deepEqual(
+    acpArtifactWritePathRanked({ title: 'wrote index.html from http://127.0.0.1/template' }),
+    { path: 'index.html', rank: 1 },
+  );
+  // Structured fields keep precedence over the title heuristic.
+  assert.deepEqual(
+    acpArtifactWritePathRanked({ title: 'curl http://x.test/a', rawInput: { path: 'out/result.txt' } }),
+    { path: 'out/result.txt', rank: 2 },
+  );
 });

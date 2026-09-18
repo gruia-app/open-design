@@ -1,10 +1,10 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T21:26:55.177382+00:00",
+ "updated_at": "2026-09-18T21:30:16.333517+00:00",
  "current": {
-  "item": "umbral 5 commits alcanzado — push + PR ready + auto-merge squash",
+  "item": "fleet/next-gap-3: 1 commit (G3). Siguiente gap acotado",
   "state": "in_progress",
-  "branch": "fleet/protocol-tokens-1"
+  "branch": "fleet/next-gap-3"
  },
  "done": [
   {
@@ -173,14 +173,21 @@
    "item": "D1 paridad upstream: cherry-pick fix automation CLI id splitter dead-zone (upstream #7612)",
    "commit": "abcb99c6d",
    "deploy": "pending"
+  },
+  {
+   "item": "PR #16 (tokens protocolo collab-context+vela + automation CLI parity) mergeado squash",
+   "commit": "ce045f845",
+   "pr": 16,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "G3: sweep periódico unref'd (15min) en SqliteSessionStore — sessions+csrf+audit retention; tests 30/30",
+   "commit": "d12f06f71",
+   "deploy": "pending"
   }
  ],
  "blocked": [
-  {
-   "item": "G3 timer de barrido periódico de sesiones",
-   "reason": "bajo valor — G1 sweep-on-write cubre el caso activo; evaluar intervalo unref() barato si se retoma",
-   "needs": "decision"
-  },
   {
    "item": "G6 métricas/observabilidad gateway",
    "reason": "decisión de diseño — endpoint /metrics vs logs estructurados",
@@ -227,6 +234,12 @@
    "pr": 15,
    "merged": "50a8470db",
    "note": "auto-merge squash ejecutado (merge inmediato, sin checks pendientes)"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 16,
+   "merged": "ce045f845",
+   "note": "auto-merge squash ejecutado"
   }
  ],
  "deploys_pending": [
@@ -241,7 +254,8 @@
   "d011a5f76 (PR #12)",
   "e10add9b4 (PR #13)",
   "cb28b84ac (PR #14)",
-  "50a8470db (PR #15)"
+  "50a8470db (PR #15)",
+  "ce045f845 (PR #16)"
  ],
  "notes": "bucle en repo privado gruia-app/design. D3 cerrado salvo tokens protocolo (collab-context/vela — migración diseñada en curso en fleet/protocol-tokens-1). Gateway: G3/G6 pendientes como decisiones de diseño."
 }

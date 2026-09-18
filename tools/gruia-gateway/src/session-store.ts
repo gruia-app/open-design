@@ -6,6 +6,7 @@ type SessionRow = { id_hash: string; user_id: string; organization_id: string; r
 const digest = (value: string): string => createHash("sha256").update(value).digest("base64url");
 const AUTH_AUDIT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const AUTH_AUDIT_MAX_ROWS = 100_000;
+const SESSION_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 
 function encrypted(key: Buffer, value: string): string {
   const iv = randomBytes(12); const cipher = createCipheriv("aes-256-gcm", key, iv);
@@ -20,9 +21,22 @@ function equal(value: string, expected: string): boolean { const actual = Buffer
 export class SqliteSessionStore implements SessionStore {
   private readonly db: DatabaseSync;
   private readonly key: Buffer;
-  constructor(path: string, secret: string) {
+  private readonly sweepTimer: NodeJS.Timeout | undefined;
+  constructor(path: string, secret: string, sweepIntervalMs = SESSION_SWEEP_INTERVAL_MS) {
     this.key = Buffer.from(secret, "base64"); this.db = new DatabaseSync(path);
     this.db.exec("PRAGMA journal_mode=WAL; PRAGMA trusted_schema=OFF; CREATE TABLE IF NOT EXISTS password_sessions (id_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, organization_id TEXT NOT NULL, role TEXT NOT NULL, csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS login_csrf (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS auth_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, event TEXT NOT NULL, at INTEGER NOT NULL, email TEXT, user_id TEXT, organization_id TEXT, ip TEXT, user_agent TEXT, detail TEXT);");
+    // Sweep-on-write only covers orgs that keep logging in; a quiet org would
+    // accumulate expired rows forever. An unref'd interval reaps them without
+    // holding the process open. Pass 0 to disable (tests, embedded callers).
+    if (sweepIntervalMs > 0) {
+      this.sweepTimer = setInterval(() => this.sweepExpired(), sweepIntervalMs);
+      this.sweepTimer.unref();
+    }
+  }
+  sweepExpired(now = Date.now()): void {
+    this.db.prepare("DELETE FROM password_sessions WHERE expires_at < ?").run(now);
+    this.db.prepare("DELETE FROM login_csrf WHERE expires_at < ?").run(now);
+    this.db.prepare("DELETE FROM auth_audit WHERE at < ?").run(now - AUTH_AUDIT_RETENTION_MS);
   }
   createLoginCsrf(token: string, expiresAt: number): void { this.db.prepare("DELETE FROM login_csrf WHERE expires_at < ?").run(Date.now()); this.db.prepare("INSERT INTO login_csrf(token_hash, expires_at) VALUES (?, ?)").run(digest(token), expiresAt); this.db.prepare("DELETE FROM login_csrf WHERE rowid NOT IN (SELECT rowid FROM login_csrf ORDER BY expires_at DESC LIMIT 10000)").run(); }
   consumeLoginCsrf(cookieToken: string, formToken: string, now: number): boolean {
@@ -62,5 +76,5 @@ export class SqliteSessionStore implements SessionStore {
       ...(row.detail ? { detail: row.detail } : {}),
     }));
   }
-  close(): void { this.db.close(); }
+  close(): void { clearInterval(this.sweepTimer); this.db.close(); }
 }

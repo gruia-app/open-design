@@ -22,10 +22,10 @@ function session(id: string, expiresAt: number): StoredSession {
   return Object.freeze({ id, userId: "u1", organizationId: "org1", role: "ADMIN", csrfToken: `csrf-${id}`, expiresAt });
 }
 
-function rowCount(path: string): number {
+function rowCount(path: string, table = "password_sessions"): number {
   const db = new DatabaseSync(path);
   try {
-    return (db.prepare("SELECT COUNT(*) AS n FROM password_sessions").get() as { n: number }).n;
+    return (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
   } finally {
     db.close();
   }
@@ -117,6 +117,41 @@ describe("SqliteSessionStore", () => {
     expect(rows[1].userAgent).toBe("agent");
     expect(rows[1].userId).toBeUndefined();
     expect(s.readAuthAudit(1)).toHaveLength(1);
+  });
+
+  it("sweepExpired reaps expired sessions, csrf tokens and stale audit rows", () => {
+    const { path, store: s } = open();
+    const now = Date.now();
+    // Insert live rows first, expired rows last — the per-write sweeps run
+    // before each insert, so only trailing expired rows survive until the
+    // periodic sweep removes them.
+    s.createSession(session("live", now + 60_000));
+    s.createSession(session("old", now - 1));
+    s.createLoginCsrf("live-csrf", now + 60_000);
+    s.createLoginCsrf("old-csrf", now - 1);
+    s.recordAuthEvent({ event: "login_success", at: now, userId: "u1" });
+    s.recordAuthEvent({ event: "login_success", at: now - 91 * 24 * 60 * 60 * 1000, userId: "u1" });
+    expect(rowCount(path)).toBe(2);
+    expect(rowCount(path, "login_csrf")).toBe(2);
+    expect(s.readAuthAudit(10)).toHaveLength(2);
+
+    s.sweepExpired(now);
+
+    expect(rowCount(path)).toBe(1);
+    expect(rowCount(path, "login_csrf")).toBe(1);
+    expect(s.readAuthAudit(10)).toHaveLength(1);
+    expect(s.readSession("live", now)?.userId).toBe("u1");
+  });
+
+  it("runs the periodic sweep on an unref'd interval", async () => {
+    const { path } = open();
+    store!.close();
+    const s = new SqliteSessionStore(path, SECRET, 25);
+    store = s;
+    const now = Date.now();
+    s.createSession(session("old", now - 1));
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(rowCount(path)).toBe(0);
   });
 
   it("sweeps audit rows older than the retention window on write", () => {

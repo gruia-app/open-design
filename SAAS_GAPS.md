@@ -8,8 +8,11 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   (commit `ad1a9f44d`, tests 5/5). Merged vía PR #4.
 - [x] G2 — páginas HTML de auth sin anti-framing → `frame-ancestors 'none'` +
   `X-Frame-Options: DENY` (commit `0dfb46556`, tests 11/11). Merged vía PR #4.
-- [ ] G3 — sin barrido periódico de sesiones: aun con sweep-on-write, una org sin
-  logins acumula. (!) decisión: ¿merece timer dedicado? Bajo — G1 lo hace opcional.
+- [x] G3 — sin barrido periódico de sesiones: aun con sweep-on-write, una org sin
+  logins acumula. Resuelto con intervalo `unref()` de 15min en
+  `SqliteSessionStore` (`sweepExpired`: password_sessions + login_csrf +
+  retención auth_audit; desactivable con `sweepIntervalMs=0`, `close()` lo
+  limpia). Commit `d12f06f71`, tests 30/30.
 - [x] G4 — rate limit de login solo en memoria y por email+global; sin bucket por IP.
   Añadido bucket por IP (20/min, 10k keys, sweep-on-access) alimentado por
   `AuthAuditContext.ip` (commit `380311354`, tests 27/27). Single-instancia
