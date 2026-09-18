@@ -1,0 +1,13 @@
+{
+  "app": "design",
+  "updated_at": "2026-09-18T17:35:00Z",
+  "current": {"item": "G1+G2 gateway hardening en rama fleet/gateway-hardening", "state": "in_progress"},
+  "done": [
+    {"item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado", "commit": "n/a", "deploy": "n/a"},
+    {"item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5", "commit": "2cc1658f5", "deploy": "pending"}
+  ],
+  "blocked": [],
+  "prs_open": [{"repo": "nexu-io/open-design", "pr": 8262, "note": "contribution upstream; no auto-merge posible"}],
+  "deploys_pending": ["2cc1658f5 (upstream PR #8262)"],
+  "notes": "revision escéptica OK; bucle en repo privado gruia-app/design, rama fleet/gateway-hardening"
+}

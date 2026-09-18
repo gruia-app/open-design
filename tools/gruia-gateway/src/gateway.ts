@@ -129,14 +129,15 @@ export class GatewayCore {
   private singleAdmittedIdentity(identities: readonly GatewayIdentity[]): GatewayIdentity | null { return identities.length === 1 && this.config.organizations.has(identities[0].organizationId) && this.admittedOrganizationIds().includes(identities[0].organizationId) ? identities[0] : null; }
 }
 
+function noFrame(response: ServerResponse): void { response.setHeader("content-security-policy", "frame-ancestors 'none'"); response.setHeader("x-frame-options", "DENY"); }
 function loginPage(response: ServerResponse, core: GatewayCore, status = 200, error?: string): void {
   const login = core.startLoginCsrf(); const csrfName = loginCsrfCookieName(core.config);
-  noStore(response); response.setHeader("set-cookie", cookie(core.config, csrfName, login.token, login.expiresAt));
+  noStore(response); noFrame(response); response.setHeader("set-cookie", cookie(core.config, csrfName, login.token, login.expiresAt));
   response.writeHead(status, { "content-type": "text/html; charset=utf-8", "referrer-policy": "same-origin" });
   response.end(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar · Gruia Design</title><style>body{margin:0;background:#f6f4ef;color:#24231f;font:16px system-ui,sans-serif}main{max-width:25rem;margin:10vh auto;padding:2rem;background:#fff;border:1px solid #dedbd2;border-radius:12px;box-shadow:0 8px 30px #0001}label{display:block;margin-top:1rem;font-weight:600}input,button{box-sizing:border-box;width:100%;padding:.7rem;margin-top:.35rem;border-radius:7px;border:1px solid #aaa;font:inherit}button{background:#24231f;color:white;cursor:pointer}.error{color:#9b1c1c}</style><main><h1>Gruia Design</h1><p>Inicia sesión con tu cuenta de Gruia.</p>${error ? `<p class="error" role="alert">${error}</p>` : ""}<form method="post" action="/auth/login"><input type="hidden" name="csrf" value="${login.token}"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="320"><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="4096"><button type="submit">Entrar</button></form></main></html>`);
 }
 function signedInPage(response: ServerResponse, core: GatewayCore, session: StoredSession): void {
-  noStore(response); response.writeHead(200, { "content-type": "text/html; charset=utf-8", "referrer-policy": "same-origin" });
+  noStore(response); noFrame(response); response.writeHead(200, { "content-type": "text/html; charset=utf-8", "referrer-policy": "same-origin" });
   response.end(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gruia Design</title><main><h1>Gruia Design</h1><p>Sesión iniciada.</p><p><a href="/">Abrir el estudio</a></p><form method="post" action="/auth/logout"><input type="hidden" name="csrf" value="${session.csrfToken}"><button type="submit">Cerrar sesión</button></form></main></html>`);
 }
 async function readForm(request: IncomingMessage): Promise<Form | null> {

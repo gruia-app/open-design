@@ -131,7 +131,7 @@ describe("Gruia gateway password-login security seams", () => {
 
   it("regression: GET /auth has a same-origin password form and GET /auth/login does not redirect externally", async () => {
     const { core } = setup(); const { server, base } = await listener(core);
-    try { const auth = await fetch(`${base}/auth`, { redirect: "manual" }); const body = await auth.text(); expect(auth.headers.get("referrer-policy")).toBe("same-origin"); expect(body).toContain('type="password"'); expect(body).toContain('autocomplete="current-password"'); const login = await fetch(`${base}/auth/login`, { redirect: "manual" }); expect(login.status).toBe(200); expect(login.headers.get("location")).toBeNull(); expect(await login.text()).not.toContain("authkit.app"); } finally { await close(server, core); }
+    try { const auth = await fetch(`${base}/auth`, { redirect: "manual" }); const body = await auth.text(); expect(auth.headers.get("referrer-policy")).toBe("same-origin"); expect(auth.headers.get("content-security-policy")).toBe("frame-ancestors 'none'"); expect(auth.headers.get("x-frame-options")).toBe("DENY"); expect(body).toContain('type="password"'); expect(body).toContain('autocomplete="current-password"'); const login = await fetch(`${base}/auth/login`, { redirect: "manual" }); expect(login.status).toBe(200); expect(login.headers.get("location")).toBeNull(); expect(login.headers.get("content-security-policy")).toBe("frame-ancestors 'none'"); expect(await login.text()).not.toContain("authkit.app"); } finally { await close(server, core); }
   });
   it("logs in through the bounded same-origin form and rejects CSRF replay", async () => {
     const { core, repo } = setup(); const { server, base } = await listener(core);

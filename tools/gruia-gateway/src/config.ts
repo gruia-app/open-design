@@ -76,7 +76,7 @@ export function loadConfig(path: string): GatewayConfig {
     sessionSecret,
     postgresUrl: text(value.postgresUrl, "postgresUrl"),
     organizations: parseOrganizations(value.organizations),
-    sessionTtlSeconds: 14_400,
+    sessionTtlSeconds: integer(value.sessionTtlSeconds, "sessionTtlSeconds", 14_400, 300, 7 * 24 * 3600),
     requestBodyLimitBytes: integer(value.requestBodyLimitBytes, "requestBodyLimitBytes", 10 * 1024 * 1024, 1, 50 * 1024 * 1024),
     upstreamTimeoutMs: integer(value.upstreamTimeoutMs, "upstreamTimeoutMs", 30_000, 1000, 120_000),
     clientAccessOpen: value.clientAccessOpen === true,

@@ -28,7 +28,7 @@ export class SqliteSessionStore implements SessionStore {
     const hash = digest(cookieToken); this.db.exec("BEGIN IMMEDIATE");
     try { const row = this.db.prepare("SELECT expires_at FROM login_csrf WHERE token_hash = ?").get(hash) as { expires_at: number } | undefined; this.db.prepare("DELETE FROM login_csrf WHERE token_hash = ?").run(hash); this.db.exec("COMMIT"); return !!row && row.expires_at >= now; } catch (error) { this.db.exec("ROLLBACK"); throw error; }
   }
-  createSession(session: StoredSession): void { this.db.prepare("INSERT INTO password_sessions VALUES (?, ?, ?, ?, ?, ?)").run(digest(session.id), session.userId, session.organizationId, session.role, encrypted(this.key, session.csrfToken), session.expiresAt); }
+  createSession(session: StoredSession): void { this.db.prepare("DELETE FROM password_sessions WHERE expires_at < ?").run(Date.now()); this.db.prepare("INSERT INTO password_sessions VALUES (?, ?, ?, ?, ?, ?)").run(digest(session.id), session.userId, session.organizationId, session.role, encrypted(this.key, session.csrfToken), session.expiresAt); }
   readSession(id: string, now: number): StoredSession | null {
     const row = this.db.prepare("SELECT * FROM password_sessions WHERE id_hash = ?").get(digest(id)) as SessionRow | undefined;
     if (!row || row.expires_at < now) { if (row) this.db.prepare("DELETE FROM password_sessions WHERE id_hash = ?").run(digest(id)); return null; }
