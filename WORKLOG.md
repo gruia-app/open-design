@@ -532,3 +532,11 @@ No tocado (mismo patrón, sin credenciales o perms que deben conservarse):
 usuario/artefactos), `orbit.ts` (store de producto), `codex-config-normalize`
 (patchea el config.toml del usuario — preservar perms propios),
 `update-apply-observations` (metadatos de migración).
+
+## Ítem 24 — Envelope consistente en `/api/import/claude-design`
+
+Los dos 400 tempranos (`zip file required`, `expected a .zip file`) seguían
+devolviendo `{error: string}` plano mientras el resto de la ruta usa
+`sendApiError`. Convertidos al envelope `{error:{code,message}}` — el
+consumer web (ítem 22) acepta ambas formas; ningún test pineaba la forma
+plana.
