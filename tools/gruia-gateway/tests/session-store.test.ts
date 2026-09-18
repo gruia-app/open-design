@@ -69,6 +69,21 @@ describe("SqliteSessionStore", () => {
     expect(s.readAuthAudit(10)).toHaveLength(1);
   });
 
+  it("revokes and audits a session whose stored CSRF token does not decrypt", () => {
+    const { path, store: s } = open();
+    const now = Date.now();
+    s.createSession(session("tampered", now + 60_000));
+    const db = new DatabaseSync(path);
+    try {
+      db.prepare("UPDATE password_sessions SET csrf_token = ? WHERE user_id = ?").run("corrupted-ciphertext", "u1");
+    } finally { db.close(); }
+    expect(s.readSession("tampered", now, { ip: "203.0.113.99" })).toBeNull();
+    const rows = s.readAuthAudit(10);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ event: "session_revoked", detail: "csrf_undecryptable", userId: "u1", organizationId: "org1", ip: "203.0.113.99" });
+    expect(rowCount(path)).toBe(0);
+  });
+
   it("sweeps expired sessions when a new one is created", () => {
     const { path } = open();
     const now = Date.now();

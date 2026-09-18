@@ -59,7 +59,7 @@ function vercel(options: { projectName?: (id: string) => string; deploymentProje
   return { calls, fetcher };
 }
 
-function verifier(status = 200, body = 'Example Brand 03') {
+function verifier(status = 200, body = html('03')) {
   return async (_url: string, expectedBrand: string, _hash: string) => ({ status, body: body.replace('Example Brand 03', expectedBrand) });
 }
 
@@ -87,7 +87,7 @@ test('publishing leaves every originally accepted campaign HTML and state record
   const before = await Promise.all(ids.map(id => readFile(join(dir, 'outputs', id, 'index.html'), 'utf8')));
   const stateBefore = await readFile(join(dir, 'state.json'), 'utf8'); const calls: ApiCall[] = [];
   const vf = vercel();
-  await main({ stateDir: dir, api: nativeApi(calls, { raw: Object.fromEntries(ids.map(id => [id, html(id)])) }), vercelFetch: vf.fetcher, verifyPublic: async (_url, brand) => ({ status: 200, body: brand }), now: fixedNow });
+  await main({ stateDir: dir, api: nativeApi(calls, { raw: Object.fromEntries(ids.map(id => [id, html(id)])) }), vercelFetch: vf.fetcher, verifyPublic: async (url) => ({ status: 200, body: html(url.match(/preview-(\d+)/)?.[1] ?? '03') }), now: fixedNow });
   assert.deepEqual(await Promise.all(ids.map(id => readFile(join(dir, 'outputs', id, 'index.html'), 'utf8'))), before);
   assert.equal(await readFile(join(dir, 'state.json'), 'utf8'), stateBefore);
   assert.equal(postCount(calls), 4);
@@ -149,6 +149,20 @@ test('a lost POST with no history remains pending on subsequent passes, never bl
   const ledger=JSON.parse(await readFile(join(dir,'publications.json'),'utf8'));
   assert.equal(ledger.publications['03'].stage,'pending');
 });
+test('a public deployment serving different bytes than the approved HTML is never confirmed published', async () => {
+  const dir = await fixture(); const calls: ApiCall[] = [];
+  await main({
+    stateDir: dir,
+    api: nativeApi(calls, { raw: { '03': html('03') } }),
+    vercelFetch: vercel().fetcher,
+    verifyPublic: async () => ({ status: 200, body: `${html('03')}<!-- tampered upstream -->` }),
+    now: fixedNow,
+  });
+  const ledger = JSON.parse(await readFile(join(dir, 'publications.json'), 'utf8'));
+  assert.notEqual(ledger.publications['03'].stage, 'published');
+  assert.equal(ledger.publications['03'].error, 'public URL content differs from the approved local HTML');
+});
+
 test('a changed local HTML cannot reuse an older published deployment under a new digest', async()=>{
   const dir=await fixture();const calls:ApiCall[]=[];const vf=vercel();
   const options={stateDir:dir,api:nativeApi(calls,{raw:{'03':html('03')}}),vercelFetch:vf.fetcher,verifyPublic:verifier(),now:fixedNow};

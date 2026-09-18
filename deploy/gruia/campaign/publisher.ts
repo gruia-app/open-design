@@ -128,6 +128,7 @@ async function verify(check: VerifyPublic, url: string, brand: string, digest: s
   const lower = body.toLowerCase();
   if (!lower.includes(brand.toLowerCase())) throw new Error('public URL does not contain the expected example brand');
   if (/authentication required|vercelsecuritycheckpoint|security checkpoint/i.test(body)) throw new Error('public URL is protected by an authentication checkpoint');
+  if (sha256(body) !== digest) throw new Error('public URL content differs from the approved local HTML');
 }
 async function localEligibility(dir: string, job: { id: string; projectId: string; status: string }) {
   if (job.status !== 'succeeded' || !UUID.test(job.projectId)) return undefined;

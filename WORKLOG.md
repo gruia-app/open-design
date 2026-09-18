@@ -318,3 +318,15 @@
   tras gracia para que SIGTERM no cuelgue en streams proxy abiertos (33/33).
 - `afb24f5e2` — hygiene: `.playwright-cli/` estaba commiteado sin ignore →
   untracked + ignorado (contrato: scratch de agente fuera de git).
+
+## Lote 15 — gateway session-store + deploy + campaign publisher (fleet/gaps-15)
+
+- Revisión post-merge: main con PR #28 verificado (34/34 gateway verdes tras G17).
+- Auditoría del session-store: AES-256-GCM correcto; gap forense en el path de
+  ciphertext indescifrable.
+- `c5c551aa7` — G17: `session_revoked:csrf_undecryptable` auditado con contexto
+  (34/34).
+- `0e7d675ee` — G18: HSTS en `deploy/gruia/Caddyfile`.
+- `8e44af759` — G19: `verify()` del publisher pinea el body remoto al sha256
+  aprobado por QA; antes un deployment con la misma marca y bytes distintos
+  quedaba `published` (10/10 publisher + 32/32 runner).

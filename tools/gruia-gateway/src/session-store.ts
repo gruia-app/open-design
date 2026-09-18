@@ -49,7 +49,7 @@ export class SqliteSessionStore implements SessionStore {
     const row = this.db.prepare("SELECT * FROM password_sessions WHERE id_hash = ?").get(digest(id)) as SessionRow | undefined;
     if (!row || row.expires_at < now) { if (row) { this.db.prepare("DELETE FROM password_sessions WHERE id_hash = ?").run(digest(id)); this.recordAuthEvent({ event: "session_expired", at: now, userId: row.user_id, organizationId: row.organization_id, ...(context ?? {}) }); } return null; }
     const csrfToken = decrypted(this.key, row.csrf_token);
-    if (!csrfToken) { this.deleteSession(id); return null; }
+    if (!csrfToken) { this.deleteSession(id); this.recordAuthEvent({ event: "session_revoked", at: now, userId: row.user_id, organizationId: row.organization_id, detail: "csrf_undecryptable", ...(context ?? {}) }); return null; }
     return Object.freeze({ id, userId: row.user_id, organizationId: row.organization_id, role: row.role, csrfToken, expiresAt: row.expires_at });
   }
   verifyCsrf(id: string, csrf: string, now: number, context?: AuthAuditContext): boolean { const session = this.readSession(id, now, context); return !!session && equal(csrf, session.csrfToken); }

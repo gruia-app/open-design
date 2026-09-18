@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T23:43:46.401498+00:00",
+ "updated_at": "2026-09-18T23:47:59.855537+00:00",
  "current": {
-  "item": "push + PR lote 14",
+  "item": "fleet/gaps-15 — buscar siguiente gap",
   "state": "in_progress"
  },
  "done": [
@@ -425,6 +425,26 @@
    "item": "hygiene: .playwright-cli untracked+ignored (scratch commiteado)",
    "commit": "afb24f5e2",
    "deploy": "n/a"
+  },
+  {
+   "item": "lote 14 merged via PR #28",
+   "commit": "cc78ada74",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "G17 — session_revoked:csrf_undecryptable auditado",
+   "commit": "c5c551aa7",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G18 — HSTS en design.gruia.app (Caddyfile)",
+   "commit": "0e7d675ee",
+   "deploy": "pending"
+  },
+  {
+   "item": "G19 — publisher: pin sha256 del HTML público",
+   "commit": "8e44af759",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
@@ -518,7 +538,8 @@
   "PR #24 / e856fdbba (lote 10)",
   "PR #25 / 640974bf8 (lote 11)",
   "PR #26 / af43be3b5 (gateway audit context)",
-  "PR #27 / 9937e7e34 (gateway org_not_admitted)"
+  "PR #27 / 9937e7e34 (gateway org_not_admitted)",
+  "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)"
  ],
  "notes": "fix en rama fleet/gaps-14 (main restaurado tras commit accidental — contenido solo gateway, verificado 32/32)."
 }

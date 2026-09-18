@@ -33,6 +33,15 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
 - [x] G9 — `sessionTtlSeconds` hardcodeado a 14400 en config.ts ignorando el valor
   del config → leído vía `integer()` como sus vecinos (commit en batch gateway,
   tests 22/22). Merged vía PR #4.
+- [x] G17 — `readSession`: csrf_token indescifrable (tamper o rotación de clave)
+  borraba la sesión en silencio → audita `session_revoked:csrf_undecryptable`
+  con contexto (commit `c5c551aa7`, tests 34/34).
+- [x] G18 — Caddy de design.gruia.app sin HSTS (Caddy no lo emite por defecto)
+  → `Strict-Transport-Security max-age=31536000; includeSubDomains`
+  (commit `0e7d675ee`, config — sin suite de tests de deploy).
+- [x] G19 — publisher de campaña: `verify()` recibía el sha256 aprobado pero solo
+  comprobaba status+marca → ahora hashea el body remoto y exige igualdad antes
+  de marcar `published` (commit `8e44af759`, tests 10/10 + 32/32 runner).
 
 ## Daemon / web (línea de producto privada)
 
