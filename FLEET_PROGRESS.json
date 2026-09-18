@@ -1,10 +1,10 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T21:46:08.872880+00:00",
+ "updated_at": "2026-09-18T22:05:14.732033+00:00",
  "current": {
-  "item": "umbral 5 commits — push + PR + auto-merge",
+  "item": "paridad upstream lote 6 — rama fleet/parity-6",
   "state": "in_progress",
-  "branch": "fleet/parity-5"
+  "branch": "fleet/parity-6"
  },
  "done": [
   {
@@ -239,6 +239,33 @@
    "item": "D1 paridad: canonical client monitoring kinds (upstream #7945)",
    "commit": "80d3e002f",
    "deploy": "pending"
+  },
+  {
+   "item": "PR #19 (paridad batch 5: proxy cred lanes + ACP cancel + monitoring kinds) mergeado squash",
+   "commit": "38abb6aee",
+   "pr": 19,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "revision post-muerte: picks 8fdb5bc52/9638d8843/66058730e correctos; fallo de tests era dist stale de contracts (OD_NEXT_AGENT_DECLARED_BLOCK_REASON ausente en build) — resuelto con rebuild, 42/42 + 25/25 + typecheck verdes",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "D1 paridad: clarification turn Runtime State wrong stage (upstream #7980)",
+   "commit": "8fdb5bc52",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: collapse identical ternary arms normalizeComparableValue (upstream #7793)",
+   "commit": "9638d8843",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: refuse turn with nothing to design + durable blockedContext (upstream #7725, prerequisito de #7980)",
+   "commit": "66058730e",
+   "deploy": "pending"
   }
  ],
  "blocked": [
@@ -306,6 +333,12 @@
    "pr": 18,
    "merged": "194286537",
    "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 19,
+   "merged": "38abb6aee",
+   "note": "squash directo (auto-merge no habilitado en repo)"
   }
  ],
  "deploys_pending": [
@@ -323,7 +356,8 @@
   "50a8470db (PR #15)",
   "ce045f845 (PR #16)",
   "b52a7cf28 (PR #17)",
-  "194286537 (PR #18)"
+  "194286537 (PR #18)",
+  "38abb6aee (PR #19)"
  ],
- "notes": "bucle en repo privado gruia-app/design. D3 cerrado salvo tokens protocolo (collab-context/vela — migración diseñada en curso en fleet/protocol-tokens-1). Gateway: G3/G6 pendientes como decisiones de diseño."
+ "notes": "bucle en repo privado gruia-app/design. Paridad lote 6 en fleet/parity-6 (3 picks + coord). Leccion: tras cherry-pick que toca packages/contracts, rebuild dist antes de tests daemon."
 }

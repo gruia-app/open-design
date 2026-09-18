@@ -371,6 +371,145 @@ describe('OD Next planning coordinator', () => {
     });
   });
 
+  // OPEND-2954 (0.22.1-prerelease.9, deepseek-v4-flash): the user answered the
+  // one clarification round, and the agent came back with a complete, correctly
+  // bound Full Plan whose Runtime State still said `inputStage: "request"` — the
+  // value every example in the protocol reference shows, and the only stage the
+  // clarification continuation never names. The coordinator refused the turn on
+  // that field alone, the task went terminal-`blocked`, and a plan that would
+  // have passed every other gate never reached production. The stage is
+  // host-owned truth (the daemon wrote it into the turn wrapper), so a
+  // declaration that disagrees with it carries no authority: adopt the host's
+  // stage when the corrected state is a valid declaration for it.
+  function answerTheOneClarificationRound(): void {
+    prepareStrategyRequest(db, {
+      taskExecutionId: 'task-1',
+      preference: 'full_plan',
+      directEdit: directEligible,
+      intake: intakePassed,
+      updatedAt: 110,
+    });
+    const question = '<question-form id="scope">{"questions":[{"id":"surface","label":"Surface?"}]}</question-form>';
+    finalizeStrategyPlanningTurn(db, {
+      taskExecutionId: 'task-1',
+      runId: 'run-request',
+      protocol: protocol(`${question}\n${block('open-design-runtime-state', runtimeState({
+        outcome: 'clarification_required',
+      }))}`),
+      updatedAt: 120,
+    });
+    beginStrategyClarification(db, {
+      taskExecutionId: 'task-1',
+      sourceRunId: 'run-request',
+      nextRunId: 'run-clarification',
+      answer: 'Both audiences; one 40-minute lesson.',
+      updatedAt: 130,
+    });
+  }
+
+  it('accepts a clarification turn whose plan-ready state still names the request stage', () => {
+    answerTheOneClarificationRound();
+    const plan = planContract(snapshot);
+    const final = finalizeStrategyPlanningTurn(db, {
+      taskExecutionId: 'task-1',
+      runId: 'run-clarification',
+      protocol: protocol([
+        'Direction settled; building next.',
+        block('open-design-plan-contract', plan),
+        block('open-design-runtime-state', runtimeState({
+          inputStage: 'request', outcome: 'plan_ready', executionMode: 'simple',
+        })),
+      ].join('\n')),
+      executionPreflight: executionPassed,
+      updatedAt: 140,
+    });
+    expect(final).toMatchObject({
+      action: 'plan_ready',
+      reasonCodes: [],
+      decisionSummary: plan.decisionSummary,
+      task: {
+        inputStage: 'clarification',
+        outcome: 'plan_ready',
+        executionMode: 'simple',
+        clarificationCount: 1,
+        planContract: plan,
+      },
+    });
+  });
+
+  it('keeps the agent-declared attribution of a clarification block that names the request stage', () => {
+    answerTheOneClarificationRound();
+    const final = finalizeStrategyPlanningTurn(db, {
+      taskExecutionId: 'task-1',
+      runId: 'run-clarification',
+      protocol: protocol(`The answer contradicts the brief; nothing to plan.\n${block('open-design-runtime-state', runtimeState({
+        inputStage: 'request', outcome: 'blocked',
+      }))}`),
+      updatedAt: 140,
+    });
+    // Same shape as any agent-declared block: the stage the agent wrote is not
+    // promoted into a reason code, so the attribution stays the agent's own.
+    expect(final).toMatchObject({
+      action: 'blocked',
+      reasonCodes: [],
+      task: {
+        inputStage: 'clarification',
+        outcome: 'blocked',
+        blockedContext: {
+          reasonCodes: ['od_next_agent_declared_block'],
+          visibleText: 'The answer contradicts the brief; nothing to plan.\n',
+        },
+      },
+    });
+  });
+
+  it('still refuses a clarification turn whose outcome the host stage cannot admit', () => {
+    answerTheOneClarificationRound();
+    const question = '<question-form id="again">{"questions":[{"id":"tone","label":"Tone?"}]}</question-form>';
+    const final = finalizeStrategyPlanningTurn(db, {
+      taskExecutionId: 'task-1',
+      runId: 'run-clarification',
+      protocol: protocol(`${question}\n${block('open-design-runtime-state', runtimeState({
+        inputStage: 'request', outcome: 'clarification_required',
+      }))}`),
+      updatedAt: 140,
+    });
+    expect(final.action).toBe('blocked');
+    expect(final.reasonCodes).toEqual(expect.arrayContaining([
+      'od_next_protocol_stage_mismatch',
+      'od_next_clarification_repeated',
+    ]));
+    expect(final.task).toMatchObject({ inputStage: 'clarification', outcome: 'blocked' });
+  });
+
+  it('anchors a clarification-turn repair on a plan whose state names the request stage', () => {
+    answerTheOneClarificationRound();
+    const plan = planContract(snapshot);
+    const repair = finalizeStrategyPlanningTurn(db, {
+      taskExecutionId: 'task-1',
+      runId: 'run-clarification',
+      protocol: protocol([
+        block('open-design-plan-contract', plan, true),
+        block('open-design-runtime-state', runtimeState({
+          inputStage: 'request', outcome: 'plan_ready', executionMode: 'simple',
+        })),
+      ].join('\n')),
+      repairRun: { runId: 'run-repair', sourceRunId: 'run-clarification' },
+      executionPreflight: executionPassed,
+      updatedAt: 140,
+    });
+    expect(repair).toMatchObject({
+      action: 'contract_repair',
+      task: {
+        inputStage: 'contract_repair',
+        outcome: 'running',
+        executionMode: 'simple',
+        planContractRepairAttempts: 1,
+        planContract: plan,
+      },
+    });
+  });
+
   it('persists a valid Full Plan and returns only its decision summary as structured output', () => {
     prepareStrategyRequest(db, {
       taskExecutionId: 'task-1',
@@ -1283,6 +1422,58 @@ describe('OD Next planning coordinator', () => {
       reasonCodes: ['od_next_native_session_continuity_unproven'],
       visibleText: null,
     });
+  });
+
+  // OPEND-2565. A blocked strategy task is the one verdict a user is asked to
+  // act on, and `blockedContext` is the only durable channel that says why.
+  // Two of the three blocking paths never wrote it: the request router computed
+  // its reason codes and returned them without persisting, and the turn
+  // finalizer passed an agent-declared `blocked` straight through. A field
+  // report (Design Harness on, prototype task) landed on the second one and
+  // reached the client with `blockedContext: null` — no reason codes, and the
+  // agent's own written explanation dropped — so the chat could only render an
+  // anonymous "the strategy task could not continue".
+  it('records why the agent declared the task blocked', () => {
+    prepareStrategyRequest(db, {
+      taskExecutionId: 'task-1', preference: 'full_plan', directEdit: directEligible,
+      intake: intakePassed, updatedAt: 110,
+    });
+    const question = '<question-form id="scope">{"questions":[{"id":"surface","label":"Surface?"}]}</question-form>';
+    const waiting = finalizeStrategyPlanningTurn(db, {
+      taskExecutionId: 'task-1', runId: 'run-request',
+      protocol: protocol(`${question}\n${block('open-design-runtime-state', runtimeState({
+        outcome: 'clarification_required',
+      }))}`),
+      updatedAt: 120,
+    });
+    beginStrategyClarification(db, {
+      taskExecutionId: 'task-1', sourceRunId: waiting.task.latestRunId,
+      nextRunId: 'run-clarification', answer: 'skipped', updatedAt: 130,
+    });
+    const halted = 'Key requirements were skipped, so no runnable prototype plan can be formed. This task is blocked.';
+    const result = finalizeStrategyPlanningTurn(db, {
+      taskExecutionId: 'task-1', runId: 'run-clarification',
+      protocol: protocol(`${halted}\n${block('open-design-runtime-state', runtimeState({
+        inputStage: 'clarification', outcome: 'blocked',
+      }))}`),
+      updatedAt: 140,
+    });
+    expect(result.task.outcome).toBe('blocked');
+    const persisted = getStrategyTaskExecution(db, 'task-1');
+    expect(persisted?.outcome).toBe('blocked');
+    expect(persisted?.blockedContext?.visibleText).toContain('This task is blocked.');
+  });
+
+  it('records why a request was blocked before any turn ran', () => {
+    const result = prepareStrategyRequest(db, {
+      taskExecutionId: 'task-1', preference: 'full_plan', directEdit: directEligible,
+      intake: { ...intakePassed, selectedAgentAvailable: false }, updatedAt: 110,
+    });
+    expect(result.action).toBe('blocked');
+    expect(result.reasonCodes.length).toBeGreaterThan(0);
+    const persisted = getStrategyTaskExecution(db, 'task-1');
+    expect(persisted?.outcome).toBe('blocked');
+    expect(persisted?.blockedContext?.reasonCodes).toEqual(result.reasonCodes);
   });
 
   it('accepts a form-only first turn by inferring the clarification runtime state', () => {

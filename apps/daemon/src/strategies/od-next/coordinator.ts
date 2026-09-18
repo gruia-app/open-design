@@ -4,7 +4,9 @@ import type {
 } from '@open-design/contracts';
 import {
   AppliedStrategyBindingV2Schema,
+  OD_NEXT_AGENT_DECLARED_BLOCK_REASON,
   OD_NEXT_RUNTIME_STATE_SCHEMA,
+  StrategyRuntimeStateV2Schema,
   composeOdNextStrategyContinuationV2,
 } from '@open-design/contracts';
 import type Database from 'better-sqlite3';
@@ -15,7 +17,9 @@ import {
   compareAndTransitionStrategyTaskExecution,
   getStrategyTaskExecution,
   strategyPlanContractHash,
+  type StrategyTaskBlockedContext,
   type StrategyTaskExecutionRecord,
+  type StrategyTaskOutcome,
 } from '../task-store.js';
 import type { OdNextMachineProtocolStream } from './protocol.js';
 import {
@@ -119,6 +123,66 @@ function uniqueReasonCodes(values: ReadonlyArray<string>): string[] {
  * Agent's declaration when the turn comes back. Callers that already know the
  * route keep using `prepareStrategyRequest`.
  */
+/**
+ * The reason codes a blocked turn is attributed with: whatever the caller
+ * established, plus any question-form marker violation the visible text
+ * carries.
+ */
+function blockedReasonCodesFor(
+  visibleText: string,
+  reasonCodes: readonly string[],
+): string[] {
+  return uniqueReasonCodes([
+    ...reasonCodes,
+    ...questionFormMarkerReasonCodes(visibleText),
+  ]);
+}
+
+/**
+ * The attribution a task settling on `blocked` must carry, shaped to spread
+ * into a transition.
+ *
+ * `blockedContext` is the only durable answer to "why did this stop": the chat
+ * error card, the diagnostics export, and every later triage read it and have
+ * nothing else to fall back on. Three paths settle a task on `blocked`, and
+ * until OPEND-2565 only `blockTask` recorded anything —`prepareStrategyRequest`
+ * computed its reason codes and returned them to its caller without persisting
+ * them, and `finalizeStrategyPlanningResult` passed an agent-declared `blocked`
+ * straight through, dropping the agent's own written explanation with it. Both
+ * reached the client as an anonymous failure, which is exactly what the field
+ * report on Design Harness saw.
+ *
+ * A non-blocked outcome spreads to nothing on purpose: a task that did not
+ * block must not carry a blocked context, and the accepted-turn tests pin that.
+ */
+function blockedAttribution(
+  outcome: StrategyTaskOutcome,
+  visibleText: string,
+  reasonCodes: readonly string[],
+): { blockedContext: StrategyTaskBlockedContext } | Record<string, never> {
+  if (outcome !== 'blocked') return {};
+  return {
+    blockedContext: {
+      reasonCodes: blockedReasonCodesFor(visibleText, reasonCodes),
+      visibleText: visibleText.length > 0 ? visibleText : null,
+    },
+  };
+}
+
+/** One log line per blocked task, whichever path settled it. */
+function logStrategyTaskBlocked(
+  current: StrategyTaskExecutionRecord,
+  runId: string,
+  reasonCodes: readonly string[],
+): void {
+  console.warn('[od-next-task] blocked', {
+    taskExecutionId: current.taskExecutionId,
+    runId,
+    inputStage: current.inputStage,
+    reasonCodes: [...reasonCodes],
+  });
+}
+
 export function prepareStrategyIntake(db: SqliteDb, input: {
   taskExecutionId: string;
   intake: OdNextIntakePreflightInput;
@@ -194,15 +258,22 @@ export function prepareStrategyRequest(db: SqliteDb, input: {
     : [];
   const blockingCodes = [...preflightCodes, ...executionCodes];
   const reasonCodes = uniqueReasonCodes([...route.reasonCodes, ...blockingCodes]);
+  const outcome: StrategyTaskOutcome = blockingCodes.length > 0 ? 'blocked' : 'running';
+  if (outcome === 'blocked') {
+    logStrategyTaskBlocked(current, current.latestRunId, reasonCodes);
+  }
   const task = compareAndTransitionStrategyTaskExecution(db, {
     taskExecutionId: current.taskExecutionId,
     expectedRevision: current.revision,
     to: {
       route: route.route,
       inputStage: 'request',
-      outcome: blockingCodes.length > 0 ? 'blocked' : 'running',
+      outcome,
       executionMode: route.executionMode,
     },
+    // The router already knows why it refused; without this the codes lived
+    // only in the value returned to the caller (OPEND-2565).
+    ...blockedAttribution(outcome, '', reasonCodes),
     ...(input.updatedAt === undefined ? {} : { updatedAt: input.updatedAt }),
   });
   return {
@@ -390,6 +461,17 @@ export function finalizeStrategyPlanningResult(db: SqliteDb, input: {
       input.updatedAt,
     );
   }
+  const adopted = adoptHostInputStage(current, state);
+  if (adopted.normalized) {
+    console.info('[od-next-task] protocol normalized', {
+      taskExecutionId: current.taskExecutionId,
+      runId: input.runId,
+      normalizations: ['od_next_protocol_input_stage_normalized'],
+      declaredInputStage: state.inputStage,
+      inputStage: current.inputStage,
+    });
+  }
+  state = adopted.state;
   const reasonCodes = validateAcceptedTurn(db, current, state, parsed.planContract, parsed.visibleText, {
     toolUseCount: input.toolUseCount ?? 0,
     ...(input.executionPreflight ? { executionPreflight: input.executionPreflight } : {}),
@@ -411,6 +493,16 @@ export function finalizeStrategyPlanningResult(db: SqliteDb, input: {
       executionMode: state.executionMode,
     });
   }
+  // An agent may declare `blocked` itself — it is the turn that knows a task
+  // ran out of clarification budget, and it writes that reasoning out for the
+  // user. Carry both here: this transition used to pass the verdict through
+  // and drop the attribution, so the chat could only say "the strategy task
+  // could not continue" over an explanation the agent had already written
+  // (OPEND-2565).
+  const acceptedReasonCodes = uniqueReasonCodes([...state.reasonCodes, ...markerCodes]);
+  if (state.outcome === 'blocked') {
+    logStrategyTaskBlocked(current, input.runId, acceptedReasonCodes);
+  }
   const task = compareAndTransitionStrategyTaskExecution(db, {
     taskExecutionId: current.taskExecutionId,
     expectedRevision: current.revision,
@@ -420,6 +512,13 @@ export function finalizeStrategyPlanningResult(db: SqliteDb, input: {
       outcome: state.outcome,
       executionMode: state.executionMode,
     },
+    ...blockedAttribution(
+      state.outcome,
+      parsed.visibleText,
+      acceptedReasonCodes.length > 0
+        ? acceptedReasonCodes
+        : [OD_NEXT_AGENT_DECLARED_BLOCK_REASON],
+    ),
     ...(parsed.planContract ? { planContract: parsed.planContract } : {}),
     ...(input.updatedAt === undefined ? {} : { updatedAt: input.updatedAt }),
   });
@@ -429,7 +528,7 @@ export function finalizeStrategyPlanningResult(db: SqliteDb, input: {
       : state.outcome,
     task,
     visibleText: parsed.visibleText,
-    reasonCodes: uniqueReasonCodes([...state.reasonCodes, ...markerCodes]),
+    reasonCodes: acceptedReasonCodes,
     ...(parsed.planContract
       ? { decisionSummary: parsed.planContract.decisionSummary }
       : {}),
@@ -654,6 +753,47 @@ function questionFormMarkerReasonCodes(
   return codes;
 }
 
+/**
+ * Give a Runtime State the input stage the daemon itself issued the turn at,
+ * when the agent's declaration disagrees with it and the corrected state is a
+ * valid declaration for that stage.
+ *
+ * The stage is host-owned truth: the daemon chose it, wrote it into the
+ * continuation wrapper (`stage="clarification"`), and holds it on the task. An
+ * agent that writes a different value has told the host nothing it did not
+ * already know — the same footing as the execution mode a clarification turn
+ * predicts, which the parser already discards as authority-free
+ * (`OdNextMachineProtocolStream.normalizeMachineValue`).
+ *
+ * The case that made this necessary (OPEND-2954): the user answered the one
+ * clarification round, the agent returned a complete, correctly bound Full Plan,
+ * and its Runtime State said `inputStage: "request"` — the value every example
+ * in the protocol reference shows. `validateAcceptedTurn` refused the turn on
+ * that field alone, `blockTask` made the task terminal, and a plan that passed
+ * every other gate never reached production. Nothing could rescue it: the
+ * serialization repair only anchors on parser issues, and this was not one.
+ *
+ * Fail-closed where the field DOES carry meaning. The contract keys its
+ * stage/outcome/mode rules on `inputStage`, so the corrected state is re-run
+ * through the schema; a state the host's stage cannot admit (a second
+ * `clarification_required`, a `plan_ready` at production) keeps the agent's own
+ * value, and the mismatch is reported as before. The decision is recorded as a
+ * normalization, never as a reason code: a reason code would displace the
+ * agent's own attribution on a declared `blocked`.
+ */
+function adoptHostInputStage(
+  task: StrategyTaskExecutionRecord,
+  state: StrategyRuntimeStateV2,
+): { state: StrategyRuntimeStateV2; normalized: boolean } {
+  if (state.inputStage === task.inputStage) return { state, normalized: false };
+  const corrected = StrategyRuntimeStateV2Schema.safeParse({
+    ...state,
+    inputStage: task.inputStage,
+  });
+  if (!corrected.success) return { state, normalized: false };
+  return { state: corrected.data, normalized: true };
+}
+
 function validateAcceptedTurn(
   db: SqliteDb,
   task: StrategyTaskExecutionRecord,
@@ -676,6 +816,8 @@ function validateAcceptedTurn(
   if (task.route !== null && state.route !== task.route) {
     reasonCodes.push('od_next_protocol_route_mismatch');
   }
+  // Reached only when `adoptHostInputStage` declined: the agent's stage
+  // disagrees with the host's AND the host's stage cannot admit this outcome.
   if (state.inputStage !== task.inputStage) reasonCodes.push('od_next_protocol_stage_mismatch');
   if (task.executionMode && state.executionMode !== task.executionMode) {
     reasonCodes.push('od_next_protocol_execution_mode_mismatch');
@@ -817,7 +959,13 @@ function tryBeginSerializationRepair(
   ) return null;
   const recoveredState = parsed.runtimeState ?? parsed.repairRuntimeState;
   if (recoveredState) {
-    const stateCodes = validateRepairAnchorState(current, recoveredState, plan);
+    // The anchor is the same declaration the strict path validates, so it gets
+    // the same host-owned stage before its stage is compared.
+    const stateCodes = validateRepairAnchorState(
+      current,
+      adoptHostInputStage(current, recoveredState).state,
+      plan,
+    );
     if (stateCodes.length > 0) return null;
   }
   const repairRun = input.repairRun;
@@ -944,16 +1092,8 @@ function blockTask(
   // store has, and these codes raise no rollout stop signal
   // (`rolloutStopSignalForBlockedContinuation` matches route/execution-mode
   // drift and machine-block boundary failures only).
-  const blockedReasonCodes = uniqueReasonCodes([
-    ...reasonCodes,
-    ...questionFormMarkerReasonCodes(visibleText),
-  ]);
-  console.warn('[od-next-task] blocked', {
-    taskExecutionId: current.taskExecutionId,
-    runId: current.latestRunId,
-    inputStage: current.inputStage,
-    reasonCodes: blockedReasonCodes,
-  });
+  const blockedReasonCodes = blockedReasonCodesFor(visibleText, reasonCodes);
+  logStrategyTaskBlocked(current, current.latestRunId, blockedReasonCodes);
   const task = compareAndTransitionStrategyTaskExecution(db, {
     taskExecutionId: current.taskExecutionId,
     expectedRevision: current.revision,
@@ -963,10 +1103,7 @@ function blockTask(
       outcome: 'blocked',
       executionMode: current.executionMode,
     },
-    blockedContext: {
-      reasonCodes: blockedReasonCodes,
-      visibleText: visibleText.length > 0 ? visibleText : null,
-    },
+    ...blockedAttribution('blocked', visibleText, reasonCodes),
     ...(updatedAt === undefined ? {} : { updatedAt }),
   });
   return {

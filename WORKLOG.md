@@ -196,3 +196,22 @@
   (QuestionForm), `ab009b1a3` (file-ops), `ad9078b87` (chat footer).
 - Verificación: tasks-routes 9/9 + export-tool-token 16/16 + acp 94/94 +
   web observability 43/43.
+
+## Paridad upstream — lote 6 (rama fleet/parity-6)
+
+- `8fdb5bc52` (upstream #7980): `adoptHostInputStage` — el daemon corrige un
+  Runtime State válido que nombre el stage equivocado (`request` en un turno
+  de clarificación) antes de validar; el prompt de continuación de
+  clarificación ahora nombra `inputStage clarification`.
+- `9638d8843` (upstream #7793): colapsa brazos ternarios idénticos en
+  `normalizeComparableValue`.
+- `66058730e` (upstream #7725, prerequisito de #7980): `blockedAttribution` —
+  las tres rutas que asientan `blocked` persisten `blockedContext`
+  (reasonCodes + visibleText); `prepareStrategyRequest` y el blocked
+  declarado por el agente ya no lo pierden.
+- Revision post-muerte: los 2 tests rojos del predecessor NO eran un mal
+  pick — `OD_NEXT_AGENT_DECLARED_BLOCK_REASON` se añadio a
+  `packages/contracts/src/` pero el daemon resuelve contracts via `dist/`
+  (gitignored, stale). Rebuild de contracts → 42/42 coordinator + 25/25
+  prompt-recipe + typecheck verdes. Leccion: rebuild contracts tras cualquier
+  pick que toque `packages/contracts/src`.
