@@ -219,6 +219,39 @@ bind no-loopback exige token (server.ts:2904); el hueco solo existe con
 `OD_DISABLE_API_AUTH=1` explícito. leaf-0 #3 (rate limiting) queda como
 follow-up — requiere decisión de diseño (token bucket vs cap de concurrencia).
 
+## Ítem 9 — Escapado de `$` literal en strings NSIS
+
+**Hecho:**
+
+- `tools/pack/src/win/nsis.ts`: `escapeNsisString` intentaba escapar `$` con
+  `value.replace(/\$/g, "$$")` — en JS, `$$` en el string de reemplazo inserta
+  un solo `$` literal, así que era un **no-op silencioso**. Corregido a
+  `"$$$$"` (emite la secuencia `$$` que NSIS lee como dólar escapado). Un path
+  con un segmento como `$TEMP` hubiera sido expandido por NSIS, haciendo que
+  `RMDir /r` del desinstalador apuntara al directorio equivocado.
+- `escapeNsisPathValue` preserva el prefijo deliberado `$APPDATA` de los
+  builds portable (debe seguir expandiéndose) y escapa el resto del valor.
+- `tools/pack/src/win/custom-installer.ts`: mismo bug del no-op — corregido.
+- `tests/win-nsis.test.ts`: +tests de `$TEMP`→`$$TEMP`, preservación de
+  `$APPDATA` en portable, y comportamiento existente de quotes/newlines.
+
+**Verificación:** `tests/win-nsis.test.ts` 4/4, `tests/win-custom-installer.test.ts`
+2/2, typecheck tools-pack verde.
+
+## Ítem 10 — Dead code: duplicado drifted de `normalizeIpcPath`
+
+**Hecho:** `packages/sidecar/src/ipc-path.ts` contenía una segunda copia de
+`normalizeIpcPath` (la autoritativa vive en `sidecar-proto`) sin ningún
+consumidor — el único import real del fichero era `isWindowsNamedPipePath`
+en `json-ipc.ts`. Eliminada la copia muerta junto a su import `isAbsolute`;
+el comentario del módulo ahora apunta a `sidecar-proto` como fuente única
+para evitar que vuelva a driftear una segunda respuesta para el mismo campo
+de wire.
+
+**Verificación:** typecheck `@open-design/sidecar` verde;
+`tests/index.test.ts` 14/14; grep confirma cero referencias restantes a la
+copia eliminada.
+
 ## Bloqueados
 
 - Ninguno todavía.
