@@ -1,0 +1,62 @@
+# Design — Simplia shared Jenkins CI manifest.
+# Pair with: Jenkinsfile -> @Library('simplia-ci@6417a12e…') _ ; simpliaPipeline(manifest: 'ci/app.yml')
+# CI-only lane: no deploy targets (the Gruia studio deploy is systemd/Caddy on
+# its own host, outside the simplia-ci deploy adapters for now).
+
+app_key: design
+repo: https://github.com/gruia-app/design.git
+repo_owner: gruia-app
+default_branch: main
+
+stack:
+  # pnpm monorepo: Node ~24 + pnpm 10.33.2 (packageManager pin). apps/web is
+  # Next.js 16, apps/daemon is Express+SQLite, packages/* are pure TS.
+  type: [node, next, monorepo]
+
+ci:
+  # guard/typecheck/test are independent read-mostly stages; test writes only
+  # vitest artifacts. Same playbook as contenido/b2bweb.
+  parallel_checks: true
+
+paths:
+  root: .
+  frontend: apps/web
+  backend: apps/daemon
+
+commands:
+  install:
+    # pnpm is preinstalled on the worker image; corepack enable is a no-op
+    # there (simplia-ci appends || true) but keeps the pin honest locally.
+    - corepack enable
+    - pnpm install --frozen-lockfile
+  lint:
+    # Repo canonical gate: residual-JS, package specs, product neutrality,
+    # import boundaries, test layout, token/manifest contracts.
+    - pnpm guard
+  typecheck:
+    # Workspace-wide tsc (28 packages).
+    - pnpm typecheck
+  test:
+    # Bounded green slice: shared contracts + sidecar protocol. The full
+    # daemon/web suites are load-sensitive (~20min) — widen deliberately.
+    - pnpm --filter @open-design/contracts test
+    - pnpm --filter @open-design/sidecar test
+  build:
+    # Package + daemon builds (esbuild + tsc). apps/web `next build` is left
+    # out: it needs deploy env and is covered by typecheck here.
+    - pnpm --filter @open-design/contracts build
+    - pnpm --filter @open-design/components build
+    - pnpm --filter @open-design/daemon build
+  e2e: []
+
+deploy:
+  type: none
+
+health:
+  staging: []
+  production: []
+
+security:
+  trivy: false
+
+secrets: {}
