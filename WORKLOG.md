@@ -348,6 +348,38 @@ ruta gh del CLI ahora consume las funciones compartidas de
 **Verificación:** typecheck daemon verde; `tests/login-shell.test.ts`
 sigue cubriendo el boundary compartido (14/14 previo).
 
+## Ítem 17 — Doc: `pnpm typecheck` descrito incorrectamente en CONTRIBUTING
+
+**Hecho:** `CONTRIBUTING.md` decía `pnpm typecheck # tsc -b --noEmit`; el script
+real corre los typechecks de todos los paquetes del workspace más
+`tsc -p scripts/tsconfig.json --noEmit`. Corregido el comentario.
+
+## Revisados sin cambio (con rationale)
+
+- **BYOK `apiKey` en `localStorage` (web):** `saveConfig` ya sanea
+  `agentCliEnv` y las claves daemon-owned; Composio y media-providers guardan
+  el secreto en el daemon y persisten solo `apiKeyConfigured`/`apiKeyTail`.
+  La clave BYOK de finalize viaja **por request** (`buildFinalizeRequest`);
+  el daemon no tiene store de credenciales BYOK hoy — moverla a custodia
+  daemon requiere un endpoint nuevo y una decisión de diseño → deferred.
+- **`.mcp.json` residual tras el run (daemon):** borrarlo en el finish rompe
+  el contrato ya testeado (`mcp-spawn.test.ts` aserta persistencia tras
+  `waitForRunStatus`), los tokens residen bajo `RUNTIME_DATA_DIR` igual que
+  el token store MCP, y un cleanup refcounted en `server.ts` añade estado
+  compartido en el hot path por ganancia marginal → deferred.
+- **Rate limiting en endpoints mutantes caros (daemon):** token-bucket vs
+  concurrency cap es una decisión de diseño → deferred.
+- **`/api/mcp/install-info` sin auth propia:** mitigado por el middleware
+  `/api` (bearer token para peers no-loopback cuando `OD_API_TOKEN` activo)
+  + el invariante que exige token en binds no-loopback. El hueco real solo
+  existe con `OD_DISABLE_API_AUTH=1` explícito → documentado, sin auth
+  duplicada.
+- **Inyección JSON en attribution URL del instalador NSIS:** el valor viene
+  del ADS `Zone.Identifier` que escribe el browser desde la URL de descarga;
+  URLs no pueden contener `"`/`\` sin codificar → superficie teórica, no
+  merece maquinaria de escape JSON en NSIS → no accionado.
+
 ## Bloqueados
 
-- Ninguno todavía.
+- Custodia daemon-side de la clave BYOK (ver "Revisados" arriba): requiere
+  endpoint nuevo + migración; decisión de diseño pendiente.
