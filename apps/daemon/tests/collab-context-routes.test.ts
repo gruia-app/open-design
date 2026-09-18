@@ -137,7 +137,7 @@ describe('collab context routes', () => {
     const api = await startContextServer();
     const response = await api.req('/api/workspace/context');
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe('WORKSPACE_CONTEXT_REQUIRED');
+    expect(response.body.error.code).toBe('WORKSPACE_CONTEXT_REQUIRED');
   });
 
   it('round-trips a context set via the dev PUT for an explicit directory membership', async () => {
@@ -354,7 +354,7 @@ describe('collab context routes', () => {
 
     const missing = await api.req('/api/workspace/context');
     expect(missing.status).toBe(400);
-    expect(missing.body.error).toBe('WORKSPACE_CONTEXT_REQUIRED');
+    expect(missing.body.error.code).toBe('WORKSPACE_CONTEXT_REQUIRED');
 
     const explicitA = await api.req('/api/workspace/context', {
       headers: {
@@ -382,8 +382,7 @@ describe('collab context routes', () => {
     });
     expect(response.status).toBe(503);
     expect(response.body).toMatchObject({
-      error: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
-      retryable: true,
+      error: { code: 'WORKSPACE_AUTHORITY_UNAVAILABLE', retryable: true },
     });
   });
 
@@ -710,7 +709,7 @@ describe('workspace billing routes', () => {
       },
     );
     expect(response.status).toBe(403);
-    expect(response.body).toEqual({ error: 'workspace_not_authorized' });
+    expect(response.body).toEqual({ error: { code: 'workspace_not_authorized', message: 'workspace_not_authorized' } });
   });
 
   it('does not revoke another client when a stale member declares the same workspace', async () => {
@@ -865,7 +864,7 @@ describe('workspace billing routes', () => {
     );
 
     expect(response.status).toBe(403);
-    expect(response.body).toEqual({ error: 'workspace_not_authorized' });
+    expect(response.body).toEqual({ error: { code: 'workspace_not_authorized', message: 'workspace_not_authorized' } });
     expect(fetchWorkspaceDirectory).toHaveBeenCalledTimes(1);
   });
 
@@ -1050,7 +1049,7 @@ describe('workspace billing routes', () => {
       { headers },
     );
     expect(revoked.status).toBe(403);
-    expect(revoked.body).toEqual({ error: 'workspace_not_authorized' });
+    expect(revoked.body).toEqual({ error: { code: 'workspace_not_authorized', message: 'workspace_not_authorized' } });
   });
 
   it('retains internal last-good state across a transient directory outage', async () => {
@@ -1086,7 +1085,7 @@ describe('workspace billing routes', () => {
     directoryAvailable = false;
     const unavailable = await request('1');
     expect(unavailable.status).toBe(503);
-    expect(unavailable.body).toEqual({ error: 'workspace_directory_unavailable' });
+    expect(unavailable.body).toEqual({ error: { code: 'workspace_directory_unavailable', message: 'workspace_directory_unavailable' } });
 
     directoryAvailable = true;
     balance = '8.99';
@@ -1128,7 +1127,7 @@ describe('workspace billing routes', () => {
       '/api/workspace/billing?scope=workspace&workspaceId=wm-1&freshness=authoritative',
     );
     expect(action.status).toBe(503);
-    expect(action.body).toEqual({ error: 'temporary' });
+    expect(action.body).toEqual({ error: { code: 'temporary', message: 'temporary' } });
     expect(calls).toBe(2);
   });
 
@@ -1216,7 +1215,7 @@ describe('workspace billing routes', () => {
     const res = await api.req('/api/workspace/billing?scope=workspace&workspaceId=other');
 
     expect(res.status).toBe(403);
-    expect(res.body).toEqual({ error: 'workspace_not_authorized' });
+    expect(res.body).toEqual({ error: { code: 'workspace_not_authorized', message: 'workspace_not_authorized' } });
     expect(calls).toEqual([]);
   });
 
@@ -1329,9 +1328,9 @@ describe('workspace billing routes', () => {
     });
 
     expect(catalog.status).toBe(400);
-    expect(catalog.body.error).toBe('WORKSPACE_CONTEXT_REQUIRED');
+    expect(catalog.body.error.code).toBe('WORKSPACE_CONTEXT_REQUIRED');
     expect(checkout.status).toBe(400);
-    expect(checkout.body.error).toBe('WORKSPACE_CONTEXT_REQUIRED');
+    expect(checkout.body.error.code).toBe('WORKSPACE_CONTEXT_REQUIRED');
     expect(fetchBillingCatalog).not.toHaveBeenCalled();
     expect(startCheckout).not.toHaveBeenCalled();
   });
@@ -1356,9 +1355,9 @@ describe('workspace billing routes', () => {
     });
 
     expect(catalog.status).toBe(403);
-    expect(catalog.body.error).toBe('WORKSPACE_ACCESS_DENIED');
+    expect(catalog.body.error.code).toBe('WORKSPACE_ACCESS_DENIED');
     expect(checkout.status).toBe(403);
-    expect(checkout.body.error).toBe('WORKSPACE_ACCESS_DENIED');
+    expect(checkout.body.error.code).toBe('WORKSPACE_ACCESS_DENIED');
     expect(fetchBillingCatalog).not.toHaveBeenCalled();
     expect(startCheckout).not.toHaveBeenCalled();
   });
@@ -1529,7 +1528,7 @@ describe('POST /api/workspace/invite', () => {
     const api = await startContextServer();
     const res = await api.req('/api/workspace/invite', { method: 'POST', body: { invites: [] } });
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({ error: 'missing_invites' });
+    expect(res.body).toEqual({ error: { code: 'missing_invites', message: 'missing_invites' } });
   });
 
   it('400s when no explicit workspace identity is provided', async () => {
@@ -1541,7 +1540,7 @@ describe('POST /api/workspace/invite', () => {
       body: { invites: [{ email: 'a@x.com', role: 'member' }] },
     });
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe('WORKSPACE_CONTEXT_REQUIRED');
+    expect(res.body.error.code).toBe('WORKSPACE_CONTEXT_REQUIRED');
   });
 
   it('403s when the verified team member cannot invite teammates', async () => {
@@ -1561,7 +1560,7 @@ describe('POST /api/workspace/invite', () => {
     });
 
     expect(res.status).toBe(403);
-    expect(res.body).toEqual({ error: 'forbidden' });
+    expect(res.body).toEqual({ error: { code: 'forbidden', message: 'forbidden' } });
     expect(called).toBe(false);
   });
 
@@ -1576,7 +1575,7 @@ describe('POST /api/workspace/invite', () => {
       body: { invites: [{ email: 'a@x.com', role: 'member' }] },
     });
     expect(res.status).toBe(401);
-    expect(res.body).toEqual({ error: 'no_session' });
+    expect(res.body).toEqual({ error: { code: 'no_session', message: 'no_session' } });
   });
 
   it("degrades a failed B create (e.g. 404) to an ok:false result, HTTP 200", async () => {

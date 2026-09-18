@@ -394,7 +394,7 @@ describe('PUT /api/workspace/active authorizes on a live membership', () => {
     const result = await api.switchTo(TEAM);
 
     expect(result.status).toBe(404);
-    expect(result.body.error).toBe('workspace_not_visible');
+    expect((result.body.error as { code?: string }).code).toBe('workspace_not_visible');
     expect(api.pinnedWorkspace()).toBe(PERSONAL);
     expect(api.onWorkspaceSwitched).not.toHaveBeenCalled();
   });
@@ -407,7 +407,7 @@ describe('PUT /api/workspace/active authorizes on a live membership', () => {
     const result = await api.switchTo(TEAM);
 
     expect(result.status).toBe(404);
-    expect(result.body.error).toBe('workspace_not_visible');
+    expect((result.body.error as { code?: string }).code).toBe('workspace_not_visible');
     expect(api.onWorkspaceSwitched).not.toHaveBeenCalled();
   });
 });

@@ -56,6 +56,16 @@ import {
   fetchVelaRemoteModelsWithRetry,
 } from '../runtimes/defs/amr.js';
 import { classifyAmrAccountFailure } from '../integrations/vela-errors.js';
+import { sendApiError } from '../http/api-errors.js';
+import type { ApiErrorCode } from '@open-design/contracts';
+
+// Protocol tokens are emitted on the wire but are not yet in the
+// ApiErrorCode union — preserve them verbatim in both `error.code` and
+// `error.message` so consumers reading either field observe the same value
+// the legacy flat `{error: 'token'}` string carried.
+function sendTokenError(res: Response, status: number, token: string): void {
+  sendApiError(res, status, token as ApiErrorCode, token);
+}
 
 const AMR_API_PROXY_PREFIX = '/api/integrations/vela/api-proxy';
 const VELA_MESSAGE_CENTER_PREFIX = '/api/integrations/vela/message-center';
@@ -251,6 +261,10 @@ export function pipeProxyStreamWithGuard(
   source.pipe(dest);
 }
 
+// The spawned vela binary consumes this proxy surface (it receives
+// `AMR_API_PROXY_PREFIX` as its API base), so its error bodies keep the legacy
+// flat `{error: 'token'}` shape until the binary's error handling is verified.
+// Local `/api/integrations/vela/*` routes emit the canonical error envelope.
 function proxyAmrApiRequest(req: Request, res: Response): void {
   const suffix = req.originalUrl.slice(AMR_API_PROXY_PREFIX.length);
   if (!suffix.startsWith('/api/v1/')) {
@@ -353,7 +367,7 @@ function proxyVelaMessageCenterRequest(
   const suffix = req.originalUrl.slice(proxyPrefix.length);
   const parsedSuffix = new URL(suffix, 'http://message-center.local');
   if (!isAllowedMessageCenterRequest(req.method, parsedSuffix.pathname)) {
-    res.status(404).json({ error: 'unknown_message_center_path' });
+    sendTokenError(res, 404, 'unknown_message_center_path');
     return;
   }
   const target = new URL(
@@ -361,7 +375,7 @@ function proxyVelaMessageCenterRequest(
     context.apiUrl,
   );
   if (target.protocol !== 'http:' && target.protocol !== 'https:') {
-    res.status(500).json({ error: 'invalid_vela_api_url' });
+    sendTokenError(res, 500, 'invalid_vela_api_url');
     return;
   }
   const body = velaProxyRequestBody(req);
@@ -384,7 +398,7 @@ function proxyVelaMessageCenterRequest(
       }
       pipeProxyStreamWithGuard(upstreamRes, res, (err) => {
         if (!res.headersSent) {
-          res.status(502).json({ error: err instanceof Error ? err.message : String(err) });
+          sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', err instanceof Error ? err.message : String(err));
         } else {
           res.end();
         }
@@ -394,7 +408,7 @@ function proxyVelaMessageCenterRequest(
   upstream.setTimeout(30_000, () => upstream.destroy(new Error('Vela Message Center timed out')));
   upstream.on('error', (err) => {
     if (!res.headersSent) {
-      res.status(502).json({ error: err instanceof Error ? err.message : String(err) });
+      sendApiError(res, 502, 'UPSTREAM_UNAVAILABLE', err instanceof Error ? err.message : String(err));
     } else {
       res.end();
     }
@@ -510,7 +524,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       });
       res.json(response);
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', err instanceof Error ? err.message : String(err));
     }
   });
 
@@ -522,7 +536,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       const amrDef = getAgentDef('amr');
       const amrLaunch = amrDef ? resolveAgentLaunch(amrDef, configuredEnv) : null;
       if (!(amrLaunch?.launchPath ?? amrLaunch?.selectedPath)) {
-        res.status(503).json({ error: 'amr-runtime-unavailable' });
+        sendTokenError(res, 503, 'amr-runtime-unavailable');
         return;
       }
       const refresh = _req.query.refresh === '1' || _req.query.refresh === 'true';
@@ -594,7 +608,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       }
       res.json(status);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -618,7 +632,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       }
       res.json(snapshot);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -631,7 +645,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       const context = readVelaApiContext(env, configuredEnv);
       proxyVelaMessageCenterRequest(req, res, context, VELA_PUBLIC_MESSAGE_CENTER_PREFIX);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -641,12 +655,12 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       const configuredEnv = agentCliEnvForAgent(appConfig.agentCliEnv, 'amr');
       const context = readVelaControlApiContext(env, configuredEnv);
       if (!context) {
-        res.status(401).json({ error: 'vela_control_key_required' });
+        sendTokenError(res, 401, 'vela_control_key_required');
         return;
       }
       proxyVelaMessageCenterRequest(req, res, context);
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -662,7 +676,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       && Object.prototype.hasOwnProperty.call(req.body, 'authRequestId'),
     );
     if (bodyHasRequestId && !requestAuthRequestId) {
-      res.status(400).json({ error: 'invalid_auth_request_id' });
+      sendTokenError(res, 400, 'invalid_auth_request_id');
       return;
     }
     try {
@@ -728,7 +742,10 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
         ? snapshot
         : {};
       res.status(status).json({
-        error: message,
+        error: {
+          code: status === 409 ? 'CONFLICT' : 'INTERNAL_ERROR',
+          message,
+        },
         ...responseSnapshot,
       });
     }
@@ -755,7 +772,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
         || (bodyHasRequestId && !authRequestId)
         || (bodyHasAttemptId && bodyHasRequestId)
       ) {
-        res.status(400).json({ error: 'invalid_auth_attempt_id' });
+        sendTokenError(res, 400, 'invalid_auth_attempt_id');
         return;
       }
       // No body remains a compatibility path for older web clients. New
@@ -766,14 +783,14 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
         authRequestId ?? undefined,
       ));
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
   app.post('/api/integrations/vela/analytics-entry', async (req, res) => {
     const payload = parseAmrEntryAnalyticsPayload(req.body);
     if (!payload) {
-      res.status(400).json({ error: 'invalid_amr_entry_analytics' });
+      sendTokenError(res, 400, 'invalid_amr_entry_analytics');
       return;
     }
     const analyticsContext = readAnalyticsContext(req);
@@ -796,7 +813,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
   app.post('/api/integrations/vela/analytics-profile', async (req, res) => {
     const payload = parseAmrOnboardingProfileAnalyticsPayload(req.body);
     if (!payload) {
-      res.status(400).json({ error: 'invalid_amr_profile_analytics' });
+      sendTokenError(res, 400, 'invalid_amr_profile_analytics');
       return;
     }
     const analyticsContext = readAnalyticsContext(req);
@@ -842,7 +859,7 @@ export function registerVelaRoutes(app: Express, deps: RegisterVelaRoutesDeps): 
       onCredentialStateObserved();
       res.json({ ok: true });
     } catch (err) {
-      res.status(500).json({ error: String(err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 }

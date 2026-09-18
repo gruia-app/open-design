@@ -14,7 +14,7 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   Añadido bucket por IP (20/min, 10k keys, sweep-on-access) alimentado por
   `AuthAuditContext.ip` (commit `380311354`, tests 27/27). Single-instancia
   in-memory — si el gateway pasa a multi-instancia reabrir como limiter
-  compartido.
+  compartido. Merged vía PR #15 (`50a8470db`).
 - [x] G5 — `GET /auth/session` `csrfToken`: verificado — `json()` aplica `noStore`
   globalmente a rutas /auth. Sin gap real.
 - [ ] G6 — sin métricas/observabilidad propia (solo /healthz). (!) decisión de diseño.
@@ -22,8 +22,11 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   `auth_audit` (event/at/email/user_id/org/ip/user_agent/detail) con retención
   90d + 100k rows; eventos login_success/login_failure(detail)/logout/
   session_revoked (commits `7db05a69b` + `a8f0e978f`, tests 27/27).
-- [ ] G8 — `verifyCsrf`/`readSession` devuelven bool/null sin distinguir "expirada" de
-  "inexistente" — logging forense limitado. Bajo.
+  Merged vía PR #15 (`50a8470db`).
+- [x] G8 — `verifyCsrf`/`readSession` devuelven bool/null sin distinguir "expirada" de
+  "inexistente" → `readSession` audita `session_expired` en el delete de la fila
+  expirada: una fila por sesión, cero para ids desconocidos (commit `a0a0408bc`,
+  tests 28/28). Merged vía PR #15 (`50a8470db`).
 - [x] G9 — `sessionTtlSeconds` hardcodeado a 14400 en config.ts ignorando el valor
   del config → leído vía `integer()` como sus vecinos (commit en batch gateway,
   tests 22/22). Merged vía PR #4.
@@ -54,21 +57,25 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   lectura dual legacy/envelope; consumers migrados en brands, registry,
   elevenlabs-voices, public-file-publish, launchAntigravityOauth, CLI
   (`structuredHttpFailure`/`structuredErrorData` ya eran duales).
-  **Estado: sweep completo salvo tokens de protocolo.** Inventario restante
-  verificado (grep `.json({...error:`): solo `collab-context.ts` (~30
-  tokens snake_case: `missing_nonce`, `workspace_not_visible`, `forbidden`…)
-  y `vela.ts` (~24 tokens AMR: `unknown_amr_api_proxy_path`,
-  `vela_control_key_required`, `invalid_auth_request_id`…). Ambos emiten
-  tokens que clients (web `parsed.error === 'x'` y posibles clients AMR
-  externos) matchean como string — requieren migración diseñada de
-  consumers con lectura dual, no sweep. Envelopes manuales legítimos que
-  permanecen: critique artifact/interrupt (`error.currentStatus` es campo
-  contractual asertado), strategy-rollout 409 (`status` sibling top-level),
-  comments.ts fallback (emite envelope cuando ctx no inyecta sender).
-  Siguiente paso si se retoma: plan de migración collab-context/vela —
-  consumer-by-consumer a `error?.code ?? error` antes de tocar el wire.
-  Ritmo aplicado: un fichero por iteración, consumers auditados antes de
-  convertir.
+  **Estado: migración diseñada de tokens aplicada.** `collab-context.ts`
+  (~30 tokens) migrado tras auditoría consumer-by-consumer
+  (`8697251e9`): tokens verbatim en `error.code`+`error.message`, sibling
+  top-level `acceptedGeneration` preservado manual; web dual-read
+  (`apiErrorCode`/`apiErrorMessage` en `utils/apiErrors.ts`). `vela.ts`
+  migrado en dos zonas (`263606cbf`): rutas locales
+  `/api/integrations/vela/*` + `/api/amr/models` enveloped (login preserva
+  siblings `authAttemptId`/`authStages`/`authRoute`/`fallbackUsed`); el
+  proxy `api-proxy/*` que sirve al binario vela hijo mantiene flat tokens
+  — superficie externa no verificable, documentado in situ.
+  Consumers migrados: message-center-client (apiErrorCode para
+  `amr-runtime-unavailable`), providers/daemon `startVelaLogin`
+  (apiErrorMessage). CLI `structuredHttpFailure` y MCP
+  `formatDaemonError` ya eran duales.
+  Envelopes manuales legítimos que permanecen: critique artifact/interrupt
+  (`error.currentStatus` contractual), strategy-rollout 409 (`status`
+  sibling), comments.ts fallback.
+  **Resta solo:** `proxyAmrApiRequest` (6 sitios) — pendiente verificar el
+  parsing de errores del binario vela antes de convertir.
 
 ## Coordinación
 

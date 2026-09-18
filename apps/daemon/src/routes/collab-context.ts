@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from 'express';
 import type {
+  ApiErrorCode,
   CollabCloudMemberDirectoryEntry,
   CollabCloudMembersResponse,
   TeamProject,
@@ -366,15 +367,27 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
       VerifiedWorkspaceRequestContextResult,
       { ok: true }
     >,
-  ) => verified.code === 'AMR_AUTH_REQUIRED'
-    ? sendApiError(res, verified.status, verified.code, verified.message, {
-        retryable: false,
-      })
-    : res.status(verified.status).json({
-        error: verified.code,
-        message: verified.message,
-        ...(verified.retryable ? { retryable: true } : {}),
-      });
+  ) =>
+    sendApiError(
+      res,
+      verified.status,
+      verified.code as ApiErrorCode,
+      verified.message,
+      // AMR_AUTH_REQUIRED deliberately publishes `retryable: false`; every
+      // other verification failure only emits retryable when it is true.
+      verified.code === 'AMR_AUTH_REQUIRED'
+        ? { retryable: false }
+        : verified.retryable
+          ? { retryable: true }
+          : {},
+    );
+
+  // Protocol tokens are emitted on the wire but are not yet in the
+  // ApiErrorCode union — preserve them verbatim in both `error.code` and
+  // `error.message` so consumers reading either field observe the same value
+  // the legacy flat `{error: 'token'}` string carried.
+  const sendTokenError = (res: Response, status: number, token: string) =>
+    sendApiError(res, status, token as ApiErrorCode, token);
 
   // Desktop invite hand-off ("桌面唤起和本地恢复"): the desktop app parses the
   // opendesign:// invite deeplink and POSTs the nonce here. The daemon consumes
@@ -384,9 +397,9 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
   app.post('/api/workspace/invite/continue', async (req, res) => {
     const body = req.body as { nonce?: unknown } | null;
     const nonce = body && typeof body.nonce === 'string' ? body.nonce : '';
-    if (!nonce.trim()) return res.status(400).json({ error: 'missing_nonce' });
+    if (!nonce.trim()) return sendTokenError(res, 400, 'missing_nonce');
     const outcome = await consumeInvite(nonce);
-    if (!outcome.ok) return res.status(outcome.status).json({ error: outcome.error });
+    if (!outcome.ok) return sendTokenError(res, outcome.status, outcome.error);
     // Consuming the one-time nonce has already committed the membership on B.
     // Refresh the daemon's settled authority lease before the renderer makes
     // its first exact-scope read. A refresh outage must not turn a successfully
@@ -411,7 +424,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
   // — the endpoint never crashes on the backend being unavailable.
   app.post('/api/workspace/invite', async (req, res) => {
     const items = parseInviteCreateItems(req.body);
-    if (items.length === 0) return res.status(400).json({ error: 'missing_invites' });
+    if (items.length === 0) return sendTokenError(res, 400, 'missing_invites');
 
     const verified = await verifyWorkspaceRequestContext({
       req,
@@ -423,7 +436,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
     const context = verified.context;
     const workspaceId = context.workspaceId;
     if (!context.permissions.canInviteMembers) {
-      return res.status(403).json({ error: 'forbidden' });
+      return sendTokenError(res, 403, 'forbidden');
     }
 
     const results: WorkspaceInviteCreateResult[] = [];
@@ -432,7 +445,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
       // The vela session is workspace-wide: if it is missing for one invite it is
       // missing for all, so short-circuit to a single 401 instead of N failures.
       if (!outcome.ok && outcome.error === 'no_session') {
-        return res.status(401).json({ error: 'no_session' });
+        return sendTokenError(res, 401, 'no_session');
       }
       results.push(
         outcome.ok
@@ -483,10 +496,12 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
     app.get('/api/workspace/events', async (req, res) => {
       const scopedRequest = requestWithWorkspaceNavigationScope(req);
       if (scopedRequest === 'conflict') {
-        res.status(400).json({
-          error: 'WORKSPACE_CONTEXT_CONFLICT',
-          message: 'workspace header and navigation scope must match',
-        });
+        sendApiError(
+          res,
+          400,
+          'WORKSPACE_CONTEXT_CONFLICT' as ApiErrorCode,
+          'workspace header and navigation scope must match',
+        );
         return;
       }
       const verified = await verifyWorkspaceRequestContext({
@@ -544,11 +559,13 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
           { retryable: false },
         );
       }
-      return res.status(503).json({
-        error: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
-        message: 'workspace membership authority is temporarily unavailable',
-        retryable: true,
-      });
+      return sendApiError(
+        res,
+        503,
+        'WORKSPACE_AUTHORITY_UNAVAILABLE',
+        'workspace membership authority is temporarily unavailable',
+        { retryable: true },
+      );
     }
     const items = directory.items;
     const claimed = await verifyWorkspaceRequestContext({
@@ -583,9 +600,9 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
     const workspaceId = typeof raw?.workspaceId === 'string' ? raw.workspaceId.trim() : '';
     const workspaceMemberId =
       typeof raw?.workspaceMemberId === 'string' ? raw.workspaceMemberId.trim() : '';
-    if (!workspaceId) return res.status(400).json({ error: 'missing_workspace_id' });
+    if (!workspaceId) return sendTokenError(res, 400, 'missing_workspace_id');
     if (!workspaceMemberId) {
-      return res.status(400).json({ error: 'missing_workspace_member_id' });
+      return sendTokenError(res, 400, 'missing_workspace_member_id');
     }
 
     const directoryResult = await fetchWorkspaceDirectory().catch(
@@ -601,11 +618,13 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
           { retryable: false },
         );
       }
-      return res.status(503).json({
-        error: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
-        message: 'workspace membership authority is temporarily unavailable',
-        retryable: true,
-      });
+      return sendApiError(
+        res,
+        503,
+        'WORKSPACE_AUTHORITY_UNAVAILABLE',
+        'workspace membership authority is temporarily unavailable',
+        { retryable: true },
+      );
     }
     const directory = directoryResult.items;
     // A directory row only authorizes a switch while it is a LIVE membership.
@@ -622,7 +641,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
         item.lifecycleState !== 'deleted',
     );
     if (!selected) {
-      return res.status(404).json({ error: 'workspace_not_visible' });
+      return sendTokenError(res, 404, 'workspace_not_visible');
     }
 
     // The membership directory above is the authorization. Persist the choice
@@ -650,7 +669,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
         || context.workspaceMemberId !== workspaceMemberId
       )
     ) {
-      return res.status(404).json({ error: 'workspace_no_longer_available' });
+      return sendTokenError(res, 404, 'workspace_no_longer_available');
     }
     const resolved = context ?? workspaceContextFromDirectoryItem(selected, configuredEnv());
     try {
@@ -688,17 +707,15 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
           requireTeam: true,
         });
     if (!verified.ok) {
-      return res.status(verified.status).json({
-        error: verified.code,
-        message: verified.message,
-        ...(verified.retryable ? { retryable: true } : {}),
-      });
+      return sendWorkspaceVerificationFailure(res, verified);
     }
     if (verified.context.workspaceType !== 'team') {
-      return res.status(403).json({
-        error: 'WORKSPACE_ACCESS_DENIED',
-        message: 'the requested workspace is not available to this member',
-      });
+      return sendApiError(
+        res,
+        403,
+        'WORKSPACE_ACCESS_DENIED' as ApiErrorCode,
+        'the requested workspace is not available to this member',
+      );
     }
     let projects: TeamProject[];
     try {
@@ -775,7 +792,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
       !/^(?:0|[1-9]\d*)$/.test(generation) ||
       !Array.isArray(body.interests)
     ) {
-      return res.status(400).json({ error: 'invalid_billing_interest' });
+      return sendTokenError(res, 400, 'invalid_billing_interest');
     }
     const interests = body.interests.map((interest) => ({
       workspaceId:
@@ -786,7 +803,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
           : '',
     }));
     if (interests.some((interest) => !interest.workspaceId || !interest.workspaceMemberId)) {
-      return res.status(400).json({ error: 'invalid_billing_interest' });
+      return sendTokenError(res, 400, 'invalid_billing_interest');
     }
 
     if (interests.length > 0) {
@@ -803,7 +820,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
             { retryable: false },
           );
         }
-        return res.status(503).json({ error: 'workspace_directory_unavailable' });
+        return sendTokenError(res, 503, 'workspace_directory_unavailable');
       }
       const unauthorized = interests.filter(
         (interest) =>
@@ -819,7 +836,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
         // A stale renderer may still declare an old membership epoch for a
         // workspace another renderer is legitimately using. Reject this
         // declaration without mutating process-wide workspace state.
-        return res.status(403).json({ error: 'workspace_not_authorized' });
+        return sendTokenError(res, 403, 'workspace_not_authorized');
       }
     }
 
@@ -836,7 +853,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
       return res
         .status(error.code === 'interest_capacity_exceeded' ? 429 : 409)
         .json({
-          error: error.code,
+          error: { code: error.code, message: error.message },
           ...(error.acceptedGeneration
             ? { acceptedGeneration: error.acceptedGeneration }
             : {}),
@@ -848,13 +865,13 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
     const clientId = req.params.clientId?.trim() ?? '';
     const generation =
       typeof req.query.generation === 'string' ? req.query.generation.trim() : undefined;
-    if (!clientId) return res.status(400).json({ error: 'invalid_billing_interest' });
+    if (!clientId) return sendTokenError(res, 400, 'invalid_billing_interest');
     try {
       const released = billingRuntime.releaseClientInterests(clientId, generation);
       return res.json({ ok: true, released });
     } catch (error) {
       if (!(error instanceof WorkspaceBillingInterestError)) throw error;
-      return res.status(400).json({ error: error.code });
+      return sendTokenError(res, 400, error.code);
     }
   });
 
@@ -871,7 +888,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
       (freshness !== '' && freshness !== 'authoritative') ||
       (scope !== 'workspace' && freshness !== '')
     ) {
-      return res.status(400).json({ error: 'invalid_billing_scope' });
+      return sendTokenError(res, 400, 'invalid_billing_scope');
     }
     if (scope === 'account') {
       const summary = await fetchBilling();
@@ -909,7 +926,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
             { retryable: false },
           );
         }
-        return res.status(503).json({ error: 'workspace_directory_unavailable' });
+        return sendTokenError(res, 503, 'workspace_directory_unavailable');
       }
       membership = directoryResult.items.find(
         (item) =>
@@ -920,7 +937,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
     }
     if (!membership) {
       billingRuntime.revokeWorkspace(requestedWorkspaceId);
-      return res.status(403).json({ error: 'workspace_not_authorized' });
+      return sendTokenError(res, 403, 'workspace_not_authorized');
     }
     billingRuntime.retainWorkspaceMember(
       requestedWorkspaceId,
@@ -954,7 +971,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
     } catch (error) {
       if (error instanceof WorkspaceBillingInterestError) {
         return res.status(409).json({
-          error: error.code,
+          error: { code: error.code, message: error.message },
           ...(error.acceptedGeneration
             ? { acceptedGeneration: error.acceptedGeneration }
             : {}),
@@ -965,7 +982,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
           typeof (error as { code?: unknown })?.code === 'string'
             ? (error as { code: string }).code
             : 'workspace_billing_authoritative_unavailable';
-        return res.status(503).json({ error: code });
+        return sendTokenError(res, 503, code);
       }
       throw error;
     }
@@ -988,9 +1005,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
         ? runtimeResult.state.observedAt
         : null;
     if (freshness === 'authoritative' && !authoritativeObservedAt) {
-      return res.status(503).json({
-        error: 'workspace_billing_authoritative_unavailable',
-      });
+      return sendTokenError(res, 503, 'workspace_billing_authoritative_unavailable');
     }
     const body: WorkspaceBillingResponse = {
       summary: accountSummary,
@@ -1055,7 +1070,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
   // not expose `set`, so this 404s in production instead of spoofing identity.
   app.put('/api/workspace/context', (req, res) => {
     if (!workspaceContext.set) {
-      return res.status(404).json({ error: 'workspace context is not settable' });
+      return sendApiError(res, 404, 'NOT_FOUND', 'workspace context is not settable');
     }
     const body = req.body as unknown;
     // `null` explicitly clears the context (sign-out / leave team).
@@ -1065,7 +1080,7 @@ export function registerCollabContextRoutes(app: Express, deps: RegisterCollabCo
       return res.json(cleared);
     }
     const context = parseWorkspaceCollabContext(body);
-    if (!context) return res.status(400).json({ error: 'invalid workspace context' });
+    if (!context) return sendApiError(res, 400, 'BAD_REQUEST', 'invalid workspace context');
     workspaceContext.set(context);
     const response: WorkspaceContextResponse = { context };
     res.json(response);

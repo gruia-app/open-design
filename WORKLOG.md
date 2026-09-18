@@ -135,3 +135,27 @@
   revocada — delete antes de auditar → una fila por revocación, no una
   por request con cookie stale.
 - Verificación: typecheck + 27/27 tests gateway verdes en cada paso.
+
+## D3 cierre — migración diseñada de tokens de protocolo (rama fleet/protocol-tokens-1)
+
+- `dbe65a54b` fase 1 consumer: `apiErrorCode` en `utils/apiErrors.ts` +
+  dual-read en `useWorkspaceContext` (billing) — tests 8/8 helper + 54/54
+  billing scope.
+- `8697251e9` collab-context wire: ~30 tokens → `error.code`+`error.message`
+  verbatim; `acceptedGeneration` preservado como sibling top-level (manual
+  json, patrón strategy-rollout); 6 aserciones stale migradas; 725/725
+  tests collab verdes.
+- `263606cbf` vela.ts wire local: `/api/integrations/vela/*` +
+  `/api/amr/models` enveloped; login preserva siblings
+  (authAttemptId/authStages/authRoute/fallbackUsed) con envelope manual;
+  `proxyVelaMessageCenterRequest` convertido (consumers web+CLI nuestros).
+  Diferido `proxyAmrApiRequest` (6 sitios): sirve al binario vela hijo vía
+  `proxyApiUrl` — parsing de errores externo no verificable.
+  Consumers: message-center-client `apiErrorCode` (status 503),
+  providers/daemon `startVelaLogin` `apiErrorMessage`. CLI
+  `structuredHttpFailure` y MCP `formatDaemonError` ya duales.
+- Verificación: daemon typecheck + web typecheck + 93/93 daemon
+  (vela.routes + bootstrap-regression) + 62/62 web (MessageCenter,
+  AmrLoginPill, EntryNavRail) + 24/24 MessageCenter re-run.
+- Corrección menor: dos aserciones `body.error.code` en
+  workspace-switch-warms-caches necesitaban cast (`Record<string,unknown>`).

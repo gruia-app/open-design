@@ -1113,8 +1113,10 @@ describe('useWorkspaceBilling explicit scope', () => {
         if (url.startsWith('/api/workspace/billing?')) {
           billingCalls += 1;
           if (billingCalls === 2) {
+            // Canonical envelope shape — the consumer must read error.code the
+            // same way it read the legacy flat token.
             return new Response(
-              JSON.stringify({ error: 'workspace_directory_unavailable' }),
+              JSON.stringify({ error: { code: 'workspace_directory_unavailable', message: 'workspace_directory_unavailable' } }),
               {
                 status: 503,
                 headers: { 'content-type': 'application/json' },

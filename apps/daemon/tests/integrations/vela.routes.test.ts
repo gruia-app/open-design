@@ -670,12 +670,12 @@ describe('GET /api/integrations/vela/status', () => {
     const isolatedUrl = `http://127.0.0.1:${isolatedAddress.port}`;
 
     try {
-      const { status, body } = await getJson<{ error?: string; loggedIn?: boolean }>(
+      const { status, body } = await getJson<{ error?: { code?: string }; loggedIn?: boolean }>(
         `${isolatedUrl}/api/integrations/vela/status`,
       );
 
       expect(status).toBe(503);
-      expect(body.error).toBe('amr-runtime-unavailable');
+      expect(body.error?.code).toBe('amr-runtime-unavailable');
       expect(body.loggedIn).toBeUndefined();
     } finally {
       await new Promise<void>((resolve) => isolatedServer.close(() => resolve()));
@@ -1449,13 +1449,13 @@ describe('POST /api/integrations/vela/login', () => {
       status: 200,
       body: { canceled: false, pids: [] },
     });
-    const invalidCancel = await postJson<{ error?: string }>(
+    const invalidCancel = await postJson<{ error?: { code?: string } }>(
       `${baseUrl}/api/integrations/vela/login/cancel`,
       { authAttemptId: 'not-a-uuid' },
     );
     expect(invalidCancel).toMatchObject({
       status: 400,
-      body: { error: 'invalid_auth_attempt_id' },
+      body: { error: { code: 'invalid_auth_attempt_id' } },
     });
     const status = await getJson<{
       authAttemptId?: string;
@@ -1921,11 +1921,11 @@ describe('POST /api/integrations/vela/login', () => {
     );
     expect(first.status).toBe(202);
 
-    const second = await postJson<{ error?: string; authAttemptId?: string }>(
+    const second = await postJson<{ error?: { message?: string }; authAttemptId?: string }>(
       `${baseUrl}/api/integrations/vela/login`,
     );
     expect(second.status).toBe(409);
-    expect(String(second.body.error || '')).toMatch(/already running/i);
+    expect(String(second.body.error?.message || '')).toMatch(/already running/i);
     // A concurrent initiator intentionally joins the one active attempt.
     expect(second.body.authAttemptId).toBe(first.body.authAttemptId);
 
@@ -1937,12 +1937,12 @@ describe('POST /api/integrations/vela/login', () => {
     process.env.FAKE_VELA_LOGIN_FAIL =
       'profile "prod" api URL: is not configured';
 
-    const { status, body } = await postJson<{ error?: string }>(
+    const { status, body } = await postJson<{ error?: { message?: string } }>(
       `${baseUrl}/api/integrations/vela/login`,
     );
 
     expect(status).toBe(500);
-    expect(body.error).toContain('profile "prod" api URL: is not configured');
+    expect(body.error?.message).toContain('profile "prod" api URL: is not configured');
   });
 
   it('does not attach a stale attempt snapshot to a pre-spawn config failure', async () => {
@@ -2464,7 +2464,9 @@ describe('ALL /api/integrations/vela/message-center/*', () => {
       ]);
       const rejected = await fetch(`${baseUrl}/api/integrations/vela/message-center/wallet/balance`);
       expect(rejected.status).toBe(404);
-      expect(await rejected.json()).toEqual({ error: 'unknown_message_center_path' });
+      expect(await rejected.json()).toEqual({
+        error: { code: 'unknown_message_center_path', message: 'unknown_message_center_path' },
+      });
       expect(requests).toHaveLength(2);
     } finally {
       await new Promise<void>((resolve) => upstream.close(() => resolve()));
@@ -2476,7 +2478,9 @@ describe('ALL /api/integrations/vela/message-center/*', () => {
       `${baseUrl}/api/integrations/vela/message-center/messages?locale=en-US`,
     );
     expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({ error: 'vela_control_key_required' });
+    expect(await response.json()).toEqual({
+      error: { code: 'vela_control_key_required', message: 'vela_control_key_required' },
+    });
   });
 
   it('guards upstream response-stream errors after headers without crashing the daemon', async () => {
@@ -2857,13 +2861,15 @@ describe('POST /api/integrations/vela/analytics-entry', () => {
       }),
     ).toBeNull();
 
-    const { status, body } = await postJson<{ error: string }>(
+    const { status, body } = await postJson<{ error: { code: string } }>(
       `${baseUrl}/api/integrations/vela/analytics-profile`,
       { payload: { pageName: 'open_design' } },
     );
 
     expect(status).toBe(400);
-    expect(body).toEqual({ error: 'invalid_amr_profile_analytics' });
+    expect(body).toEqual({
+      error: { code: 'invalid_amr_profile_analytics', message: 'invalid_amr_profile_analytics' },
+    });
   });
 
   it('rejects non-onboarding sources for AMR onboarding profile analytics', async () => {
@@ -2883,23 +2889,27 @@ describe('POST /api/integrations/vela/analytics-entry', () => {
 
     expect(parseAmrOnboardingProfileAnalyticsPayload({ payload })).toBeNull();
 
-    const { status, body } = await postJson<{ error: string }>(
+    const { status, body } = await postJson<{ error: { code: string } }>(
       `${baseUrl}/api/integrations/vela/analytics-profile`,
       { payload },
     );
 
     expect(status).toBe(400);
-    expect(body).toEqual({ error: 'invalid_amr_profile_analytics' });
+    expect(body).toEqual({
+      error: { code: 'invalid_amr_profile_analytics', message: 'invalid_amr_profile_analytics' },
+    });
   });
 
   it('rejects malformed AMR entry analytics payloads', async () => {
-    const { status, body } = await postJson<{ error: string }>(
+    const { status, body } = await postJson<{ error: { code: string } }>(
       `${baseUrl}/api/integrations/vela/analytics-entry`,
       { payload: { pageName: 'open_design' } },
     );
 
     expect(status).toBe(400);
-    expect(body).toEqual({ error: 'invalid_amr_entry_analytics' });
+    expect(body).toEqual({
+      error: { code: 'invalid_amr_entry_analytics', message: 'invalid_amr_entry_analytics' },
+    });
   });
 
   it('does not mirror to AMR when the request carries no analytics-consent headers', async () => {

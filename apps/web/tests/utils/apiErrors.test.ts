@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apiErrorMessage } from '../../src/utils/apiErrors';
+import { apiErrorCode, apiErrorMessage } from '../../src/utils/apiErrors';
 
 describe('apiErrorMessage', () => {
   it('reads the canonical envelope shape', () => {
@@ -32,5 +32,31 @@ describe('apiErrorMessage', () => {
     expect(apiErrorMessage({ error: {} }, 'fallback')).toBe('fallback');
     expect(apiErrorMessage({ error: { code: 'X' } }, 'fallback')).toBe('fallback');
     expect(apiErrorMessage('nope', 'fallback')).toBe('fallback');
+  });
+});
+
+describe('apiErrorCode', () => {
+  it('reads the canonical envelope code', () => {
+    expect(
+      apiErrorCode({ error: { code: 'workspace_not_authorized', message: 'denied' } }),
+    ).toBe('workspace_not_authorized');
+  });
+
+  it('reads the legacy flat token', () => {
+    expect(apiErrorCode({ error: 'workspace_not_visible' })).toBe('workspace_not_visible');
+  });
+
+  it('reads the legacy flat-fields code', () => {
+    expect(
+      apiErrorCode({ error: 'WORKSPACE_ACCESS_DENIED', message: 'not available' }),
+    ).toBe('WORKSPACE_ACCESS_DENIED');
+  });
+
+  it('returns undefined when no usable code is present', () => {
+    expect(apiErrorCode({})).toBeUndefined();
+    expect(apiErrorCode(null)).toBeUndefined();
+    expect(apiErrorCode({ error: {} })).toBeUndefined();
+    expect(apiErrorCode({ error: '   ' })).toBeUndefined();
+    expect(apiErrorCode('nope')).toBeUndefined();
   });
 });

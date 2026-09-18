@@ -16,6 +16,7 @@ import {
   buildWorkspaceSeatSummary,
 } from '@open-design/contracts';
 import { coalescedGet, forceCoalescedGet } from '../lib/coalesced-get';
+import { apiErrorCode } from '../utils/apiErrors';
 import { BackoffController, type BackoffOptions } from '../lib/backoff';
 import {
   markProjectDisplaySnapshotsDirty,
@@ -1337,9 +1338,10 @@ export function useWorkspaceBillingResponse(
           let errorCode = `workspace_billing_http_${res.status}`;
           try {
             const errorBody = (await res.json()) as { error?: unknown };
-            if (typeof errorBody.error === 'string' && errorBody.error.trim()) {
-              errorCode = errorBody.error.trim();
-            }
+            // Dual-read while collab-context routes migrate: legacy wire sends
+            // `{error: 'token'}`, the canonical envelope sends
+            // `{error: {code, message}}`.
+            errorCode = apiErrorCode(errorBody) ?? errorCode;
           } catch {
             // The status remains authoritative when an older daemon returns
             // a non-JSON error page.

@@ -1,204 +1,247 @@
 {
-  "app": "design",
-  "updated_at": "2026-09-18T22:45:00Z",
-  "current": {
-    "item": "fleet/next-gaps-2 — gaps gateway cerrados (G7+G4+session_revoked); siguiente: G8 session_expired o migración diseñada de tokens protocolo",
-    "state": "in_progress",
-    "branch": "fleet/next-gaps-2"
+ "app": "design",
+ "updated_at": "2026-09-18T21:26:55.177382+00:00",
+ "current": {
+  "item": "umbral 5 commits alcanzado — push + PR ready + auto-merge squash",
+  "state": "in_progress",
+  "branch": "fleet/protocol-tokens-1"
+ },
+ "done": [
+  {
+   "item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado",
+   "commit": "n/a",
+   "deploy": "n/a"
   },
-  "done": [
-    {
-      "item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5",
-      "commit": "2cc1658f5",
-      "deploy": "pending",
-      "note": "upstream PR #8262"
-    },
-    {
-      "item": "gateway G1+G2+G9: sweep sesiones, anti-framing, sessionTtl config",
-      "commit": "squash via PR #4",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 batch 2: sidecar IPC, records, resilience",
-      "commit": "73b37548f",
-      "deploy": "pending",
-      "pr": 6
-    },
-    {
-      "item": "D1 batch 3: pack/serve/release quoting+validation",
-      "commit": "8089972db",
-      "deploy": "pending",
-      "pr": 7
-    },
-    {
-      "item": "D1 batch 4: web resilience, envelopes, timeouts",
-      "commit": "6384ae519",
-      "deploy": "pending",
-      "pr": 8
-    },
-    {
-      "item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n",
-      "commit": "adefce32f",
-      "deploy": "pending",
-      "pr": 9
-    },
-    {
-      "item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING",
-      "commit": "6b878c4e2",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 sweep: memory (072b65d02), media+xai, collab-context — PR #10 squash 9b3ef04ec",
-      "commit": "9b3ef04ec",
-      "deploy": "pending",
-      "pr": 10
-    },
-    {
-      "item": "D3: envelope en genui route errors (14 sitios, import directo)",
-      "commit": "406a03aae",
-      "deploy": "pending",
-      "pr": 11,
-      "merged": "74fcd820e"
-    },
-    {
-      "item": "D3: envelope en comment route errors (24 sitios, ctx.sendApiError + fallback)",
-      "commit": "07d14a7b2",
-      "deploy": "pending",
-      "pr": 11,
-      "merged": "74fcd820e"
-    },
-    {
-      "item": "D3: envelope en static-resource (28 sitios + sendWorkspaceScopeError local; atom/install codes en details; fixtures con sender real; bootstrap-regression al día)",
-      "commit": "0fa8652de",
-      "deploy": "pending",
-      "pr": 11,
-      "merged": "74fcd820e"
-    },
-    {
-      "item": "D3: envelope en design-systems (35 sitios + sendWorkspaceScopeError propio; workspace codes preservados; consumers dual-read)",
-      "commit": "74fcd820e",
-      "pr": 11,
-      "deploy": "pending",
-      "merged": true
-    },
-    {
-      "item": "D3 batch 3: envelope en automation (21), routine (+sendRoutineError scope shape), team-resources, team-resource-share (workspace codes verbatim); web apiErrorMessage helper + 10 consumer sites",
-      "commit": "0202c835b",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 batch 3 (4 ficheros lógicos): automation/routine/team-resources/team-resource-share + project tabs/templates/artifacts/conversations + daemon db + connectors + telemetry/attribution/presence/public-metadata/critique-artifact + plugins assets/marketplaces; web apiErrorMessage helper + readErrorMessage details.errors",
-      "commit": "d011a5f76",
-      "pr": 12,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
-      "commit": "29b4fe3bb",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 batch 4: collab-sync + stragglers + multiline sweep + media residuals",
-      "commit": "e10add9b4",
-      "pr": 13,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 batch 5: plugins/index + daemon oauth-launch + comments fallback + plugin-assets + strategy-rollout; sweep envelope completo salvo tokens protocolo",
-      "commit": "cb28b84ac",
-      "pr": 14,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "revision post-muerte (esta sesión): diffs G7/G4 del predecesor auditados con escepticismo — schema auth_audit, retención, orden sweep/check del limiter IP y flujo de contexto correctos; 27/27 tests re-ejecutados verdes",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G7: auth audit trail — tabla auth_audit (90d/100k retención), login_success/login_failure(detail)/logout con ip+user-agent del request",
-      "commit": "7db05a69b",
-      "deploy": "pending"
-    },
-    {
-      "item": "G4: bucket rate-limit por IP en login (20/min, 10k keys, sweep-on-access) via AuthAuditContext.ip",
-      "commit": "380311354",
-      "deploy": "pending"
-    },
-    {
-      "item": "G7 refinamiento: authorize() audita session_revoked (identity_mismatch) al matar sesión por identidad revocada — 1 fila por revocación",
-      "commit": "a8f0e978f",
-      "deploy": "pending"
-    }
-  ],
-  "blocked": [
-    {
-      "item": "G3 timer de barrido periódico de sesiones",
-      "reason": "bajo valor — G1 sweep-on-write cubre el caso activo; evaluar intervalo unref() barato si se retoma",
-      "needs": "decision"
-    },
-    {
-      "item": "G6 métricas/observabilidad gateway",
-      "reason": "decisión de diseño — endpoint /metrics vs logs estructurados",
-      "needs": "decision"
-    },
-    {
-      "item": "collab-context/vela/server.ts vela-proxy envelope",
-      "reason": "tokens snake_case de protocolo que clients matchean — requiere migración diseñada consumer-by-consumer con lectura dual",
-      "needs": "review"
-    }
-  ],
-  "prs_open": [
-    {
-      "repo": "nexu-io/open-design",
-      "pr": 8262,
-      "note": "contribution upstream; no auto-merge posible"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 11,
-      "merged": "74fcd820e",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 12,
-      "merged": "d011a5f76",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 13,
-      "merged": "e10add9b4",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 14,
-      "merged": "cb28b84ac",
-      "note": "auto-merge squash ejecutado"
-    }
-  ],
-  "deploys_pending": [
-    "2cc1658f5 (upstream PR #8262)",
-    "PR #4 squash (gateway G1+G2+G9)",
-    "73b37548f (PR #6)",
-    "8089972db (PR #7)",
-    "6384ae519 (PR #8)",
-    "adefce32f (PR #9)",
-    "9b3ef04ec (PR #10)",
-    "74fcd820e (PR #11)",
-    "d011a5f76 (PR #12)",
-    "e10add9b4 (PR #13)",
-    "cb28b84ac (PR #14)",
-    "7db05a69b + 380311354 + a8f0e978f (fleet/next-gaps-2, sin PR aún — 3/5 commits)"
-  ],
-  "notes": "bucle en repo privado gruia-app/design. D3 cerrado salvo tokens protocolo. Gateway gaps restantes: G8 (session_expired forense), G3/G6 decisiones. Próximo PR al llegar a 5 commits en fleet/next-gaps-2."
+  {
+   "item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5",
+   "commit": "2cc1658f5",
+   "deploy": "pending",
+   "note": "upstream PR #8262"
+  },
+  {
+   "item": "gateway G1+G2+G9: sweep sesiones, anti-framing, sessionTtl config",
+   "commit": "squash via PR #4",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 batch 2: sidecar IPC, records, resilience",
+   "commit": "73b37548f",
+   "deploy": "pending",
+   "pr": 6
+  },
+  {
+   "item": "D1 batch 3: pack/serve/release quoting+validation",
+   "commit": "8089972db",
+   "deploy": "pending",
+   "pr": 7
+  },
+  {
+   "item": "D1 batch 4: web resilience, envelopes, timeouts",
+   "commit": "6384ae519",
+   "deploy": "pending",
+   "pr": 8
+  },
+  {
+   "item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n",
+   "commit": "adefce32f",
+   "deploy": "pending",
+   "pr": 9
+  },
+  {
+   "item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING",
+   "commit": "6b878c4e2",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 sweep: memory (072b65d02), media+xai, collab-context — PR #10 squash 9b3ef04ec",
+   "commit": "9b3ef04ec",
+   "deploy": "pending",
+   "pr": 10
+  },
+  {
+   "item": "D3: envelope en genui route errors (14 sitios, import directo)",
+   "commit": "406a03aae",
+   "deploy": "pending",
+   "pr": 11,
+   "merged": "74fcd820e"
+  },
+  {
+   "item": "D3: envelope en comment route errors (24 sitios, ctx.sendApiError + fallback)",
+   "commit": "07d14a7b2",
+   "deploy": "pending",
+   "pr": 11,
+   "merged": "74fcd820e"
+  },
+  {
+   "item": "D3: envelope en static-resource (28 sitios + sendWorkspaceScopeError local; atom/install codes en details; fixtures con sender real; bootstrap-regression al día)",
+   "commit": "0fa8652de",
+   "deploy": "pending",
+   "pr": 11,
+   "merged": "74fcd820e"
+  },
+  {
+   "item": "D3: envelope en design-systems (35 sitios + sendWorkspaceScopeError propio; workspace codes preservados; consumers dual-read)",
+   "commit": "74fcd820e",
+   "pr": 11,
+   "deploy": "pending",
+   "merged": true
+  },
+  {
+   "item": "D3 batch 3: envelope en automation (21), routine (+sendRoutineError scope shape), team-resources, team-resource-share (workspace codes verbatim); web apiErrorMessage helper + 10 consumer sites",
+   "commit": "0202c835b",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 batch 3 (4 ficheros lógicos): automation/routine/team-resources/team-resource-share + project tabs/templates/artifacts/conversations + daemon db + connectors + telemetry/attribution/presence/public-metadata/critique-artifact + plugins assets/marketplaces; web apiErrorMessage helper + readErrorMessage details.errors",
+   "commit": "d011a5f76",
+   "pr": 12,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
+   "commit": "29b4fe3bb",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 batch 4: collab-sync + stragglers + multiline sweep + media residuals",
+   "commit": "e10add9b4",
+   "pr": 13,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 batch 5: plugins/index + daemon oauth-launch + comments fallback + plugin-assets + strategy-rollout; sweep envelope completo salvo tokens protocolo",
+   "commit": "cb28b84ac",
+   "pr": 14,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "revision post-muerte (esta sesión): diffs G7/G4 del predecesor auditados con escepticismo — schema auth_audit, retención, orden sweep/check del limiter IP y flujo de contexto correctos; 27/27 tests re-ejecutados verdes",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G7: auth audit trail — tabla auth_audit (90d/100k retención), login_success/login_failure(detail)/logout con ip+user-agent del request",
+   "commit": "7db05a69b",
+   "deploy": "pending"
+  },
+  {
+   "item": "G4: bucket rate-limit por IP en login (20/min, 10k keys, sweep-on-access) via AuthAuditContext.ip",
+   "commit": "380311354",
+   "deploy": "pending"
+  },
+  {
+   "item": "G7 refinamiento: authorize() audita session_revoked (identity_mismatch) al matar sesión por identidad revocada — 1 fila por revocación",
+   "commit": "a8f0e978f",
+   "deploy": "pending"
+  },
+  {
+   "item": "G8: readSession audita session_expired en el delete de la fila expirada — 1 fila por sesión, 0 para ids desconocidos",
+   "commit": "a0a0408bc",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #15 (gateway auth G7+G4+G8+session_revoked) mergeado squash",
+   "commit": "50a8470db",
+   "pr": 15,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 tokens fase 1: apiErrorCode helper web + dual-read useWorkspaceContext billing",
+   "commit": "dbe65a54b",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 collab-context wire: ~30 tokens -> envelope code+message, acceptedGeneration sibling preservado; 725/725 collab",
+   "commit": "8697251e9",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 vela wire local: /api/integrations/vela/* + /api/amr/models enveloped, login siblings preservados, api-proxy diferido (binario vela externo); consumers web dual-read; 93+62 tests verdes",
+   "commit": "263606cbf",
+   "deploy": "pending"
+  },
+  {
+   "item": "chore(fleet): coordinación D3 cierre tokens",
+   "commit": "ccdc25b82",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad upstream: cherry-pick fix automation CLI id splitter dead-zone (upstream #7612)",
+   "commit": "abcb99c6d",
+   "deploy": "pending"
+  }
+ ],
+ "blocked": [
+  {
+   "item": "G3 timer de barrido periódico de sesiones",
+   "reason": "bajo valor — G1 sweep-on-write cubre el caso activo; evaluar intervalo unref() barato si se retoma",
+   "needs": "decision"
+  },
+  {
+   "item": "G6 métricas/observabilidad gateway",
+   "reason": "decisión de diseño — endpoint /metrics vs logs estructurados",
+   "needs": "decision"
+  },
+  {
+   "item": "proxyAmrApiRequest (/api/integrations/vela/api-proxy/*) flat tokens",
+   "reason": "superficie consumida por el binario vela hijo — verificar su parsing de errores antes de convertir (6 sitios)",
+   "needs": "review"
+  }
+ ],
+ "prs_open": [
+  {
+   "repo": "nexu-io/open-design",
+   "pr": 8262,
+   "note": "contribution upstream; no auto-merge posible"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 11,
+   "merged": "74fcd820e",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 12,
+   "merged": "d011a5f76",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 13,
+   "merged": "e10add9b4",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 14,
+   "merged": "cb28b84ac",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 15,
+   "merged": "50a8470db",
+   "note": "auto-merge squash ejecutado (merge inmediato, sin checks pendientes)"
+  }
+ ],
+ "deploys_pending": [
+  "2cc1658f5 (upstream PR #8262)",
+  "PR #4 squash (gateway G1+G2+G9)",
+  "73b37548f (PR #6)",
+  "8089972db (PR #7)",
+  "6384ae519 (PR #8)",
+  "adefce32f (PR #9)",
+  "9b3ef04ec (PR #10)",
+  "74fcd820e (PR #11)",
+  "d011a5f76 (PR #12)",
+  "e10add9b4 (PR #13)",
+  "cb28b84ac (PR #14)",
+  "50a8470db (PR #15)"
+ ],
+ "notes": "bucle en repo privado gruia-app/design. D3 cerrado salvo tokens protocolo (collab-context/vela — migración diseñada en curso en fleet/protocol-tokens-1). Gateway: G3/G6 pendientes como decisiones de diseño."
 }

@@ -1124,7 +1124,7 @@ export async function startVelaLogin(
       ok: false,
       status: resp.status,
       alreadyRunning: resp.status === 409,
-      error: body?.error ?? '',
+      error: apiErrorMessage(body, ''),
       ...(body?.authAttemptId ? { authAttemptId: body.authAttemptId } : {}),
       ...(body?.authStages ? { authStages: body.authStages } : {}),
       ...(body?.authRoute ? { authRoute: body.authRoute } : {}),

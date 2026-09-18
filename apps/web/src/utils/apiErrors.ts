@@ -21,3 +21,24 @@ export function apiErrorMessage(body: unknown, fallback: string): string {
   if (typeof message === 'string' && message.length > 0) return message;
   return fallback;
 }
+
+/**
+ * Extract the machine error code from a daemon error response body that may
+ * be in either shape:
+ *
+ * - canonical envelope: `{ error: { code, message, ... } }`
+ * - legacy flat token: `{ error: 'some_token' }`
+ * - legacy flat fields: `{ error: 'CODE', message: 'message' }`
+ *
+ * Returns `undefined` when no usable code is present.
+ */
+export function apiErrorCode(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const { error } = body as { error?: unknown };
+  if (typeof error === 'string' && error.trim().length > 0) return error.trim();
+  if (error && typeof error === 'object') {
+    const inner = (error as { code?: unknown }).code;
+    if (typeof inner === 'string' && inner.trim().length > 0) return inner.trim();
+  }
+  return undefined;
+}

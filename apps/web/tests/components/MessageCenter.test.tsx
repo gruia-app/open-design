@@ -165,7 +165,10 @@ describe('MessageCenter', () => {
 
   it('falls back to the public feed when the AMR runtime is unavailable', async () => {
     mockFetch({
-      onStatus: async () => Response.json({ error: 'amr-runtime-unavailable' }, { status: 503 }),
+      onStatus: async () => Response.json(
+        { error: { code: 'amr-runtime-unavailable', message: 'amr-runtime-unavailable' } },
+        { status: 503 },
+      ),
     });
 
     renderMessageCenter();
