@@ -1,0 +1,15 @@
+# simplia-ci runs `trivy fs --severity CRITICAL --exit-code 1 --no-progress .`
+# from the repo root. Skip generated/vendor directories: dependencies are
+# already covered by the pnpm-lock.yaml scan, and vendored store content
+# (e.g. doc fixtures inside the pnpm store) produces false-positive secret
+# findings that are not project-owned code.
+scan:
+  skip-dirs:
+    - .git
+    - .simplia-ci
+    - .pnpm
+    - node_modules
+    - dist
+    - out
+    - .next
+    - coverage
