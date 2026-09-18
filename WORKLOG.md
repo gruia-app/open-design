@@ -184,3 +184,15 @@
   ProjectView divergente.
 - `3552c6a53`→`9f9e26f31` (en PR #17): ACP URL title fix con test e2e
   portado a unitario daemon (build-turn-blocks no existe en el fork).
+
+## Paridad upstream — lote 5 (rama fleet/parity-5)
+
+- Cherry-picks limpios: `32cae7f17` + `6fc501fb6` (mantener credenciales
+  Basic del proxy fuera de los lanes tool-token de media-wait y export,
+  #8006/#7999 — seguridad), `ac06579fa` (cancelación de sesión ACP como
+  notificación, #7959), `d54f5cf07`→HEAD (kinds canónicos de monitoring
+  cliente, #7945 — 43/43 web observability).
+- Descartados por divergencia/borrado en fork: `a62d5e08c`
+  (QuestionForm), `ab009b1a3` (file-ops), `ad9078b87` (chat footer).
+- Verificación: tasks-routes 9/9 + export-tool-token 16/16 + acp 94/94 +
+  web observability 43/43.

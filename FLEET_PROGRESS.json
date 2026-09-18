@@ -1,10 +1,10 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T21:42:25.391805+00:00",
+ "updated_at": "2026-09-18T21:46:08.872880+00:00",
  "current": {
-  "item": "umbral >=5 commits — push + PR + auto-merge",
+  "item": "umbral 5 commits — push + PR + auto-merge",
   "state": "in_progress",
-  "branch": "fleet/parity-4"
+  "branch": "fleet/parity-5"
  },
  "done": [
   {
@@ -212,6 +212,33 @@
    "item": "D1 paridad: MCP workflow id en confirm briefs (upstream #7779)",
    "commit": "e7e4b52b2",
    "deploy": "pending"
+  },
+  {
+   "item": "PR #18 (paridad batch 4: Copilot CLI, payload handoff, BYOK image, MCP workflow id) mergeado squash",
+   "commit": "194286537",
+   "pr": 18,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: proxy Basic creds fuera de media wait tool-token (upstream #8006)",
+   "commit": "32cae7f17",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: proxy Basic creds fuera de export tool-token (upstream #7999)",
+   "commit": "6fc501fb6",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: ACP session cancel como notificación (upstream #7959)",
+   "commit": "ac06579fa",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: canonical client monitoring kinds (upstream #7945)",
+   "commit": "80d3e002f",
+   "deploy": "pending"
   }
  ],
  "blocked": [
@@ -273,6 +300,12 @@
    "pr": 17,
    "merged": "b52a7cf28",
    "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 18,
+   "merged": "194286537",
+   "note": "auto-merge squash ejecutado"
   }
  ],
  "deploys_pending": [
@@ -289,7 +322,8 @@
   "cb28b84ac (PR #14)",
   "50a8470db (PR #15)",
   "ce045f845 (PR #16)",
-  "b52a7cf28 (PR #17)"
+  "b52a7cf28 (PR #17)",
+  "194286537 (PR #18)"
  ],
  "notes": "bucle en repo privado gruia-app/design. D3 cerrado salvo tokens protocolo (collab-context/vela — migración diseñada en curso en fleet/protocol-tokens-1). Gateway: G3/G6 pendientes como decisiones de diseño."
 }
