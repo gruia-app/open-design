@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { createServer, request as httpRequest, type Server, type ServerResponse } from "node:http";
 import { describe, expect, it } from "vitest";
-import { GatewayCore, createGatewayServer, daemonUpstreamHeaders, isAuthorizedWebSocketHandshake, isExpectedOrigin, isSafeProxyPath, verifyCanonicalPassword } from "../src/gateway.js";
+import { GatewayCore, createGatewayServer, daemonUpstreamHeaders, isAuthorizedWebSocketHandshake, isExpectedOrigin, isSafeProxyPath, shutdownGateway, verifyCanonicalPassword } from "../src/gateway.js";
 import { SqliteSessionStore } from "../src/session-store.js";
 import type { AuthorizationRepository, GatewayConfig, GatewayIdentity, GatewayLoginUser } from "../src/types.js";
 
@@ -38,6 +38,7 @@ describe("Gruia gateway client cancellation", () => {
     const upstream = createServer((request, response) => {
       expect(request.headers.authorization).toBe("Bearer daemon-a");
       expect(request.headers.cookie).toBeUndefined();
+      expect(request.headers["x-forwarded-for"]).toBe("198.51.100.66");
       response.setHeader("set-cookie", "upstream-cookie=blocked");
       response.write("first ");
       received.resolve(response);
@@ -49,7 +50,7 @@ describe("Gruia gateway client cancellation", () => {
     const { server, base } = await listener(core);
     try {
       const session = await core.login("user@gruia.app", "password");
-      const response = await fetch(`${base}/api/projects`, { headers: { cookie: `gruia_design_session=${session!.id}`, authorization: "Bearer untrusted" } });
+      const response = await fetch(`${base}/api/projects`, { headers: { cookie: `gruia_design_session=${session!.id}`, authorization: "Bearer untrusted", "x-forwarded-for": "198.51.100.66, 10.0.0.1" } });
       expect(response.status).toBe(200);
       const upstreamResponse = await received.promise;
       upstreamResponse.end("last");
@@ -61,6 +62,26 @@ describe("Gruia gateway client cancellation", () => {
       await new Promise<void>((resolve) => upstream.close(() => resolve()));
       server.closeAllConnections();
       await close(server, core);
+    }
+  });
+
+  it("shutdown completes despite a hanging proxied request", async () => {
+    const upstream = createServer(() => { /* never responds — simulates a stalled daemon */ });
+    await new Promise<void>((resolve) => upstream.listen(0, "127.0.0.1", resolve));
+    const address = upstream.address();
+    if (!address || typeof address === "string") throw new Error("missing upstream listener");
+    const core = new GatewayCore(config({ organizations: new Map([["org-a", { upstream: `http://127.0.0.1:${address.port}`, daemonApiToken: "daemon-a" }]]) }), new SqliteSessionStore(":memory:", secret), new Repository());
+    const { server, base } = await listener(core);
+    try {
+      const session = await core.login("user@gruia.app", "password");
+      const pending = fetch(`${base}/api/projects`, { headers: { cookie: `gruia_design_session=${session!.id}` } }).then(() => "answered", () => "aborted");
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await expect(shutdownGateway(server, 25)).resolves.toBeUndefined();
+      expect(await pending).toBe("aborted");
+    } finally {
+      upstream.closeAllConnections();
+      await new Promise<void>((resolve) => upstream.close(() => resolve()));
+      await core.close();
     }
   });
 

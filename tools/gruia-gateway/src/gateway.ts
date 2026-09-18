@@ -59,9 +59,10 @@ export function sanitizedUpstreamHeaders(headers: IncomingHttpHeaders, target: U
   output.host = target.host;
   return output;
 }
-export function daemonUpstreamHeaders(headers: IncomingHttpHeaders, target: URL, daemonApiToken: string): Record<string, string | string[]> {
+export function daemonUpstreamHeaders(headers: IncomingHttpHeaders, target: URL, daemonApiToken: string, clientIp?: string): Record<string, string | string[]> {
   const output = sanitizedUpstreamHeaders(headers, target);
   output.authorization = `Bearer ${daemonApiToken}`;
+  if (clientIp) output["x-forwarded-for"] = clientIp;
   return output;
 }
 
@@ -189,6 +190,14 @@ export function createGatewayServer(core: GatewayCore): Server {
   return server;
 }
 
+/** Stops accepting work, then force-closes lingering keep-alive/SSE sockets after a grace period so SIGTERM cannot hang on open proxy streams. */
+export function shutdownGateway(server: Server, graceMs = 5_000): Promise<void> {
+  const closed = new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  const force = setTimeout(() => server.closeAllConnections(), graceMs);
+  force.unref();
+  return closed;
+}
+
 async function handleRequest(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
   const raw = request.url;
   if (!isSafeProxyPath(raw)) { json(response, 400, { error: "invalid_request" }); return; }
@@ -239,7 +248,7 @@ async function proxy(request: IncomingMessage, response: ServerResponse, core: G
   const target = core.config.organizations.get(organizationId); if (!target || !isSafeProxyPath(request.url)) { json(response, 403, { error: "forbidden" }); return; }
   const upstream = new URL(target.upstream); const contentLength = Number(request.headers["content-length"] ?? 0);
   if (!Number.isSafeInteger(contentLength) || contentLength < 0 || contentLength > core.config.requestBodyLimitBytes) { json(response, 413, { error: "payload_too_large" }); return; }
-  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken);
+  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs }, (upstreamResponse) => {
     if (response.destroyed || response.writableEnded) { upstreamResponse.destroy(); return; }
     try {
@@ -268,7 +277,7 @@ async function handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buf
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request));
   if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER") { deny(); return; }
   const target = core.config.organizations.get(authorized.identity.organizationId); if (!target) { deny(); return; }
-  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken);
+  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs });
   upstreamRequest.on("response", (upstreamResponse) => { upstreamResponse.resume(); deny(); });
   upstreamRequest.on("upgrade", (upstreamResponse, upstreamSocket, upstreamHead) => { let lines = `HTTP/${upstreamResponse.httpVersion} ${upstreamResponse.statusCode} ${upstreamResponse.statusMessage}\r\n`; for (const [name, value] of Object.entries(upstreamResponse.headers)) if (value !== undefined && name.toLowerCase() !== "set-cookie") lines += `${name}: ${Array.isArray(value) ? value.join(", ") : value}\r\n`; socket.write(`${lines}\r\n`); if (upstreamHead.length) socket.write(upstreamHead); if (head.length) upstreamSocket.write(head); upstreamSocket.pipe(socket).pipe(upstreamSocket); });

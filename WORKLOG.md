@@ -307,3 +307,14 @@
 - Pendientes reales: G6 (decisión /metrics vs logs estructurados — requiere
   operador), proxyAmrApiRequest flat tokens (parsing del binario vela no
   verificable — ELF Go compilado; conservador mantenerlos).
+
+## Lote 14 — gateway proxy + hygiene (fleet/gaps-14)
+
+- Revisión post-muerte: main con PR #24-27 verificado (32/32 gateway verdes).
+- `87da4c53c` — G15: `daemonUpstreamHeaders` propaga `x-forwarded-for` con la IP
+  resuelta por authContext (antes el daemon veía la IP del gateway — auditoría
+  daemon-side sin atribución real). HTTP proxy + upgrade WS (33/33).
+- `2149b0e97` — G16: `shutdownGateway` — cierre forzado de sockets keep-alive/SSE
+  tras gracia para que SIGTERM no cuelgue en streams proxy abiertos (33/33).
+- `afb24f5e2` — hygiene: `.playwright-cli/` estaba commiteado sin ignore →
+  untracked + ignorado (contrato: scratch de agente fuera de git).

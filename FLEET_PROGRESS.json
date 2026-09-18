@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T23:03:56.738703+00:00",
+ "updated_at": "2026-09-18T23:43:46.401498+00:00",
  "current": {
-  "item": "convergido — esperando decisiones operador (G6) o nueva cola upstream",
-  "state": "blocked"
+  "item": "push + PR lote 14",
+  "state": "in_progress"
  },
  "done": [
   {
@@ -410,6 +410,21 @@
    "item": "lote 13 merged via PR #27 — convergencia alcanzada",
    "commit": "9937e7e34",
    "deploy": "pendiente"
+  },
+  {
+   "item": "G15 — x-forwarded-for propagado al daemon (audit daemon-side ve IP real)",
+   "commit": "87da4c53c",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G16 — shutdownGateway: cierre forzado de sockets para que SIGTERM no cuelgue (SSE proxy)",
+   "commit": "2149b0e97",
+   "deploy": "n/a"
+  },
+  {
+   "item": "hygiene: .playwright-cli untracked+ignored (scratch commiteado)",
+   "commit": "afb24f5e2",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
@@ -505,5 +520,5 @@
   "PR #26 / af43be3b5 (gateway audit context)",
   "PR #27 / 9937e7e34 (gateway org_not_admitted)"
  ],
- "notes": "Paridad upstream: cola limpia agotada (ChatPanel/CMS/codex-app-server/prerelease-card ausentes). Gateway: audit forense completo. Bloqueados: G6 (decision /metrics), proxyAmrApiRequest (parsing binario vela no verificable — ELF)."
+ "notes": "fix en rama fleet/gaps-14 (main restaurado tras commit accidental — contenido solo gateway, verificado 32/32)."
 }
