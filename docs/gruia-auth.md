@@ -4,7 +4,7 @@
 
 ## Runtime configuration migration
 
-Remove the complete `workos` object from the protected gateway JSON configuration, including the former client secret and callback URL. Remove any `sessionTtlSeconds` override: sessions are fixed at four hours. Keep `publicOrigin`, `postgresUrl`, `sessionSecret`, `databasePath`, `organizations`, and the existing daemon targets. `publicOrigin` must be the exact public HTTPS origin.
+Remove the complete `workos` object from the protected gateway JSON configuration, including the former client secret and callback URL. Sessions default to four hours; a `sessionTtlSeconds` override in the JSON is honored when set. Keep `publicOrigin`, `postgresUrl`, `sessionSecret`, `databasePath`, `organizations`, and the existing daemon targets. `publicOrigin` must be the exact public HTTPS origin.
 
 The gateway issues a new `__Host-gruia_design_session` cookie in production. It is opaque, HttpOnly, Secure, host-only (no `Domain` attribute), `SameSite=Lax`, and has a fixed four-hour default lifetime. It is stored only as a hash in the local SQLite `password_sessions` table. Old WorkOS cookies and the old `sessions` table are not read.
 
@@ -25,7 +25,7 @@ Canonical `hashed_password` records may be bcrypt (`$2b$`, with compatible bcryp
 
 ## Browser behavior
 
-`GET /auth` and `GET /auth/login` render the same Spanish email/password form at the Gruia Design origin. There is no external navigation, registration, or reset flow. Login requires an exact `Origin` match and single-use durable CSRF state. Logout requires the same Origin and the session’s CSRF token; failed or disallowed login attempts return the same Spanish generic error. Login attempts have per-process global and normalized-email caps with bounded-memory pruning. These limits are intentionally a local defense layer, not a replacement for edge rate limiting.
+`GET /auth` and `GET /auth/login` render the same Spanish email/password form at the Gruia Design origin. There is no external navigation, registration, or reset flow. Login requires an exact `Origin` match and single-use durable CSRF state. Logout requires the same Origin and the session’s CSRF token; failed or disallowed login attempts return the same Spanish generic error. Login attempts have per-process global, normalized-email, and client-IP caps with bounded-memory pruning. These limits are intentionally a local defense layer, not a replacement for edge rate limiting.
 
 ## Admission and transport
 
@@ -39,7 +39,8 @@ selection is implemented.
 Every protected HTTP, SSE and WebSocket request revalidates canonical membership.
 Mutations and WebSockets require the exact public Origin. VIEWER members cannot
 mutate or use WebSockets. The proxy strips caller cookies and identity headers,
-injects only the selected daemon token, and marks private responses no-store.
+re-asserts the gateway-resolved client IP as `x-forwarded-for`, injects only
+the selected daemon token, and marks private responses no-store.
 
 ## PostgreSQL TLS
 

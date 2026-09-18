@@ -330,3 +330,16 @@
 - `8e44af759` — G19: `verify()` del publisher pinea el body remoto al sha256
   aprobado por QA; antes un deployment con la misma marca y bytes distintos
   quedaba `published` (10/10 publisher + 32/32 runner).
+
+## Lote 16 — CI privada + drift doc↔código (fleet/gaps-16)
+
+- `621f9e4f9` — G20: `ci/app.yml` (Jenkins) ahora corre las suites privadas
+  `@open-design/gruia-gateway` (34) y `deploy/gruia/campaign/tests` (42) —
+  antes no corrían en ningún CI.
+- `886b75c85` — docs: `gruia-auth.md` sincronizado con G4 (bucket por IP),
+  G9 (`sessionTtlSeconds` efectivo), G15 (`x-forwarded-for` re-asertado).
+- `7d7369001` — docs: `gruia-b2b-campaign.md` sincronizado (concurrencia 16,
+  publisher.test.ts en verificación, pin sha256 en `published`).
+- Auditoría completa de `deploy/gruia/` (Dockerfiles, scripts, systemd,
+  Caddyfile, campaign tooling): endurecido salvo los dos gaps corregidos
+  (HSTS G18 en lote 15, pin sha256 G19).

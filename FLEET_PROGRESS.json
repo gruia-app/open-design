@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T23:47:59.855537+00:00",
+ "updated_at": "2026-09-18T23:53:18.435189+00:00",
  "current": {
-  "item": "fleet/gaps-15 — buscar siguiente gap",
+  "item": "auditoría de superficies privadas restantes (mocks/, systemd, docs)",
   "state": "in_progress"
  },
  "done": [
@@ -445,6 +445,16 @@
    "item": "G19 — publisher: pin sha256 del HTML público",
    "commit": "8e44af759",
    "deploy": "n/a"
+  },
+  {
+   "item": "G20 — CI Jenkins corre suites privadas (gateway+campaign)",
+   "commit": "621f9e4f9",
+   "deploy": "n/a"
+  },
+  {
+   "item": "Docs: sync gruia-auth + gruia-b2b-campaign con código",
+   "commit": "886b75c85+7d7369001",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
@@ -541,5 +551,5 @@
   "PR #27 / 9937e7e34 (gateway org_not_admitted)",
   "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)"
  ],
- "notes": "fix en rama fleet/gaps-14 (main restaurado tras commit accidental — contenido solo gateway, verificado 32/32)."
+ "notes": "PR #29 merged (543f080a3) — G17-G19. gh pr create requiere --repo gruia-app/design (3 remotes)."
 }

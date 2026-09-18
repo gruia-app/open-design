@@ -39,8 +39,12 @@ commands:
   test:
     # Bounded green slice: shared contracts + sidecar protocol. The full
     # daemon/web suites are load-sensitive (~20min) — widen deliberately.
+    # Fork-private suites below are fast and cover the auth/security boundary
+    # and campaign publishing pipeline; neither exists upstream.
     - pnpm --filter @open-design/contracts test
     - pnpm --filter @open-design/sidecar test
+    - pnpm --filter @open-design/gruia-gateway test
+    - node --test 'deploy/gruia/campaign/tests/*.ts'
   build:
     # Package + daemon builds (esbuild + tsc). apps/web `next build` is left
     # out: it needs deploy env and is covered by typecheck here.

@@ -7,7 +7,8 @@ originales y sus referencias están en
 `index.html`, `DESIGN.md` y `README.md`, y aparece con el nombre
 `B2B NN · Marca · Sector` en los proyectos de Design.
 
-El controlador mantiene hasta ocho trabajos simultáneos. Tras alcanzar el límite específico de Fable, sus pendientes continúan con Opus 5 mediante el fallback explícito `GRUIA_B2B50_FABLE_FALLBACK=claude-opus-5`; los ejemplos aprobados no cambian.
+El controlador mantiene hasta dieciséis trabajos simultáneos, con límites por
+modelo (5 Fable, 16 Opus). Tras alcanzar el límite específico de Fable, sus pendientes continúan con Opus 5 mediante el fallback explícito `GRUIA_B2B50_FABLE_FALLBACK=claude-opus-5`; los ejemplos aprobados no cambian.
 Conserva los identificadores antes de crear proyectos y ejecuciones, recupera
 respuestas perdidas, renueva la sesión Gruia y comprueba el estado autoritativo
 al finalizar el stream. Si la cuota se agota, pausa los nuevos encargos durante
@@ -59,7 +60,7 @@ acceso y la generación con ambos modelos.
 ## Verificación y límites
 
 ```bash
-node --experimental-strip-types --test deploy/gruia/campaign/tests/runner.test.ts
+node --experimental-strip-types --test 'deploy/gruia/campaign/tests/*.ts'
 node --experimental-strip-types deploy/gruia/campaign/runner.ts --review
 systemctl --user list-timers gruia-design-b2b50-review.timer
 ```
@@ -114,4 +115,5 @@ El publicador comprueba que cada proyecto Vercel se llama exactamente
 verificación pública usa una petición HTTP sin credenciales desde el servidor
 configurado por `GRUIA_PUBLIC_VERIFY_HOST`, para distinguir la página real de
 una comprobación antibot del navegador automatizado local. El estado
-`published` exige contenido del ejemplo y acceso HTTP 200.
+`published` exige acceso HTTP 200, la marca del ejemplo y que el SHA-256 del
+cuerpo remoto coincida con el HTML aprobado por QA.
