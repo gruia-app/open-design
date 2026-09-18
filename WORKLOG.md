@@ -334,6 +334,20 @@ parcialmente vía CAS) en `publish-platform`, `publish-metadata`,
 **Verificación:** typecheck tools-release verde; suite tools-release
 82/82.
 
+## Ítem 16 — Dedup del shell-quoting drifted en `cli.ts`
+
+**Hecho:** `cli.ts` mantenía copias untyped de `execFileBuffered`,
+`quotePosixShellArg`, `buildGhShellCommand`, `buildLoginShellCommand` y
+`execGhBuffered` — incluida la variante con el bug `export PATH=''`
+corregido en `login-shell.ts` (ítem 7). Eliminadas las cinco copias; la
+ruta gh del CLI ahora consume las funciones compartidas de
+`services/login-shell.ts`, y `spawnGhPassthrough` se reescribió sobre
+`buildCommandShellCommand('gh', …)` + `buildLoginShellCommand`
+(exportados). El boundary de quoting queda single-sourced y testeado.
+
+**Verificación:** typecheck daemon verde; `tests/login-shell.test.ts`
+sigue cubriendo el boundary compartido (14/14 previo).
+
 ## Bloqueados
 
 - Ninguno todavía.
