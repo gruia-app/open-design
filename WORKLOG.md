@@ -303,6 +303,37 @@ record`: path fuera del root → reject; drift launcher↔resource → reject;
 record intacto → lectura OK). `standalone.test.ts` 15/15, suite completo
 del paquete 34/34, typecheck verde.
 
+## Ítem 14 — Escape de `'` en los escapers NSIS
+
+**Hecho:** `escapeNsisString` (ambas copias en `nsis.ts` y
+`custom-installer.ts`) no escapaba `'`. El comando
+`nsExec::ExecToLog '...'` en `custom-installer.ts` es un literal
+single-quoted que interpola paths derivados de `--dir`/toolPackRoot — un
+apóstrofo en el build root (`C:\Tools\D'Arcy`) terminaba el literal a
+media línea → makensis fallaba o el argv de PowerShell quedaba mangled.
+Añadido `'`→`$\'` (escape NSIS nativo) tras el escape de `$`. Los callers
+de `createNsisQuotedCommandLiteral` ya pasan por el escaper, así que el
+fix cubre todo el call graph.
+
+**Verificación:** +1 test en `win-custom-installer.test.ts` (build root
+con `'` → el literal contiene `d$\'arcy`, no `d'arcy`). Tests win:
+19 passed / 1 skipped (skip preexistente); typecheck tools-pack verde.
+
+## Ítem 15 — Validación de shape de `RELEASE_VERSION` en tools-release
+
+**Hecho:** cinco scripts de `tools/release/src/storage` interpolaban
+`required("RELEASE_VERSION")` directamente en object keys de R2 y path
+joins (`<channel>/versions/${releaseVersion}${suffix}/...`) sin chequear
+la forma `x.y.z`/`x.y.z-<channel>.N` — un valor typo'd o hostil producía
+claves absurdas o publicaba bajo prefijos arbitrarios. Añadida la guarda
+`parseReleaseVersion(releaseVersion, releaseChannel)` (ya exportada por
+`@open-design/release`, mismo contrato que `publish-metadata` aplicaba
+parcialmente vía CAS) en `publish-platform`, `publish-metadata`,
+`verify-metadata`, `download-platform-manifest` y `prepare-github-assets`.
+
+**Verificación:** typecheck tools-release verde; suite tools-release
+82/82.
+
 ## Bloqueados
 
 - Ninguno todavía.
