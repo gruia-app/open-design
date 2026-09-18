@@ -1,10 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T22:39:29.210585+00:00",
+ "updated_at": "2026-09-18T22:49:19.001818+00:00",
  "current": {
-  "item": "paridad upstream lote 6 — rama fleet/parity-6",
-  "state": "in_progress",
-  "branch": "fleet/parity-6"
+  "item": "push + PR lote 10",
+  "state": "in_progress"
  },
  "done": [
   {
@@ -351,6 +350,16 @@
    "item": "D1 paridad: French setup/recovery copy (upstream #7753)",
    "commit": "b830d0452",
    "deploy": "pending"
+  },
+  {
+   "item": "revision post-muerte: picks a745c2ca2 (updater predecessor ordering) y c9edcea4b (AMR chat-capable guard) auditados — diffs correctos, tests verdes previos (78/78 chat-route, 12/12 entry-handoff)",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "paridad lote 10: packaged updater ordering, AMR chat-capable guard, PPTX portable compare, e2e mock hardening",
+   "commit": "fleet/parity-10",
+   "deploy": "PR pendiente"
   }
  ],
  "blocked": [
@@ -444,5 +453,5 @@
   "194286537 (PR #18)",
   "38abb6aee (PR #19)"
  ],
- "notes": "fleet/parity-9: 7 picks limpios. Cola upstream restante: mayoria depende del rebuild ChatPanel (ad09d3883) o de pipelines no portados (deliverable-syntax, suppression arch, domain cutover)."
+ "notes": "fleet/parity-10: 2 picks verificados. Cola upstream remanente: mayoria ChatPanel-dependiente o pipelines no portados."
 }

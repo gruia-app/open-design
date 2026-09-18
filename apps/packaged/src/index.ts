@@ -149,6 +149,13 @@ async function main(): Promise<void> {
       );
     }
   }
+  // An updater successor must outlive its predecessor before discovering or
+  // bootstrapping a desktop in the same namespace. Otherwise it can focus
+  // the quitting predecessor and exit as an ordinary duplicate launch.
+  if (!headlessRequest.headless && !await waitForLauncherAfterQuit(afterQuit, initialPaths)) {
+    app.exit(1);
+    return;
+  }
   const oppositeDesktop = await inspectExistingDesktopForLauncher(launchStamp, {
     deeplinkUrl: findPackagedDeeplinkArg(process.argv),
     logger: console,
@@ -172,10 +179,6 @@ async function main(): Promise<void> {
     runtimeRoot: initialPaths.runtimeRoot,
   })) {
     app.exit(0);
-    return;
-  }
-  if (!headlessRequest.headless && !await waitForLauncherAfterQuit(afterQuit, initialPaths)) {
-    app.exit(1);
     return;
   }
   const existingDesktop = await inspectExistingDesktopForLauncher(launchStamp, {

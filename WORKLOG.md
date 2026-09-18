@@ -262,3 +262,12 @@
 - `b830d0452` (#7753): copy francés setup/recovery.
 - Descartado: `81044a03c` (whats-new doc conflicto), resto de cola depende de
   ChatPanel rebuild o pipelines no portados.
+
+## Lote 10 — paridad (fleet/parity-10)
+
+- Revisión post-muerte: picks a745c2ca2/c9edcea4b auditados — correctos, tests ya verdes (78/78 chat-route, 12/12 entry-handoff).
+- `a745c2ca2` — packaged: espera al predecessor updater antes del instance discovery (evita focus-exit).
+- `c9edcea4b` — daemon: guard de modelo chat-capable en runs AMR (`isVelaChatCapableModelId`).
+- `d3f232306` — desktop: comparación portable de capturas PPTX (62/62 verdes).
+- `4cc7d9be1` — e2e: hardening del mock de onboarding status ante reload race (Playwright, fuera de vitest).
+- Descartado: `53a47bf91` (10 ficheros de tests chat-observability conflictúan — divergencia ChatPanel).
