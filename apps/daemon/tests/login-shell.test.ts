@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, describe, test } from 'vitest';
+import { afterAll, beforeAll, describe, test } from 'vitest';
 import { execCommandViaLoginShell } from '../src/services/login-shell.js';
 
 // quotePosixShellArg is the injection boundary for every POSIX gh/CLI call the
@@ -14,9 +14,16 @@ const posixOnly = process.platform === 'win32' ? describe.skip : describe;
 
 posixOnly('execCommandViaLoginShell quoting', () => {
   // Sentinel paths live under a per-run mkdtemp so a leftover from a crashed
-  // run or a shared CI runner can never produce a spurious pass/fail.
-  const sentinelDir = mkdtempSync(join(tmpdir(), 'od-quoting-'));
-  afterAll(() => rmSync(sentinelDir, { recursive: true, force: true }));
+  // run or a shared CI runner can never produce a spurious pass/fail. The dir
+  // is created in beforeAll (not the describe factory) so a skipped suite —
+  // win32 — never leaves an orphaned temp dir behind.
+  let sentinelDir = '';
+  beforeAll(() => {
+    sentinelDir = mkdtempSync(join(tmpdir(), 'od-quoting-'));
+  });
+  afterAll(() => {
+    if (sentinelDir) rmSync(sentinelDir, { recursive: true, force: true });
+  });
   const sentinel = (name: string) => join(sentinelDir, name);
   const hostileArgs = [
     "it's",

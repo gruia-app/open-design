@@ -60,7 +60,7 @@ export function DesktopPetSurface() {
           console.error('[pet] project list refresh failed; keeping last-good', err);
           return null;
         }),
-        listProjectRuns().catch((err: unknown) => {
+        listProjectRuns(undefined, { throwOnError: true }).catch((err: unknown) => {
           console.error('[pet] run list refresh failed; keeping last-good', err);
           return null;
         }),
