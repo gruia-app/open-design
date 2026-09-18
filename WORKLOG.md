@@ -646,3 +646,7 @@ deferido).
   failure en la pierna runs (y en projects) conserva el task center
   last-good. Cierra la cobertura pendiente del late review; todos los
   hallazgos accionables quedan actuados o documentados.
+- `fix(web)` retry timers: callbacks de `setTimeout` en ambos schedulers
+  de useWorkspaceContext usaban `window` sin re-check — uncaught
+  ReferenceError post-teardown (visto como unhandled error en el suite
+  web completo). Guard dentro del callback en ambos.
