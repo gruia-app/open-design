@@ -4,6 +4,8 @@ import type {
   ReasoningExecutionPolicy,
 } from '@open-design/contracts/api/reasoningExecution';
 import { normalizeGoogleModelId } from './integrations/google-models.js';
+import { sendApiError } from './http/api-errors.js';
+import type { ApiErrorCode } from '@open-design/contracts';
 
 export type ReasoningEgressRouteKind =
   | 'proxy'
@@ -176,11 +178,7 @@ export function authorizeReasoningEgress(args: ReasoningEgressRequest): Reasonin
 }
 
 export function sendReasoningEgressDenial(res: Response, denial: ReasoningEgressDenial): void {
-  res.status(denial.status).json({
-    error: {
-      code: denial.code,
-      message: denial.message,
-      data: denial.data,
-    },
+  sendApiError(res, denial.status, denial.code as ApiErrorCode, denial.message, {
+    details: denial.data,
   });
 }

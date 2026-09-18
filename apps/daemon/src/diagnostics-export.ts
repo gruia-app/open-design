@@ -1,3 +1,5 @@
+import type { ApiErrorCode } from '@open-design/contracts';
+import { sendApiError } from './http/api-errors.js';
 import { access } from 'node:fs/promises';
 import { homedir, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -345,7 +347,7 @@ export function createDiagnosticsExportHandler(options: DiagnosticsHandlerOption
       res.status(200).end(result.zip);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ error: 'DIAGNOSTICS_EXPORT_FAILED', message });
+      sendApiError(res, 500, 'DIAGNOSTICS_EXPORT_FAILED' as ApiErrorCode, message);
     }
   };
 }

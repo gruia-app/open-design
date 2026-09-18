@@ -932,7 +932,7 @@ describe('collab sync routes', () => {
       workspaceScope: false,
     });
     expect(missing.status).toBe(403);
-    expect(missing.body.error).toBe('WORKSPACE_PROJECT_STATUS_DENIED');
+    expect(missing.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_STATUS_DENIED' });
     expect(resolveSharedProjectOwner).not.toHaveBeenCalled();
     expect(store.has('secret-project')).toBe(false);
 
@@ -1019,7 +1019,7 @@ describe('collab sync routes', () => {
       workspaceScope: false,
     });
     expect(missing.status).toBe(403);
-    expect(missing.body.error).toBe('WORKSPACE_PROJECT_PUBLISH_DENIED');
+    expect(missing.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_PUBLISH_DENIED' });
 
     const spoofed = await api.json('/api/projects/shared-project/collab/publish', {
       method: 'POST',
@@ -1030,7 +1030,7 @@ describe('collab sync routes', () => {
       },
     });
     expect(spoofed.status).toBe(403);
-    expect(spoofed.body.error).toBe('WORKSPACE_PROJECT_PUBLISH_DENIED');
+    expect(spoofed.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_PUBLISH_DENIED' });
 
     expect(runtime!.projectSyncState('shared-project', principal)).toBe('synced');
     expect(publish).not.toHaveBeenCalled();
@@ -1732,7 +1732,7 @@ describe('collab sync routes', () => {
       body: { event: 'project_team_share_requested', projectId: 'p1' },
     });
     expect(res.status).toBe(403);
-    expect(res.body.error).toBe('WORKSPACE_PROJECT_SHARE_DENIED');
+    expect(res.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_SHARE_DENIED' });
     expect((await api.json('/api/projects/p1/collab/status')).body.syncState).toBe('local_only');
   });
 
@@ -1743,10 +1743,10 @@ describe('collab sync routes', () => {
       body: { event: 'project_team_share_requested', projectId: 'p1' },
     });
     expect(res.status).toBe(403);
-    expect(res.body.error).toBe('WORKSPACE_PROJECT_SHARE_DENIED');
+    expect(res.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_SHARE_DENIED' });
     const status = await api.json('/api/projects/p1/collab/status');
     expect(status.status).toBe(403);
-    expect(status.body.error).toBe('WORKSPACE_PROJECT_STATUS_DENIED');
+    expect(status.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_STATUS_DENIED' });
   });
 
   it('honors a team-share intent from a member with canShareProjects', async () => {
@@ -1811,7 +1811,7 @@ describe('collab sync routes', () => {
     });
 
     expect(res.status).toBe(403);
-    expect(res.body.error).toBe('WORKSPACE_PROJECT_UNSHARE_DENIED');
+    expect(res.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_UNSHARE_DENIED' });
   });
 
   it('publishes a public file from a personal workspace, scoped by its workspace id', async () => {
@@ -1977,11 +1977,11 @@ describe('collab sync routes', () => {
 
     for (const res of [publish, read, unpublish]) {
       expect(res.status).toBe(409);
-      expect(res.body.error).toBe('WORKSPACE_IDENTITY_REQUIRED');
+      expect(res.body.error).toMatchObject({ code: 'WORKSPACE_IDENTITY_REQUIRED' });
       // The load-bearing assertion: a human-readable reason ships with the code.
-      expect(typeof res.body.message).toBe('string');
-      expect(res.body.message).toMatch(/sign in/i);
-      expect(res.body.message).not.toMatch(/team workspace/i);
+      expect(typeof res.body.error?.message).toBe('string');
+      expect(res.body.error.message).toMatch(/sign in/i);
+      expect(res.body.error.message).not.toMatch(/team workspace/i);
     }
     // The gate must short-circuit before any project read or hub call.
     expect(resolveProjectDir).not.toHaveBeenCalled();
@@ -2020,7 +2020,7 @@ describe('collab sync routes', () => {
 
     for (const res of [publish, current, unpublish]) {
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('WORKSPACE_PROJECT_PUBLISH_DENIED');
+      expect(res.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_PUBLISH_DENIED' });
     }
     expect(resolveProjectDir).not.toHaveBeenCalled();
     expect(runVelaResourceCommand).not.toHaveBeenCalled();
@@ -2053,9 +2053,9 @@ describe('collab sync routes', () => {
     });
 
     expect(publish.status).toBe(503);
-    expect(publish.body.error).toBe('WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE');
+    expect(publish.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' });
     expect(unpublish.status).toBe(503);
-    expect(unpublish.body.error).toBe('WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE');
+    expect(unpublish.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' });
     expect(resolveProjectDir).not.toHaveBeenCalled();
     expect(runVelaResourceCommand).not.toHaveBeenCalled();
   });
@@ -2074,7 +2074,7 @@ describe('collab sync routes', () => {
     });
 
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe('PUBLIC_FILE_URL_UNAVAILABLE');
+    expect(res.body.error).toMatchObject({ code: 'PUBLIC_FILE_URL_UNAVAILABLE' });
     expect(resolveProjectDir).not.toHaveBeenCalled();
     expect(runVelaResourceCommand).not.toHaveBeenCalled();
   });
@@ -2191,9 +2191,9 @@ describe('collab sync routes', () => {
     const symlinked = await api.json('/api/projects/p1/files/secret-link.html/publish-public', { method: 'POST' });
 
     expect(backslash.status).toBe(400);
-    expect(backslash.body.error).toBe('invalid_file_path');
+    expect(backslash.body.error).toMatchObject({ code: 'invalid_file_path' });
     expect(symlinked.status).toBe(400);
-    expect(symlinked.body.error).toBe('FILE_UNAVAILABLE');
+    expect(symlinked.body.error).toMatchObject({ code: 'FILE_UNAVAILABLE' });
     expect(runVelaResourceCommand).not.toHaveBeenCalled();
   });
 
@@ -2285,7 +2285,7 @@ describe('collab sync routes', () => {
       body: { event: 'project_team_share_requested', projectId: 'p1' },
     });
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe('TEAM_PROJECT_PUBLISH_UNAVAILABLE');
+    expect(res.body.error).toMatchObject({ code: 'TEAM_PROJECT_PUBLISH_UNAVAILABLE' });
     expect(unpublish).toHaveBeenCalledTimes(1);
     expect((await api.json('/api/projects/p1/collab/status')).body.syncState).toBe('sync_failed');
   });
@@ -2319,7 +2319,7 @@ describe('collab sync routes', () => {
     });
 
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe('TEAM_PROJECT_PUBLISH_UNAVAILABLE');
+    expect(res.body.error).toMatchObject({ code: 'TEAM_PROJECT_PUBLISH_UNAVAILABLE' });
     expect(writes).toEqual([]);
     expect((await api.json('/api/projects/p1/collab/status')).body.syncState).toBe('sync_failed');
   });
@@ -2444,8 +2444,10 @@ describe('collab sync routes', () => {
     for (const response of responses) {
       expect(response.status).toBe(503);
       expect(response.body).toMatchObject({
-        error: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
-        retryable: true,
+        error: {
+          code: 'WORKSPACE_AUTHORITY_UNAVAILABLE',
+          retryable: true,
+        },
       });
     }
     expect(notifyChanged).not.toHaveBeenCalled();
@@ -2461,7 +2463,7 @@ describe('collab sync routes', () => {
     });
     const before = await api.json('/api/projects/p1/collab/pull', { method: 'POST' });
     expect(before.status).toBe(403);
-    expect(before.body.error).toBe('WORKSPACE_PROJECT_PULL_DENIED');
+    expect(before.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_PULL_DENIED' });
 
     await api.json('/api/projects/p1/collab/sync-intent', {
       method: 'POST',
@@ -2550,7 +2552,7 @@ describe('collab sync routes', () => {
     const pull = await api.json('/api/projects/moved-out-project/collab/pull', { method: 'POST' });
 
     expect(pull.status).toBe(403);
-    expect(pull.body.error).toBe('WORKSPACE_PROJECT_PULL_DENIED');
+    expect(pull.body.error).toMatchObject({ code: 'WORKSPACE_PROJECT_PULL_DENIED' });
     expect(revoked).toContainEqual({ projectId: 'moved-out-project', revoked: true });
   });
 
@@ -2591,7 +2593,7 @@ describe('collab sync routes', () => {
     await api.awaitPublishedVersion('/api/projects/shared-register-fail/collab/status', null);
     const pull = await api.json('/api/projects/shared-register-fail/collab/pull', { method: 'POST' });
     expect(pull.status).toBe(502);
-    expect(pull.body.error).toBe('TEAM_PROJECT_PULL_REGISTER_UNAVAILABLE');
+    expect(pull.body.error).toMatchObject({ code: 'TEAM_PROJECT_PULL_REGISTER_UNAVAILABLE' });
   });
 
   it('registers a pulled shared project locally so it appears in the project store', async () => {

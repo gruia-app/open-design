@@ -88,7 +88,8 @@ export type PublicFilePublishFailureKey =
  */
 export function publicFilePublishFailureKey(error: unknown): PublicFilePublishFailureKey {
   const message = error instanceof Error ? error.message : String(error ?? '');
-  return message.includes('WORKSPACE_IDENTITY_REQUIRED')
+  const code = error instanceof PublicFilePublishError ? error.code : undefined;
+  return code === 'WORKSPACE_IDENTITY_REQUIRED' || message.includes('WORKSPACE_IDENTITY_REQUIRED')
     ? 'fileViewer.publishFileRequiresWorkspace'
     : 'fileViewer.publishFileFailed';
 }

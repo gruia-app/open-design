@@ -209,11 +209,12 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
         body.properties,
       );
     } catch (error) {
-      res.status(400).json({
-        error: error instanceof Error
-          ? error.message
-          : 'invalid MCP analytics properties',
-      });
+      sendApiError(
+        res,
+        400,
+        'BAD_REQUEST',
+        error instanceof Error ? error.message : 'invalid MCP analytics properties',
+      );
       return;
     }
     const properties = {

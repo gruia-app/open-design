@@ -623,10 +623,12 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
           req.body.orbit.workspaceScope,
         );
         if (req.body.orbit.workspaceScope !== null && !scope) {
-          return res.status(400).json({
-            error: 'Orbit Workspace scope must contain workspaceId and workspaceMemberId',
-            code: 'WORKSPACE_CONTEXT_INCOMPLETE',
-          });
+          return sendApiError(
+            res,
+            400,
+            'WORKSPACE_CONTEXT_INCOMPLETE' as ApiErrorCode,
+            'Orbit Workspace scope must contain workspaceId and workspaceMemberId',
+          );
         }
         if (scope) {
           const claimedWorkspaceId = String(req.get('x-od-workspace-id') ?? '').trim();
@@ -635,10 +637,12 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
             claimedWorkspaceId !== scope.workspaceId
             || claimedMemberId !== scope.workspaceMemberId
           ) {
-            return res.status(400).json({
-              error: 'Orbit Workspace scope must match the explicit request identity',
-              code: 'WORKSPACE_CONTEXT_INCOMPLETE',
-            });
+            return sendApiError(
+              res,
+              400,
+              'WORKSPACE_CONTEXT_INCOMPLETE' as ApiErrorCode,
+              'Orbit Workspace scope must match the explicit request identity',
+            );
           }
         }
       }
@@ -652,20 +656,18 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
         // this shape; from a flat body it falls back to `daemon-not-running`
         // and exits 64, which tells a caller to go start a daemon that just
         // answered. Rejected input should read as a plain failure.
-        return res.status(400).json({
-          error: { code: err.code, message: String(err.message) },
-        });
+        return sendApiError(res, 400, err.code as ApiErrorCode, String(err.message));
       }
       const status = err?.code === 'WORKSPACE_ACCESS_DENIED'
           ? 403
           : 500;
-      res
-        .status(status)
-        .json({
-          error: String(err && err.message ? err.message : err),
-          ...(err?.code ? { code: err.code } : {}),
-          ...(err?.retryable ? { retryable: true } : {}),
-        });
+      sendApiError(
+        res,
+        status,
+        ((err?.code as string | undefined) ?? 'INTERNAL_ERROR') as ApiErrorCode,
+        String(err && err.message ? err.message : err),
+        err?.retryable ? { retryable: true } : undefined,
+      );
     }
   });
 
@@ -741,13 +743,13 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       const status = err?.code === 'WORKSPACE_ACCESS_DENIED'
           ? 403
           : 500;
-      res
-        .status(status)
-        .json({
-          error: String(err && err.message ? err.message : err),
-          ...(err?.code ? { code: err.code } : {}),
-          ...(err?.retryable ? { retryable: true } : {}),
-        });
+      sendApiError(
+        res,
+        status,
+        ((err?.code as string | undefined) ?? 'INTERNAL_ERROR') as ApiErrorCode,
+        String(err && err.message ? err.message : err),
+        err?.retryable ? { retryable: true } : undefined,
+      );
     }
   });
 
@@ -761,17 +763,15 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       try {
         parsed = new URL(url);
       } catch {
-        return res.status(400).json({ ok: false, error: 'url must be a valid URL' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'url must be a valid URL');
       }
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        return res.status(400).json({ ok: false, error: 'url must be http or https' });
+        return sendApiError(res, 400, 'BAD_REQUEST', 'url must be http or https');
       }
       const child = openBrowser(parsed.toString());
       res.json({ ok: Boolean(child) });
     } catch (err: any) {
-      res
-        .status(500)
-        .json({ ok: false, error: String(err && err.message ? err.message : err) });
+      sendApiError(res, 500, 'INTERNAL_ERROR', String(err && err.message ? err.message : err));
     }
   });
 
@@ -790,9 +790,12 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
 
   app.post('/api/projects/:id/media/hyperframes/scaffold', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({
-        error: 'cross-origin request rejected: HyperFrames scaffolding is restricted to the local UI / CLI',
-      });
+      return sendApiError(
+        res,
+        403,
+        'FORBIDDEN',
+        'cross-origin request rejected: HyperFrames scaffolding is restricted to the local UI / CLI',
+      );
     }
     try {
       const project = getProject(db, req.params.id);
@@ -808,10 +811,12 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       await handleHyperFramesScaffold(req, res, project.id);
     } catch (err: any) {
       const status = typeof err?.status === 'number' ? err.status : 400;
-      const code = err?.code;
-      const body: any = { error: String(err && err.message ? err.message : err) };
-      if (code) body.code = code;
-      res.status(status).json(body);
+      sendApiError(
+        res,
+        status,
+        ((err?.code as string | undefined) ?? 'BAD_REQUEST') as ApiErrorCode,
+        String(err && err.message ? err.message : err),
+      );
     }
   });
 
@@ -829,19 +834,23 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       await handleHyperFramesScaffold(req, res, grant.projectId);
     } catch (err: any) {
       const status = typeof err?.status === 'number' ? err.status : 400;
-      const code = err?.code;
-      const body: any = { error: String(err && err.message ? err.message : err) };
-      if (code) body.code = code;
-      res.status(status).json(body);
+      sendApiError(
+        res,
+        status,
+        ((err?.code as string | undefined) ?? 'BAD_REQUEST') as ApiErrorCode,
+        String(err && err.message ? err.message : err),
+      );
     }
   });
 
   app.post('/api/projects/:id/media/generate', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({
-        error:
-          'cross-origin request rejected: media generation is restricted to the local UI / CLI',
-      });
+      return sendApiError(
+        res,
+        403,
+        'FORBIDDEN',
+        'cross-origin request rejected: media generation is restricted to the local UI / CLI',
+      );
     }
 
     try {
@@ -874,10 +883,12 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       await handleGenerate(req, res, { projectId: req.params.id, grant: grantDecision.grant });
     } catch (err: any) {
       const status = typeof err?.status === 'number' ? err.status : 400;
-      const code = err?.code;
-      const body: any = { error: String(err && err.message ? err.message : err) };
-      if (code) body.code = code;
-      res.status(status).json(body);
+      sendApiError(
+        res,
+        status,
+        ((err?.code as string | undefined) ?? 'BAD_REQUEST') as ApiErrorCode,
+        String(err && err.message ? err.message : err),
+      );
     }
   });
 
@@ -893,19 +904,23 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       await handleGenerate(req, res, { projectId: grant.projectId, grant });
     } catch (err: any) {
       const status = typeof err?.status === 'number' ? err.status : 400;
-      const code = err?.code;
-      const body: any = { error: String(err && err.message ? err.message : err) };
-      if (code) body.code = code;
-      res.status(status).json(body);
+      sendApiError(
+        res,
+        status,
+        ((err?.code as string | undefined) ?? 'BAD_REQUEST') as ApiErrorCode,
+        String(err && err.message ? err.message : err),
+      );
     }
   });
 
   app.post('/api/research/search', async (req, res) => {
     if (!isLocalSameOrigin(req, getResolvedPort())) {
-      return res.status(403).json({
-        error:
-          'cross-origin request rejected: research search is restricted to the local UI / CLI',
-      });
+      return sendApiError(
+        res,
+        403,
+        'FORBIDDEN',
+        'cross-origin request rejected: research search is restricted to the local UI / CLI',
+      );
     }
 
     try {
@@ -929,9 +944,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       }
     } catch (err: any) {
       if (err instanceof ResearchError) {
-        return res.status(err.status).json({
-          error: { code: err.code, message: err.message },
-        });
+        return sendApiError(res, err.status, err.code as ApiErrorCode, err.message);
       }
       res.status(500).json({
         error: {

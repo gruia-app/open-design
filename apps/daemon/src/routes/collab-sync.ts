@@ -57,6 +57,7 @@ import {
 } from '../collab/public-file-publication-store.js';
 import { readVelaControlApiContext } from '../integrations/vela.js';
 import { isAbortedOperationError } from '../integrations/aborted-error.js';
+import type { ApiErrorCode } from '@open-design/contracts';
 import { sendApiError } from '../http/api-errors.js';
 import { readProjectManifest } from '../project-locations.js';
 import { redactSecrets } from '../redact.js';
@@ -576,13 +577,14 @@ function encodePublicFileUrlPath(filePath: string): string {
  * echoing `WORKSPACE_IDENTITY_REQUIRED` at a human. The web UI localizes the
  * code itself; see `publicFilePublishFailureKey` in apps/web.
  */
-function workspaceIdentityRequiredBody() {
-  return {
-    error: 'WORKSPACE_IDENTITY_REQUIRED',
-    message:
-      'Publishing a public link needs a signed-in workspace. Sign in to OpenDesign Cloud, ' +
+function sendWorkspaceIdentityRequired(res: Response) {
+  return sendApiError(
+    res,
+    409,
+    'WORKSPACE_IDENTITY_REQUIRED' as ApiErrorCode,
+    'Publishing a public link needs a signed-in workspace. Sign in to OpenDesign Cloud, ' +
       'or use Deploy to publish this file without one.',
-  };
+  );
 }
 
 /**
@@ -675,9 +677,9 @@ function sendWorkspaceVerificationFailure(
   res: Response,
   verification: Exclude<RouteWorkspaceVerification, { ok: true }>,
 ) {
-  return res.status(verification.status).json({
-    error: verification.code,
-    message: verification.message,
+  // Protocol/workspace codes are emitted on the wire but are not yet in the
+  // ApiErrorCode union — preserve them verbatim.
+  return sendApiError(res, verification.status, verification.code as ApiErrorCode, verification.message, {
     ...(verification.retryable ? { retryable: true } : {}),
   });
 }
@@ -1210,11 +1212,13 @@ export function registerCollabSyncRoutes(
     const projectId = req.params.id;
     const authorization = await verifiedPublishPrincipalForRequest(req, projectId);
     if (!authorization.ok) {
-      return res.status(authorization.status).json({
-        error: authorization.error,
-        ...(authorization.message ? { message: authorization.message } : {}),
-        ...(authorization.retryable ? { retryable: true } : {}),
-      });
+      return sendApiError(
+        res,
+        authorization.status,
+        authorization.error as ApiErrorCode,
+        authorization.message ?? authorization.error,
+        { ...(authorization.retryable ? { retryable: true } : {}) },
+      );
     }
     scheduler.notifyChanged(projectId, 'change', authorization.principal);
     return res.json({ ok: true });
@@ -1224,11 +1228,13 @@ export function registerCollabSyncRoutes(
     const projectId = req.params.id;
     const authorization = await verifiedPublishPrincipalForRequest(req, projectId);
     if (!authorization.ok) {
-      return res.status(authorization.status).json({
-        error: authorization.error,
-        ...(authorization.message ? { message: authorization.message } : {}),
-        ...(authorization.retryable ? { retryable: true } : {}),
-      });
+      return sendApiError(
+        res,
+        authorization.status,
+        authorization.error as ApiErrorCode,
+        authorization.message ?? authorization.error,
+        { ...(authorization.retryable ? { retryable: true } : {}) },
+      );
     }
     scheduler.notifyChanged(projectId, 'run', authorization.principal);
     scheduler.runBoundary(projectId, authorization.principal);
@@ -1240,7 +1246,7 @@ export function registerCollabSyncRoutes(
     const projectId = String(params[0] ?? '');
     const filePath = normalizePublicFilePath(String(params[1] ?? ''));
     if (!projectId || !filePath) {
-      return res.status(400).json({ error: 'invalid_file_path' });
+      return sendApiError(res, 400, 'invalid_file_path' as ApiErrorCode, 'invalid_file_path');
     }
     const verification = await verifiedWorkspaceContextForRequest(req, projectId);
     if (!verification.ok) {
@@ -1249,10 +1255,10 @@ export function registerCollabSyncRoutes(
     const verifiedContext = verification.context;
     const principal = publicFilePrincipal(verifiedContext);
     if (!verifiedContext || !principal) {
-      return res.status(409).json(workspaceIdentityRequiredBody());
+      return sendWorkspaceIdentityRequired(res);
     }
     if (!await canShareProjectsForRequest(req, verifiedContext)) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_SHARE_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_SHARE_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_SHARE_DENIED');
     }
     const sharedProjectResult = await resolveSharedProjectForPublicFile(
       resolveSharedProject,
@@ -1261,15 +1267,15 @@ export function registerCollabSyncRoutes(
       principal,
     );
     if (!sharedProjectResult.ok) {
-      return res.status(503).json({ error: 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' });
+      return sendApiError(res, 503, 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' as ApiErrorCode, 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE');
     }
     const sharedProject = sharedProjectResult.project;
     if (sharedProject?.ownerMemberId && sharedProject.ownerMemberId !== principal.memberId) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_PUBLISH_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_PUBLISH_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_PUBLISH_DENIED');
     }
     const baseUrl = publicResourceHubBaseUrl();
     if (!baseUrl) {
-      return res.status(502).json({ error: 'PUBLIC_FILE_URL_UNAVAILABLE' });
+      return sendApiError(res, 502, 'PUBLIC_FILE_URL_UNAVAILABLE' as ApiErrorCode, 'PUBLIC_FILE_URL_UNAVAILABLE');
     }
     if (!resolveProjectDir) {
       return sendApiError(res, 500, 'PROJECT_DIR_UNAVAILABLE', 'project directory resolver unavailable');
@@ -1282,9 +1288,13 @@ export function registerCollabSyncRoutes(
       data = await readFile(sourceFile);
     } catch (error) {
       const code = (error as NodeJS.ErrnoException)?.code;
-      return res.status(code === 'ENOENT' ? 404 : 400).json({
-        error: code === 'ENOENT' ? 'FILE_NOT_FOUND' : 'FILE_UNAVAILABLE',
-      });
+      const fileErrorCode = code === 'ENOENT' ? 'FILE_NOT_FOUND' : 'FILE_UNAVAILABLE';
+      return sendApiError(
+        res,
+        code === 'ENOENT' ? 404 : 400,
+        fileErrorCode as ApiErrorCode,
+        fileErrorCode,
+      );
     }
 
     const resourceId = publicFileResourceIdFor(projectId, filePath, principal);
@@ -1319,7 +1329,7 @@ export function registerCollabSyncRoutes(
         '--json',
       ], principal.teamId));
       if (!snapshot) {
-        return res.status(502).json({ error: 'PUBLIC_SNAPSHOT_UNAVAILABLE' });
+        return sendApiError(res, 502, 'PUBLIC_SNAPSHOT_UNAVAILABLE' as ApiErrorCode, 'PUBLIC_SNAPSHOT_UNAVAILABLE');
       }
       const publication: PublicProjectFilePublication = {
         url: publicSnapshotFileUrl(baseUrl, snapshot.slug, filePath),
@@ -1363,7 +1373,7 @@ export function registerCollabSyncRoutes(
       return res.json(publication);
     } catch (error) {
       console.warn('[od] failed to publish public project file:', error);
-      return res.status(502).json({ error: 'PUBLIC_FILE_PUBLISH_UNAVAILABLE' });
+      return sendApiError(res, 502, 'PUBLIC_FILE_PUBLISH_UNAVAILABLE' as ApiErrorCode, 'PUBLIC_FILE_PUBLISH_UNAVAILABLE');
     } finally {
       await rm(tempDir, { recursive: true, force: true }).catch(() => {});
     }
@@ -1377,7 +1387,7 @@ export function registerCollabSyncRoutes(
       ? (req.body as { slug: string }).slug.trim()
       : '';
     if (!projectId || !filePath || !slug) {
-      return res.status(400).json({ error: 'invalid_public_file' });
+      return sendApiError(res, 400, 'invalid_public_file' as ApiErrorCode, 'invalid_public_file');
     }
     const verification = await verifiedWorkspaceContextForRequest(req, projectId);
     if (!verification.ok) {
@@ -1386,10 +1396,10 @@ export function registerCollabSyncRoutes(
     const verifiedContext = verification.context;
     const principal = publicFilePrincipal(verifiedContext);
     if (!verifiedContext || !principal) {
-      return res.status(409).json(workspaceIdentityRequiredBody());
+      return sendWorkspaceIdentityRequired(res);
     }
     if (!await canShareProjectsForRequest(req, verifiedContext)) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_SHARE_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_SHARE_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_SHARE_DENIED');
     }
     const sharedProjectResult = await resolveSharedProjectForPublicFile(
       resolveSharedProject,
@@ -1398,11 +1408,11 @@ export function registerCollabSyncRoutes(
       principal,
     );
     if (!sharedProjectResult.ok) {
-      return res.status(503).json({ error: 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' });
+      return sendApiError(res, 503, 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' as ApiErrorCode, 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE');
     }
     const sharedProject = sharedProjectResult.project;
     if (sharedProject?.ownerMemberId && sharedProject.ownerMemberId !== principal.memberId) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_PUBLISH_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_PUBLISH_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_PUBLISH_DENIED');
     }
     const resourceId = publicFileResourceIdFor(projectId, filePath, principal);
     try {
@@ -1418,7 +1428,7 @@ export function registerCollabSyncRoutes(
       return res.json({ ok: true, slug, fileName: filePath });
     } catch (error) {
       console.warn('[od] failed to unpublish public project file:', error);
-      return res.status(502).json({ error: 'PUBLIC_FILE_UNPUBLISH_UNAVAILABLE' });
+      return sendApiError(res, 502, 'PUBLIC_FILE_UNPUBLISH_UNAVAILABLE' as ApiErrorCode, 'PUBLIC_FILE_UNPUBLISH_UNAVAILABLE');
     }
   });
 
@@ -1427,7 +1437,7 @@ export function registerCollabSyncRoutes(
     const projectId = String(params[0] ?? '');
     const filePath = normalizePublicFilePath(String(params[1] ?? ''));
     if (!projectId || !filePath) {
-      return res.status(400).json({ error: 'invalid_file_path' });
+      return sendApiError(res, 400, 'invalid_file_path' as ApiErrorCode, 'invalid_file_path');
     }
     const verification = await verifiedWorkspaceContextForRequest(req, projectId);
     if (!verification.ok) {
@@ -1436,10 +1446,10 @@ export function registerCollabSyncRoutes(
     const verifiedContext = verification.context;
     const principal = publicFilePrincipal(verifiedContext);
     if (!verifiedContext || !principal) {
-      return res.status(409).json(workspaceIdentityRequiredBody());
+      return sendWorkspaceIdentityRequired(res);
     }
     if (!await canShareProjectsForRequest(req, verifiedContext)) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_SHARE_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_SHARE_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_SHARE_DENIED');
     }
     const sharedProjectResult = await resolveSharedProjectForPublicFile(
       resolveSharedProject,
@@ -1448,11 +1458,11 @@ export function registerCollabSyncRoutes(
       principal,
     );
     if (!sharedProjectResult.ok) {
-      return res.status(503).json({ error: 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' });
+      return sendApiError(res, 503, 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE' as ApiErrorCode, 'WORKSPACE_PROJECT_OWNERSHIP_UNAVAILABLE');
     }
     const sharedProject = sharedProjectResult.project;
     if (sharedProject?.ownerMemberId && sharedProject.ownerMemberId !== principal.memberId) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_PUBLISH_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_PUBLISH_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_PUBLISH_DENIED');
     }
     return res.json({
       publication: publicFilePublicationStore.get(
@@ -1464,7 +1474,7 @@ export function registerCollabSyncRoutes(
   app.post('/api/projects/:id/collab/sync-intent', async (req, res) => {
     const event = (req.body as { event?: unknown } | undefined)?.event;
     if (typeof event !== 'string' || !SYNC_INTENT_EVENTS.has(event as ProjectSyncIntentEvent)) {
-      return res.status(400).json({ error: 'invalid sync intent event' });
+      return sendApiError(res, 400, 'BAD_REQUEST', 'invalid sync intent event');
     }
     const projectId = req.params.id;
     const verification = await verifiedWorkspaceContextForRequest(req, projectId);
@@ -1476,7 +1486,7 @@ export function registerCollabSyncRoutes(
 
     if (event === 'project_team_share_requested') {
       if (!principal || !(await canShareProjectsForRequest(req, context))) {
-        return res.status(403).json({ error: 'WORKSPACE_PROJECT_SHARE_DENIED' });
+        return sendApiError(res, 403, 'WORKSPACE_PROJECT_SHARE_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_SHARE_DENIED');
       }
       const sharerMemberId = principal.memberId;
       const existingOwnerMemberId = await resolveSharedProjectOwner?.(projectId, {
@@ -1498,10 +1508,10 @@ export function registerCollabSyncRoutes(
         ({ version: nextPublishedVersion } = await requestTeamShare(projectId, principal ?? sharerMemberId));
       } catch (error) {
         console.warn('[od] failed to publish team-shared project bytes:', error);
-        return res.status(502).json({ error: 'TEAM_PROJECT_PUBLISH_UNAVAILABLE' });
+        return sendApiError(res, 502, 'TEAM_PROJECT_PUBLISH_UNAVAILABLE' as ApiErrorCode, 'TEAM_PROJECT_PUBLISH_UNAVAILABLE');
       }
       if (nextPublishedVersion == null) {
-        return res.status(502).json({ error: 'TEAM_PROJECT_PUBLISH_UNAVAILABLE' });
+        return sendApiError(res, 502, 'TEAM_PROJECT_PUBLISH_UNAVAILABLE' as ApiErrorCode, 'TEAM_PROJECT_PUBLISH_UNAVAILABLE');
       }
       announceTeamShareStateChange({
         projectId,
@@ -1519,7 +1529,7 @@ export function registerCollabSyncRoutes(
 
     if (event === 'project_team_unshare_requested') {
       if (!principal || !(await canShareProjectsForRequest(req, context))) {
-        return res.status(403).json({ error: 'WORKSPACE_PROJECT_SHARE_DENIED' });
+        return sendApiError(res, 403, 'WORKSPACE_PROJECT_SHARE_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_SHARE_DENIED');
       }
       const callerMemberId = principal.memberId;
       const remoteOwnerMemberId = await resolveSharedProjectOwner?.(projectId, {
@@ -1529,7 +1539,7 @@ export function registerCollabSyncRoutes(
       const ownerMemberId =
         remoteOwnerMemberId ?? projectOwnerMemberId(projectId, principal);
       if (ownerMemberId && ownerMemberId !== callerMemberId) {
-        return res.status(403).json({ error: 'WORKSPACE_PROJECT_UNSHARE_DENIED' });
+        return sendApiError(res, 403, 'WORKSPACE_PROJECT_UNSHARE_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_UNSHARE_DENIED');
       }
       await requestTeamUnshare(projectId, principal);
       announceTeamShareStateChange({
@@ -2252,14 +2262,14 @@ export function registerCollabSyncRoutes(
       return sendWorkspaceVerificationFailure(res, verification);
     }
     if (!principal || !scope) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_PULL_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_PULL_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_PULL_DENIED');
     }
     const outcome = await pullSharedProjectCoalesced(projectId, principal, scope);
     if (outcome.status === 'revoked') {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_PULL_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_PULL_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_PULL_DENIED');
     }
     if (outcome.status === 'register_failed') {
-      return res.status(502).json({ error: 'TEAM_PROJECT_PULL_REGISTER_UNAVAILABLE' });
+      return sendApiError(res, 502, 'TEAM_PROJECT_PULL_REGISTER_UNAVAILABLE' as ApiErrorCode, 'TEAM_PROJECT_PULL_REGISTER_UNAVAILABLE');
     }
     res.json({ ok: true, version: outcome.version });
   });
@@ -2276,7 +2286,7 @@ export function registerCollabSyncRoutes(
       return sendWorkspaceVerificationFailure(res, verification);
     }
     if (!principal || !scope) {
-      return res.status(404).json({ error: 'TEAM_PROJECT_NOT_FOUND' });
+      return sendApiError(res, 404, 'TEAM_PROJECT_NOT_FOUND' as ApiErrorCode, 'TEAM_PROJECT_NOT_FOUND');
     }
     let awaitingFirstMaterialization: boolean;
     try {
@@ -2285,7 +2295,7 @@ export function registerCollabSyncRoutes(
         scope,
       );
     } catch {
-      return res.status(503).json({ error: 'TEAM_PROJECT_BOOTSTRAP_UNAVAILABLE' });
+      return sendApiError(res, 503, 'TEAM_PROJECT_BOOTSTRAP_UNAVAILABLE' as ApiErrorCode, 'TEAM_PROJECT_BOOTSTRAP_UNAVAILABLE');
     }
     if (awaitingFirstMaterialization) {
       materializePlaceholderOnOpen(projectId, req, {
@@ -2301,7 +2311,7 @@ export function registerCollabSyncRoutes(
   app.get('/api/projects/:id/collab/status', async (req, res) => {
     const projectId = req.params.id;
     if (isTeamProjectRevoked?.(projectId)) {
-      return res.status(404).json({ error: 'PROJECT_NOT_FOUND' });
+      return sendApiError(res, 404, 'PROJECT_NOT_FOUND' as ApiErrorCode, 'PROJECT_NOT_FOUND');
     }
     const {
       verification,
@@ -2313,7 +2323,7 @@ export function registerCollabSyncRoutes(
       return sendWorkspaceVerificationFailure(res, verification);
     }
     if (!context || !resolvedWorkspaceId) {
-      return res.status(403).json({ error: 'WORKSPACE_PROJECT_STATUS_DENIED' });
+      return sendApiError(res, 403, 'WORKSPACE_PROJECT_STATUS_DENIED' as ApiErrorCode, 'WORKSPACE_PROJECT_STATUS_DENIED');
     }
     let syncState = projectSyncState(projectId, principal);
     let ownerMemberId = projectOwnerMemberId(projectId, principal);

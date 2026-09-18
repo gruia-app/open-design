@@ -164,7 +164,7 @@ describe('public file publication restart lifecycle', () => {
 
     expect(publish).toEqual({
       status: 502,
-      body: { error: 'PUBLIC_FILE_PUBLISH_UNAVAILABLE' },
+      body: { error: { code: 'PUBLIC_FILE_PUBLISH_UNAVAILABLE', message: 'PUBLIC_FILE_PUBLISH_UNAVAILABLE' } },
     });
     expect(vela.runResourceCommand.mock.calls.map(([args]) => args[0])).toEqual([
       'push',

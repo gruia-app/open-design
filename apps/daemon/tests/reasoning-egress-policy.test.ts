@@ -65,11 +65,11 @@ describe('reasoningExecution egress policy', () => {
     const payload = await res.json() as {
       error: {
         code: string;
-        data: Record<string, unknown>;
+        details: Record<string, unknown>;
       };
     };
     expect(payload.error.code).toBe(expected.code ?? 'reasoning_execution_disabled');
-    expect(payload.error.data).toMatchObject({
+    expect(payload.error.details).toMatchObject({
       routeKind: expected.routeKind,
       provider: expected.provider,
     });

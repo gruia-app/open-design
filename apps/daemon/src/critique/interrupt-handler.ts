@@ -1,3 +1,4 @@
+import { sendApiError } from '../http/api-errors.js';
 import type { Request, Response } from 'express';
 import type Database from 'better-sqlite3';
 import {
@@ -43,9 +44,7 @@ export function handleCritiqueInterrupt(
         : '';
 
     if (!projectId || !runId) {
-      res
-        .status(HTTP_BAD_REQUEST)
-        .json({ error: { code: 'BAD_REQUEST', message: 'projectId and runId are required' } });
+      sendApiError(res, HTTP_BAD_REQUEST, 'BAD_REQUEST', 'projectId and runId are required');
       return;
     }
 
@@ -55,9 +54,7 @@ export function handleCritiqueInterrupt(
     // must NOT find a row that actually belongs to project p2. Returning 404
     // (not 403) avoids leaking the existence of other projects' runs.
     if (row === null || row.projectId !== projectId) {
-      res
-        .status(HTTP_NOT_FOUND)
-        .json({ error: { code: 'NOT_FOUND', message: 'critique run not found' } });
+      sendApiError(res, HTTP_NOT_FOUND, 'NOT_FOUND', 'critique run not found');
       return;
     }
 

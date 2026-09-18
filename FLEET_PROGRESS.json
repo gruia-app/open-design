@@ -1,10 +1,10 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T19:43:16",
+ "updated_at": "2026-09-18T20:20:16",
  "current": {
-  "item": "D3 envelope sweep — batch 3 en curso; siguiente candidato: plugins/index.ts (38 sitios, mixto: tokens+metadata) u otro fichero humano",
+  "item": "D3 envelope sweep — restantes: plugins/index (38 mixto), project/index resto, collab-context tokens, vela",
   "state": "in_progress",
-  "branch": "fleet/envelope-batch-3"
+  "branch": "fleet/envelope-batch-4"
  },
  "done": [
   {
@@ -90,6 +90,18 @@
    "item": "D3 batch 3: envelope en automation (21), routine (+sendRoutineError scope shape), team-resources, team-resource-share (workspace codes verbatim); web apiErrorMessage helper + 10 consumer sites",
    "commit": "0202c835b",
    "deploy": "pending"
+  },
+  {
+   "item": "D3 batch 3 (4 ficheros lógicos): automation/routine/team-resources/team-resource-share + project tabs/templates/artifacts/conversations + daemon db + connectors + telemetry/attribution/presence/public-metadata/critique-artifact + plugins assets/marketplaces; web apiErrorMessage helper + readErrorMessage details.errors",
+   "commit": "d011a5f76",
+   "pr": 12,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
+   "commit": "29b4fe3bb",
+   "deploy": "pending"
   }
  ],
  "blocked": [
@@ -125,6 +137,12 @@
    "pr": 11,
    "merged": "74fcd820e",
    "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 12,
+   "merged": "d011a5f76",
+   "note": "auto-merge squash ejecutado"
   }
  ],
  "deploys_pending": [
@@ -136,7 +154,8 @@
   "adefce32f (PR #9)",
   "9b3ef04ec (PR #10)",
   "74fcd820e (PR #11)",
-  "0202c835b (fleet/envelope-batch-3 — 1/5 commits)"
+  "d011a5f76 (PR #12)",
+  "29b4fe3bb (fleet/envelope-batch-4 — 2/5 commits)"
  ],
  "notes": "bucle en repo privado gruia-app/design. Paridad upstream D1 cerrada. D3 en curso: un fichero por iteración. Siguiente candidato: design-systems.ts (sendWorkspaceScopeError propio, ejercido por explicit-workspace-scope tests vía registerDesignSystemRoutes)."
 }

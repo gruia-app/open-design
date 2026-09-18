@@ -266,10 +266,12 @@ export function registerXaiRoutes(app: Express, ctx: RegisterXaiRoutesDeps) {
     const provider = await resolveProviderConfig(PROJECT_ROOT, 'grok');
     const apiKey = provider.apiKey || '';
     if (!apiKey) {
-      return res.status(401).json({
-        error:
-          'no xAI credentials — sign in with your SuperGrok subscription, set XAI_API_KEY, or configure a key in Settings',
-      });
+      return sendApiError(
+        res,
+        401,
+        'UNAUTHORIZED',
+        'no xAI credentials — sign in with your SuperGrok subscription, set XAI_API_KEY, or configure a key in Settings',
+      );
     }
 
     const baseUrl = (provider.baseUrl || 'https://api.x.ai/v1').replace(

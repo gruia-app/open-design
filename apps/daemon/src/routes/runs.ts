@@ -2013,7 +2013,7 @@ export function registerRunRoutes(app: Express, ctx: RegisterRunRoutesDeps) {
             : undefined,
         );
       } catch (err) {
-        return res.status(500).json({ error: String(err) });
+        return sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
       }
       if (!explicitUserPlugin && strategyRolloutDecision?.effectiveMode === 'active') {
         automaticOrdinaryFallbackPluginId = selectedExamplePlugin?.id

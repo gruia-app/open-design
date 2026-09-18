@@ -228,9 +228,12 @@ export function registerGenuiRoutes(app: Express, deps: RegisterGenuiRoutesDeps)
       const explicitSnapshotId = typeof body.snapshotId === 'string' ? body.snapshotId : '';
       const snapshotId = explicitSnapshotId;
       if (!snapshotId) {
-        return res.status(400).json({
-          error: 'snapshotId is required (runs are in-memory; pass the snapshotId returned by /api/plugins/:id/apply)',
-        });
+        return sendApiError(
+          res,
+          400,
+          'BAD_REQUEST',
+          'snapshotId is required (runs are in-memory; pass the snapshotId returned by /api/plugins/:id/apply)',
+        );
       }
       const snapshot = getSnapshot(db, snapshotId);
       if (!snapshot) return sendApiError(res, 404, 'NOT_FOUND', 'snapshot not found');
