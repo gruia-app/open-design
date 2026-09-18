@@ -252,6 +252,27 @@ de wire.
 `tests/index.test.ts` 14/14; grep confirma cero referencias restantes a la
 copia eliminada.
 
+## Ítem 11 — tools-serve: URL del fixture respeta `--host` y `--port 0` es dinámico de verdad
+
+**Hecho:**
+
+- Los tres fixtures (`updater`, `release-storage`, `collab-cloud`) construían
+  su origin impreso como `http://127.0.0.1:<port>` ignorando `--host` — al
+  bindear `0.0.0.0` o una IP concreta la URL publicada no reflejaba el bind
+  real. Nuevo helper compartido `src/server-origin.ts`: deriva el host de
+  `server.address()`, normaliza wildcards (`0.0.0.0`→`127.0.0.1`,
+  `::`→`::1`) para que la URL siga siendo conectable localmente, y pone
+  brackets a literales IPv6.
+- `index.ts`: el flag `--port` tenía default `"0"`, así que collab-cloud no
+  podía distinguir "omitido" (→ 18096 well-known) de `--port 0` explícito
+  (→ dinámico según el propio help). Quitado el default del flag: omitido →
+  `DEFAULT_COLLAB_CLOUD_PORT` en collab-cloud y 0 en los demás (sin cambio);
+  `--port 0` explícito → puerto dinámico en los tres servicios.
+
+**Verificación:** +1 test (bind `0.0.0.0` → origin loopback conectable);
+`updater-fixture` 12/12, `release-storage-fixture` 2/2,
+`collab-cloud-fixture` 10/10; typecheck tools-serve verde.
+
 ## Bloqueados
 
 - Ninguno todavía.
