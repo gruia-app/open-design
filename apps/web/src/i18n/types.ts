@@ -231,6 +231,7 @@ export interface Dict {
   'plugins.availableDetails.integrity': string;
   'plugins.availableDetails.permissions': string;
   'plugins.availableDetails.capabilitySummary': string;
+  'plugins.availableDetails.closeDialog': string;
   'plugins.actions.copyInstallCommand': string;
   'plugins.actions.copyPluginId': string;
   'plugins.actions.copyReadmeBadge': string;
@@ -240,6 +241,26 @@ export interface Dict {
   'plugins.actions.openMarketplace': string;
   'plugins.contextChipsEmpty': string;
   'plugins.contextChipsRemove': string;
+  'plugins.import.kicker': string;
+  'plugins.import.title': string;
+  'plugins.import.closeDialog': string;
+  'plugins.import.sourceTabs': string;
+  'plugins.import.tabGithub': string;
+  'plugins.import.tabGithubBody': string;
+  'plugins.import.tabZip': string;
+  'plugins.import.tabZipBody': string;
+  'plugins.import.tabFolder': string;
+  'plugins.import.tabFolderBody': string;
+  'plugins.import.sourceLabel': string;
+  'plugins.import.sourceHelp': string;
+  'plugins.import.submit': string;
+  'plugins.import.submitWorking': string;
+  'plugins.import.zipBody': string;
+  'plugins.import.folderBody': string;
+  'plugins.import.noZipSelected': string;
+  'plugins.import.noFolderSelected': string;
+  'plugins.import.filesSelected': string;
+  'plugins.import.footerNote': string;
 
   // App / brand
   'app.brand': string;
