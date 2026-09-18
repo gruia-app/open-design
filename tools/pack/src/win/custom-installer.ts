@@ -40,7 +40,7 @@ function escapeNsisString(value: string): string {
   // "$$" in a replace() replacement string yields a literal "$" — emitting the
   // two-character `$$` escape NSIS expects takes "$$$$". The previous form was
   // a silent no-op for `$`.
-  return value.replace(/\$/g, "$$$$").replace(/"/g, '$\\"').replace(/\r?\n/g, "$\\r$\\n");
+  return value.replace(/\$/g, "$$$$").replace(/"/g, '$\\"').replace(/'/g, "$\\'").replace(/\r?\n/g, "$\\r$\\n");
 }
 
 export function createNsisQuotedCommandLiteral(args: readonly string[]): string {

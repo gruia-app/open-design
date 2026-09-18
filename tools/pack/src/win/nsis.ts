@@ -15,7 +15,7 @@ function escapeNsisString(value: string): string {
   // escape needs "$$$$" to emit the two-character `$$` sequence NSIS reads as
   // an escaped dollar. (`$`→`$$` is what prevents `$TEMP`-style segments from
   // being expanded at compile time.)
-  return value.replace(/\$/g, "$$$$").replace(/"/g, '$\\"').replace(/\r?\n/g, "$\\r$\\n");
+  return value.replace(/\$/g, "$$$$").replace(/"/g, '$\\"').replace(/'/g, "$\\'").replace(/\r?\n/g, "$\\r$\\n");
 }
 
 const NSIS_APPDATA_TOKEN = "$APPDATA";
