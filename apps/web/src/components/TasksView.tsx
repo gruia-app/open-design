@@ -497,6 +497,11 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
           workspaceContext: tasksWorkspaceContext,
           workspaceView: 'all',
           throwOnError: true,
+        }).catch((err: unknown) => {
+          // A failed project read is not an authoritative empty list: keep
+          // the last-good picker rows and let the rest of the batch land.
+          console.error('[tasks] project list refresh failed; keeping last-good', err);
+          return null;
         }),
         templateRequest,
         proposalRequest,
@@ -504,7 +509,7 @@ export function TasksView({ skills = [], designTemplates = [], connectors = [], 
       if (!rRes.ok) throw new Error(`routines: ${rRes.status}`);
       const rJson = await rRes.json();
       setRoutines(rJson.routines ?? []);
-      setProjects(projectList.map((p) => ({ id: p.id, name: p.name })));
+      if (projectList) setProjects(projectList.map((p) => ({ id: p.id, name: p.name })));
       if (tJson) {
         setAutomationCatalog(Array.isArray(tJson.templates) ? tJson.templates : []);
       }

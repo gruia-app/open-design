@@ -369,6 +369,62 @@ unhandled rejection.
 alerta `projects 500` en vez de lista vacía silenciosa). Suite del fichero
 16/16; `TasksView.{routines,page}` 17/17; typecheck web verde.
 
+## Ítem 19 — i18n de ContextChipStrip y MissingBrandFontsBanner
+
+**Hecho:** dos componentes cableados seguían con inglés hardcodeado: el
+estado vacío del strip de context-chips (`No active plugin context.`), el
+aria-label `Remove {kind} {label}`, y el banner de fuentes de marca
+(título, cuerpo y ambos botones). Añadidas 6 claves a `Dict` + las 19
+locales (`plugins.contextChipsEmpty`, `plugins.contextChipsRemove`,
+`brand.fontsMissingTitle/Body`, `brand.fontsAddFiles/KeepSubstitutes`) y
+`useT()` cableado en ambos componentes. Los nombres de kind
+(Skill/Plugin/MCP/…) quedan en inglés — convención del producto (es-ES
+mantiene "Skills"/"Plugins"). `GenUIInbox` quedó fuera: es código dormido
+(un solo commit, sin ningún import fuera de su propio test).
+
+**Verificación:** typecheck web verde (Dict estricto en 20 ficheros);
+`MissingBrandFontsBanner.test.tsx` 7/7 (cae a `FALLBACK_I18N` inglés sin
+provider); `pnpm guard` verde.
+
+## Ítem 20 — i18n del placeholder de búsqueda de conversaciones
+
+**Hecho:** `ChatPane.tsx` tenía `placeholder="Search conversations"`
+hardcodeado en el mismo drawer del historial que el ítem 12 tradujo.
+Nueva clave `chat.searchConversationsPlaceholder` en `Dict` + las 19
+locales. Scan complementario: ~84 aria-labels/placeholders hardcodeados
+en otros componentes — una pasada a11y-i18n completa queda como proyecto
+aparte; solo se corrigió la hoja de la superficie principal.
+
+**Verificación:** typecheck web verde.
+
+## Ítem 21 — Follow-ups del review delegado del diff (slice web)
+
+Review barato del branch diff vía `llm-delegate` (run `wf_4a1aa9b9ae034030`,
+3 leaves glm-5.3-flash). Hallazgos accionados del slice web:
+
+- **`Promise.all` blast radius (ítem 18):** con `throwOnError` dentro del
+  batch, un 500 de `/api/projects` también descartaba routines/templates/
+  proposals ya recibidos. Reescrito a per-leg `.catch → null` + guard
+  `if (projectList)` — convención del repo ("keep last-good + log"), no el
+  fail-loud del batch entero.
+- **Catch bare en create-project (`App.tsx:3555`):** añadido `console.error`
+  — convención que el propio diff establece en los catches hermanos.
+- **`DesktopPetSurface`:** último caller sin convertir; ahora conserva
+  last-good de `projects`/`runs` vía ref en vez de vaciar el task center.
+- **Comentario bootstrap impreciso:** "scope-refresh effect retry" no es
+  cierto en sesiones locales sin workspace — aclarado a "next refresh or
+  scope change retries".
+
+No accionado: tooltip `Kind: label` del chip (vocabulario de producto, igual
+que KIND_LABEL); alerta en `refreshProjects` manual (silent keep-last-good
+es la convención establecida); bump de Next (inevitable, era el fix de las
+2 RCEs críticas).
+
+**Verificación:** test de regresión reescrito a la nueva semántica
+(`/api/projects` 500 → routines aterrizan, sin alerta); RoutinesSection
+16/16; pet-task-center 4/4; TasksView.{routines,page,inactive} 20/20;
+typecheck web verde.
+
 ## Revisados sin cambio (con rationale)
 
 - **BYOK `apiKey` en `localStorage` (web):** `saveConfig` ya sanea

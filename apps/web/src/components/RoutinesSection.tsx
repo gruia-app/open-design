@@ -551,13 +551,18 @@ export function RoutinesSection({ onClose }: RoutinesSectionProps) {
           workspaceContext: requestWorkspaceContext,
           workspaceView: 'all',
           throwOnError: true,
+        }).catch((err: unknown) => {
+          // A failed project read is not an authoritative empty list: keep
+          // the last-good picker rows and let the routines payload land.
+          console.error('[routines] project list refresh failed; keeping last-good', err);
+          return null;
         }),
       ]);
       if (!rRes.ok) throw new Error(`routines: ${rRes.status}`);
       const rJson = await rRes.json();
       if (generation !== refreshGenerationRef.current) return;
       setRoutines(rJson.routines ?? []);
-      setProjects(projectList.map((p) => ({ id: p.id, name: p.name })));
+      if (projectList) setProjects(projectList.map((p) => ({ id: p.id, name: p.name })));
       setError(null);
     } catch (err) {
       if (generation !== refreshGenerationRef.current) return;

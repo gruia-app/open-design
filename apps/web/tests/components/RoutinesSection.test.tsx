@@ -619,11 +619,24 @@ describe('RoutinesSection', () => {
     expect(screen.getByRole('alert').textContent).toContain('routines: 500');
   });
 
-  it('shows an error alert when the project picker list fails to load', async () => {
+  it('keeps routines usable when the project picker list fails to load', async () => {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = input.toString();
       if (url === '/api/routines') {
-        return new Response(JSON.stringify({ routines: [] }), {
+        return new Response(JSON.stringify({
+          routines: [{
+            id: 'routine-1',
+            name: 'Morning briefing',
+            prompt: 'Summarize overnight activity.',
+            schedule: { kind: 'daily', time: '09:00', timezone: 'UTC' },
+            target: { mode: 'create_each_run' },
+            enabled: true,
+            nextRunAt: Date.now() + 3600_000,
+            lastRun: null,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }],
+        }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
@@ -639,8 +652,10 @@ describe('RoutinesSection', () => {
 
     render(<RoutinesSection />);
 
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain('projects 500');
+    // A projects outage must not blank the section: routines still land and
+    // no error alert is raised for the picker leg.
+    expect(await screen.findByText('Morning briefing')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('shows an error alert when creating a routine fails', async () => {

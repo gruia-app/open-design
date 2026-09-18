@@ -2211,8 +2211,8 @@ function AppInner() {
         setProjectsLoading(false);
       }).catch((error: unknown) => {
         // A failed bootstrap read is not an empty list: reconciling it would
-        // wipe the restored snapshot. Keep last-good rows and let the
-        // scope-refresh effect retry.
+        // wipe the restored snapshot. Keep last-good rows; the next refresh
+        // or scope change retries.
         console.error('[projects] bootstrap list failed; keeping last-good rows', error);
         if (!cancelled) setProjectsLoading(false);
       });
@@ -3790,8 +3790,9 @@ function AppInner() {
           workspaceView: workspaceProjectView,
         });
         reconcileFetchedProjects(list, request);
-      } catch {
+      } catch (error: unknown) {
         // Keep the optimistic stub; a failed refresh is not an empty list.
+        console.error('[projects] post-create refresh failed; keeping optimistic row', error);
       }
     }
     navigate({
