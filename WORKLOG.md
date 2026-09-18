@@ -140,6 +140,34 @@ por SIGKILL tras timeout (2/2 verdes); regresión: `acp-timeout-env`,
 residual cero. El path de `server.ts` (failRun/writeFile) no tiene test seam
 barato — verificado por typecheck + revisión, sin suite nueva.
 
+## Ítem 6 — Error boundary a nivel de app
+
+**Hecho** (leaf-2 #1): el único `ErrorBoundary` del SPA estaba limitado a la
+card de design-kit (`KitErrorBoundary`); cualquier throw de render fuera de ese
+subárbol (FileViewer ~20k líneas parseando HTML de artefactos, mensajes del
+deck bridge, edges de i18n) dejaba la app en pantalla blanca con solo
+telemetría — el propio `white-screen.ts` documenta que un crash post-mount es
+"solo una historia `$exception`". Cambios:
+
+- Nueva `src/components/ErrorBoundary.tsx`: clase genérica compartida (la que
+  vivía privada en `KitErrorBoundary`), con `context` para el label de
+  analytics.
+- `KitErrorBoundary` refactorizado sobre la clase compartida — API pública y
+  fallback idénticos.
+- Nueva `src/components/AppErrorBoundary.tsx` (+ `.module.css`): fallback a
+  viewport completo con `role=alert` y botón que recarga la página (retry
+  in-place re-montaría el mismo estado que crasheó). Reusa las claves ya
+  traducidas `ds.kitErrorTitle`/`ds.kitErrorRetry` — texto genérico, evita
+  tocar los 19 ficheros de locale.
+- `app/[[...slug]]/client-app.tsx`: `<ClientApp>` envuelve `<App />` con el
+  nuevo boundary.
+
+**Verificación:** nuevo `tests/components/AppErrorBoundary.test.tsx` — fallback
+traducido + `onRetry` invocado, children sanos renderizan, fallback de kit
+contenido (siblings intactos), retry del boundary genérico re-monta tras
+limpiar el fallo — 4/4 verdes; `pnpm --filter @open-design/web typecheck` y
+`pnpm guard` verdes.
+
 ## Bloqueados
 
 - Ninguno todavía.
