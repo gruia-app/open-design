@@ -238,6 +238,8 @@ export interface Dict {
   'plugins.actions.openSource': string;
   'plugins.actions.openHomepage': string;
   'plugins.actions.openMarketplace': string;
+  'plugins.contextChipsEmpty': string;
+  'plugins.contextChipsRemove': string;
 
   // App / brand
   'app.brand': string;
@@ -4840,6 +4842,10 @@ export interface Dict {
   'brand.appliedToChat': string;
   'brand.previewEmpty': string;
   'brand.viewDetails': string;
+  'brand.fontsMissingTitle': string;
+  'brand.fontsMissingBody': string;
+  'brand.fontsAddFiles': string;
+  'brand.fontsKeepSubstitutes': string;
   'newBrand.title': string;
   'newBrand.subtitle': string;
   'newBrand.urlLabel': string;
