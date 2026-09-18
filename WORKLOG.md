@@ -564,3 +564,16 @@ plana.
 - Sin fallo atribuible a los cambios de la rama.
 
 `pnpm guard` verde completo; `pnpm typecheck` workspace verde (28 pkgs).
+
+## Cierre — 05:45
+
+- Rama `t3code/7dd1c0ea` pusheada a `origin` (fork gruia-app/design), 26 commits.
+- PR abierto contra `nexu-io/open-design@main`:
+  https://github.com/nexu-io/open-design/pull/8262
+- Artefactos untracked preservados y excluidos: `.playwright-cli/`,
+  `opositia-design.png`.
+- Review delegado `wf_4a1aa9b9ae034030`: completado, 3 slices, $0,
+  12.8K output tokens. Hallazgos actuados en ítems 21-24; el resto
+  documentado en "No accionado".
+- Único bloqueo pendiente de diseño: custodia daemon-side de la clave BYOK
+  (requiere endpoint nuevo + migración — decisión de producto).
