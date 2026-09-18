@@ -602,3 +602,40 @@ vitest 4) y `waitFor` de cli-startup sube a 60s.
 
 **Verificación:** test de 34s pasa con el nuevo límite (habría expirado a
 20s con el default).
+
+## Late review delegado `wf_93e78204f3e445a2` — 06:00
+
+Segunda pasada de review barata (glm-5.3-flash, $0) sobre los commits de
+follow-up (`eec44f5..d0b2c02`, diff ~1175 líneas). Verdict: slice sólido;
+1 alto confirmado + 1 medio + 3 lows.
+
+Actuados en `6ac5821`:
+
+- **Alto** — brand preview/finalize: el gate nuevo solo cubría
+  `body.projectId`; el store resuelve `opts.projectId ?? meta.projectId ??
+  brandProjectId(id)`, así que omitir el campo bypasseaba la autorización.
+  Ahora el gate usa el projectId efectivo (body ?? meta.projectId), igual
+  que los siblings. Regresión: POST sin projectId sobre brand con
+  meta.projectId → 403 en ambas rutas.
+- **Medio** — DesktopPetSurface: `listProjectRuns` swalloweaba errores a
+  `[]`, haciendo dead code la pierna runs de keep-last-good. Añadida
+  opción `throwOnError` (convención de `listProjects`) + test provider.
+- **Low** — collab-sync public-file: `PROJECT_DIR_UNAVAILABLE` emitido
+  plano; ahora via `sendApiError` (envelope consistente con server.ts).
+- **Low** — login-shell test: `mkdtempSync` en la factory del describe
+  corría aunque el suite fuese skip en win32 (leak de temp dir); movido
+  a `beforeAll`.
+
+No accionado: tests de componente para TasksView/DesktopPetSurface
+keep-last-good (cubierto a nivel provider; test de componente pesado,
+deferido).
+
+## Verificación 06:05
+
+- `tests/brand-routes.test.ts` 34/34 (incl. nueva regresión del gate).
+- `tests/login-shell.test.ts` 14/14.
+- `tests/providers/list-project-runs.test.ts` 4/4 (nuevo).
+- typecheck daemon + web verde; `pnpm guard` verde completo.
+- Suite web completo: 7247/7248 verdes; único fallo
+  `srcdoc-bridge-empty-targets` (retry-window timing) pasa en
+  aislamiento 19/19 — flake ambiental, no regresión.
