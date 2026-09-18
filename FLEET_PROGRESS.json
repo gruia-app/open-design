@@ -1,6 +1,6 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T22:05:14.732033+00:00",
+ "updated_at": "2026-09-18T22:10:38.947637+00:00",
  "current": {
   "item": "paridad upstream lote 6 — rama fleet/parity-6",
   "state": "in_progress",
@@ -266,6 +266,31 @@
    "item": "D1 paridad: refuse turn with nothing to design + durable blockedContext (upstream #7725, prerequisito de #7980)",
    "commit": "66058730e",
    "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: Novita AI model catalog (upstream #6327)",
+   "commit": "c6e0fca3c",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: bundled Vela CLI 0.0.35->0.0.38 (upstream #8273, lockfile regenerado con pnpm)",
+   "commit": "4537ab17e",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: preserve running launcher payload during cleanup (upstream #7963)",
+   "commit": "dab5cfc14",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: preserve failed ACP tool results (upstream #8046)",
+   "commit": "73bf94d37",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: OD Next clarifications resumable after restart (upstream #7575)",
+   "commit": "0520f3f08",
+   "deploy": "pending"
   }
  ],
  "blocked": [
@@ -359,5 +384,5 @@
   "194286537 (PR #18)",
   "38abb6aee (PR #19)"
  ],
- "notes": "bucle en repo privado gruia-app/design. Paridad lote 6 en fleet/parity-6 (3 picks + coord). Leccion: tras cherry-pick que toca packages/contracts, rebuild dist antes de tests daemon."
+ "notes": "fleet/parity-7: 5 picks limpios (Novita catalog, Vela 0.0.38, launcher payload cleanup, ACP failed tool results, clarification resume). Descartados por divergencia: 11943a400 (amr-guidance web), b9c05695f (cover.ts borrado en fork)."
 }

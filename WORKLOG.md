@@ -215,3 +215,18 @@
   (gitignored, stale). Rebuild de contracts → 42/42 coordinator + 25/25
   prompt-recipe + typecheck verdes. Leccion: rebuild contracts tras cualquier
   pick que toque `packages/contracts/src`.
+
+## Paridad upstream — lote 7 (rama fleet/parity-7)
+
+- `c6e0fca3c` (#6327): catálogo Novita AI ampliado.
+- `4537ab17e` (#8273): Vela CLI bundled 0.0.35→0.0.38 — resuelto a mano
+  (nuestro base estaba en 0.0.35, no en 0.0.37) con `pnpm install
+  --lockfile-only`; lockfile solo toca entradas vela-cli con los mismos
+  integrity hashes que upstream.
+- `dab5cfc14` (#7963): el cleanup del updater no borra el payload launcher
+  que está corriendo (desktop, 7/7 tests).
+- `73bf94d37` (#8046): los tool results ACP fallidos se preservan (11/11).
+- `0520f3f08` (#7575): clarificaciones OD Next resumibles tras restart sin
+  source Run snapshot (71/71).
+- Descartados por divergencia de fork: `11943a400` (amr-guidance web),
+  `b9c05695f` (cover.ts borrado en fork — conflicto DU).
