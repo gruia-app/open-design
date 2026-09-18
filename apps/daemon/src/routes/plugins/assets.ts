@@ -2,7 +2,7 @@ import type { Express, Request, Response } from 'express';
 import { sendApiError } from '../../http/api-errors.js';
 import type * as BetterSqlite3 from 'better-sqlite3';
 import path from 'node:path';
-import type { WorkspaceCollabContext } from '@open-design/contracts';
+import type { ApiErrorCode, WorkspaceCollabContext } from '@open-design/contracts';
 import {
   resolveOptionalLocalWorkspaceRequestAuthority,
   type VerifyWorkspaceRequestAuthority,
@@ -88,19 +88,23 @@ export function registerPluginAssetRoutes(app: Express, deps: RegisterPluginAsse
   ): Promise<WorkspaceCollabContext | null | undefined> => {
     const scopedRequest = requestWithNavigationScope(req);
     if (scopedRequest === 'conflict') {
-      res.status(400).json({
-        error: 'WORKSPACE_CONTEXT_CONFLICT',
-        message: 'workspace header and navigation scope must match',
-      });
+      sendApiError(
+        res,
+        400,
+        'WORKSPACE_CONTEXT_CONFLICT' as ApiErrorCode,
+        'workspace header and navigation scope must match',
+      );
       return undefined;
     }
     const authority = resolveOptionalLocalWorkspaceRequestAuthority(scopedRequest);
     if (!authority.ok) {
-      res.status(authority.status).json({
-        error: authority.code,
-        message: authority.message,
-        ...(authority.retryable ? { retryable: true } : {}),
-      });
+      sendApiError(
+        res,
+        authority.status,
+        authority.code as ApiErrorCode,
+        authority.message,
+        authority.retryable ? { retryable: true } : undefined,
+      );
       return undefined;
     }
     return authority.context;

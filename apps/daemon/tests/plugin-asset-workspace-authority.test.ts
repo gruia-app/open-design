@@ -180,7 +180,7 @@ describe('Plugin preview and asset Workspace authority', () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({
-      error: 'WORKSPACE_CONTEXT_INCOMPLETE',
+      error: { code: 'WORKSPACE_CONTEXT_INCOMPLETE' },
     });
   });
 
@@ -198,7 +198,7 @@ describe('Plugin preview and asset Workspace authority', () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({
-      error: 'WORKSPACE_CONTEXT_CONFLICT',
+      error: { code: 'WORKSPACE_CONTEXT_CONFLICT' },
     });
   });
 });

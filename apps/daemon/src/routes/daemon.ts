@@ -74,10 +74,12 @@ export function registerDaemonRoutes(app: Express, deps: RegisterDaemonRoutesDep
   app.post('/api/agents/:agentId/oauth-launch', requireLocalDaemonRequest, async (req, res) => {
     const agentId = req.params.agentId;
     if (agentId !== 'antigravity') {
-      return res.status(400).json({
-        ok: false,
-        error: `oauth-launch is only supported for antigravity, got ${agentId}`,
-      });
+      return sendApiError(
+        res,
+        400,
+        'BAD_REQUEST',
+        `oauth-launch is only supported for antigravity, got ${agentId}`,
+      );
     }
     try {
       const { launchAgentInSystemTerminal } = await import('../runtimes/terminal-launch.js');
@@ -85,16 +87,11 @@ export function registerDaemonRoutes(app: Express, deps: RegisterDaemonRoutesDep
       if (result.ok) {
         return res.json({ ok: true, platform: result.platform, via: result.via });
       }
-      return res.status(500).json({
-        ok: false,
-        platform: result.platform,
-        error: result.reason,
+      return sendApiError(res, 500, 'INTERNAL_ERROR', result.reason ?? 'oauth launch failed', {
+        details: { platform: result.platform },
       });
     } catch (err) {
-      return res.status(500).json({
-        ok: false,
-        error: String(err),
-      });
+      return sendApiError(res, 500, 'INTERNAL_ERROR', String(err));
     }
   });
 
@@ -112,9 +109,7 @@ export function registerDaemonRoutes(app: Express, deps: RegisterDaemonRoutesDep
     } catch (error) {
       if (error instanceof AgentCompanionSetupError) {
         const status = error.code === 'AGENT_NOT_INSTALLED' ? 409 : 500;
-        return res.status(status).json({
-          error: { code: error.code, message: error.message },
-        });
+        return sendApiError(res, status, error.code, error.message);
       }
       console.warn('[agent-companion-setup] unexpected failure', error);
       return sendApiError(res, 500, 'INTERNAL_ERROR', 'DeepSeek Harness connection setup failed.');

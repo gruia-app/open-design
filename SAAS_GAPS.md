@@ -40,17 +40,30 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   media+xai (PR #10), collab-context, genui (`406a03aae`), comments
   (`07d14a7b2`), static-resource (`0fa8652de`), design-systems (PR #11
   `74fcd820e`), automation + routine + team-resources + team-resource-share
-  (`0202c835b`). `import-export-routes.ts` verificado ya enveloped.
+  (`0202c835b`), project routes + daemon-db + connectors + telemetry +
+  collab-presence + plugins assets/marketplaces (PR #12 `d011a5f76`),
+  collab-sync + server.ts plugin/origin + reasoning-egress + media residuals
+  + daemon oauth-launch + plugins/index + strategy-rollout (PRs #13, batch-5).
+  `import-export-routes.ts` verificado ya enveloped.
   Helper web compartido `utils/apiErrors.ts` (apiErrorMessage) para
-  lectura dual legacy/envelope; 10 sitios consumer migrados.
-  Aparcados por tokens de protocolo snake_case que clients matchean
-  (requieren migración diseñada): `collab-context.ts` parcial, `vela.ts`,
-  `server.ts` vela-proxy.
-  Candidatos siguientes: `plugins/index.ts` (38 sitios — mixto: tokens
-  `missing_inputs`, códigos kebab, metadata `warning`/`fields`; requiere
-  auditoría de protocolo), `project/*`, collab-*, `daemon.ts`,
-  `connectors/routes.ts` y resto con mensajes humanos.
-  Ritmo: un fichero por iteración, consumers auditados antes de convertir.
+  lectura dual legacy/envelope; consumers migrados en brands, registry,
+  elevenlabs-voices, public-file-publish, launchAntigravityOauth, CLI
+  (`structuredHttpFailure`/`structuredErrorData` ya eran duales).
+  **Estado: sweep completo salvo tokens de protocolo.** Inventario restante
+  verificado (grep `.json({...error:`): solo `collab-context.ts` (~30
+  tokens snake_case: `missing_nonce`, `workspace_not_visible`, `forbidden`…)
+  y `vela.ts` (~24 tokens AMR: `unknown_amr_api_proxy_path`,
+  `vela_control_key_required`, `invalid_auth_request_id`…). Ambos emiten
+  tokens que clients (web `parsed.error === 'x'` y posibles clients AMR
+  externos) matchean como string — requieren migración diseñada de
+  consumers con lectura dual, no sweep. Envelopes manuales legítimos que
+  permanecen: critique artifact/interrupt (`error.currentStatus` es campo
+  contractual asertado), strategy-rollout 409 (`status` sibling top-level),
+  comments.ts fallback (emite envelope cuando ctx no inyecta sender).
+  Siguiente paso si se retoma: plan de migración collab-context/vela —
+  consumer-by-consumer a `error?.code ?? error` antes de tocar el wire.
+  Ritmo aplicado: un fichero por iteración, consumers auditados antes de
+  convertir.
 
 ## Coordinación
 

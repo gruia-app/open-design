@@ -42,6 +42,7 @@ import type {
 } from '@open-design/contracts';
 import type { StreamHandlers } from './anthropic';
 import { workspaceProjectHeaders } from '../state/projects';
+import { apiErrorMessage } from '../utils/apiErrors';
 import { setRuntimeAmrConsoleOrigin } from '../runtime/amr-guidance';
 
 /**
@@ -921,16 +922,17 @@ export async function launchAntigravityOauth(): Promise<LaunchAntigravityOauthRe
       body: '{}',
     });
     const body = (await resp.json().catch(() => null)) as
-      | LaunchAntigravityOauthResult
+      | (Omit<LaunchAntigravityOauthResult, 'error'> & {
+          error?: string | { message?: string };
+        })
       | null;
     if (!resp.ok) {
       return {
         ok: false,
-        error:
-          body?.error ?? `daemon returned ${resp.status} ${resp.statusText}`,
+        error: apiErrorMessage(body, `daemon returned ${resp.status} ${resp.statusText}`),
       };
     }
-    return body ?? { ok: true };
+    return body ? { ...body, error: typeof body.error === 'string' ? body.error : undefined } : { ok: true };
   } catch (err) {
     return {
       ok: false,

@@ -1,161 +1,163 @@
 {
- "app": "design",
- "updated_at": "2026-09-18T20:20:16",
- "current": {
-  "item": "D3 envelope sweep — restantes: plugins/index (38 mixto), project/index resto, collab-context tokens, vela",
-  "state": "in_progress",
-  "branch": "fleet/envelope-batch-4"
- },
- "done": [
-  {
-   "item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado",
-   "commit": "n/a",
-   "deploy": "n/a"
-  },
-  {
-   "item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5",
-   "commit": "2cc1658f5",
-   "deploy": "pending",
-   "note": "upstream PR #8262"
-  },
-  {
-   "item": "gateway G1+G2+G9: sweep sesiones, anti-framing, sessionTtl config",
-   "commit": "squash via PR #4",
-   "deploy": "pending"
-  },
-  {
-   "item": "D1 batch 2: sidecar IPC, records, resilience",
-   "commit": "73b37548f",
-   "deploy": "pending",
-   "pr": 6
-  },
-  {
-   "item": "D1 batch 3: pack/serve/release quoting+validation",
-   "commit": "8089972db",
-   "deploy": "pending",
-   "pr": 7
-  },
-  {
-   "item": "D1 batch 4: web resilience, envelopes, timeouts",
-   "commit": "6384ae519",
-   "deploy": "pending",
-   "pr": 8
-  },
-  {
-   "item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n",
-   "commit": "adefce32f",
-   "deploy": "pending",
-   "pr": 9
-  },
-  {
-   "item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING",
-   "commit": "6b878c4e2",
-   "deploy": "pending"
-  },
-  {
-   "item": "D3 sweep: memory (072b65d02), media+xai, collab-context — PR #10 squash 9b3ef04ec",
-   "commit": "9b3ef04ec",
-   "deploy": "pending",
-   "pr": 10
-  },
-  {
-   "item": "D3: envelope en genui route errors (14 sitios, import directo)",
-   "commit": "406a03aae",
-   "deploy": "pending",
-   "pr": 11,
-   "merged": "74fcd820e"
-  },
-  {
-   "item": "D3: envelope en comment route errors (24 sitios, ctx.sendApiError + fallback)",
-   "commit": "07d14a7b2",
-   "deploy": "pending",
-   "pr": 11,
-   "merged": "74fcd820e"
-  },
-  {
-   "item": "D3: envelope en static-resource (28 sitios + sendWorkspaceScopeError local; atom/install codes en details; fixtures con sender real; bootstrap-regression al día)",
-   "commit": "0fa8652de",
-   "deploy": "pending",
-   "pr": 11,
-   "merged": "74fcd820e"
-  },
-  {
-   "item": "D3: envelope en design-systems (35 sitios + sendWorkspaceScopeError propio; workspace codes preservados; consumers dual-read)",
-   "commit": "74fcd820e",
-   "pr": 11,
-   "deploy": "pending",
-   "merged": true
-  },
-  {
-   "item": "D3 batch 3: envelope en automation (21), routine (+sendRoutineError scope shape), team-resources, team-resource-share (workspace codes verbatim); web apiErrorMessage helper + 10 consumer sites",
-   "commit": "0202c835b",
-   "deploy": "pending"
-  },
-  {
-   "item": "D3 batch 3 (4 ficheros lógicos): automation/routine/team-resources/team-resource-share + project tabs/templates/artifacts/conversations + daemon db + connectors + telemetry/attribution/presence/public-metadata/critique-artifact + plugins assets/marketplaces; web apiErrorMessage helper + readErrorMessage details.errors",
-   "commit": "d011a5f76",
-   "pr": 12,
-   "merged": true,
-   "deploy": "pending"
-  },
-  {
-   "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
-   "commit": "29b4fe3bb",
-   "deploy": "pending"
-  }
- ],
- "blocked": [
-  {
-   "item": "G3 timer de barrido periódico de sesiones",
-   "reason": "decisión de diseño — G1 sweep-on-write lo hace opcional"
-  },
-  {
-   "item": "G4 bucket rate-limit por IP",
-   "reason": "decisión — depende de si gateway será multi-instancia"
-  },
-  {
-   "item": "G6 métricas/observabilidad gateway",
-   "reason": "decisión de diseño"
-  },
-  {
-   "item": "G7 auditoría de logins (auth_audit)",
-   "reason": "decisión — requiere schema+retención"
-  },
-  {
-   "item": "collab-context/vela/server.ts vela-proxy envelope",
-   "reason": "tokens snake_case de protocolo que clients matchean — requiere migración diseñada de ~10 consumers"
-  }
- ],
- "prs_open": [
-  {
-   "repo": "nexu-io/open-design",
-   "pr": 8262,
-   "note": "contribution upstream; no auto-merge posible"
-  },
-  {
-   "repo": "gruia-app/design",
-   "pr": 11,
-   "merged": "74fcd820e",
-   "note": "auto-merge squash ejecutado"
-  },
-  {
-   "repo": "gruia-app/design",
-   "pr": 12,
-   "merged": "d011a5f76",
-   "note": "auto-merge squash ejecutado"
-  }
- ],
- "deploys_pending": [
-  "2cc1658f5 (upstream PR #8262)",
-  "PR #4 squash (gateway G1+G2+G9)",
-  "73b37548f (PR #6)",
-  "8089972db (PR #7)",
-  "6384ae519 (PR #8)",
-  "adefce32f (PR #9)",
-  "9b3ef04ec (PR #10)",
-  "74fcd820e (PR #11)",
-  "d011a5f76 (PR #12)",
-  "29b4fe3bb (fleet/envelope-batch-4 — 2/5 commits)"
- ],
- "notes": "bucle en repo privado gruia-app/design. Paridad upstream D1 cerrada. D3 en curso: un fichero por iteración. Siguiente candidato: design-systems.ts (sendWorkspaceScopeError propio, ejercido por explicit-workspace-scope tests vía registerDesignSystemRoutes)."
+  "app": "design",
+  "updated_at": "2025-01-01T00:00:00Z",
+  "current": "fleet/envelope-batch-5 — D3 sweep completo salvo tokens protocolo (vela/collab-context)",
+  "done": [
+    {
+      "item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado",
+      "commit": "n/a",
+      "deploy": "n/a"
+    },
+    {
+      "item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5",
+      "commit": "2cc1658f5",
+      "deploy": "pending",
+      "note": "upstream PR #8262"
+    },
+    {
+      "item": "gateway G1+G2+G9: sweep sesiones, anti-framing, sessionTtl config",
+      "commit": "squash via PR #4",
+      "deploy": "pending"
+    },
+    {
+      "item": "D1 batch 2: sidecar IPC, records, resilience",
+      "commit": "73b37548f",
+      "deploy": "pending",
+      "pr": 6
+    },
+    {
+      "item": "D1 batch 3: pack/serve/release quoting+validation",
+      "commit": "8089972db",
+      "deploy": "pending",
+      "pr": 7
+    },
+    {
+      "item": "D1 batch 4: web resilience, envelopes, timeouts",
+      "commit": "6384ae519",
+      "deploy": "pending",
+      "pr": 8
+    },
+    {
+      "item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n",
+      "commit": "adefce32f",
+      "deploy": "pending",
+      "pr": 9
+    },
+    {
+      "item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING",
+      "commit": "6b878c4e2",
+      "deploy": "pending"
+    },
+    {
+      "item": "D3 sweep: memory (072b65d02), media+xai, collab-context — PR #10 squash 9b3ef04ec",
+      "commit": "9b3ef04ec",
+      "deploy": "pending",
+      "pr": 10
+    },
+    {
+      "item": "D3: envelope en genui route errors (14 sitios, import directo)",
+      "commit": "406a03aae",
+      "deploy": "pending",
+      "pr": 11,
+      "merged": "74fcd820e"
+    },
+    {
+      "item": "D3: envelope en comment route errors (24 sitios, ctx.sendApiError + fallback)",
+      "commit": "07d14a7b2",
+      "deploy": "pending",
+      "pr": 11,
+      "merged": "74fcd820e"
+    },
+    {
+      "item": "D3: envelope en static-resource (28 sitios + sendWorkspaceScopeError local; atom/install codes en details; fixtures con sender real; bootstrap-regression al día)",
+      "commit": "0fa8652de",
+      "deploy": "pending",
+      "pr": 11,
+      "merged": "74fcd820e"
+    },
+    {
+      "item": "D3: envelope en design-systems (35 sitios + sendWorkspaceScopeError propio; workspace codes preservados; consumers dual-read)",
+      "commit": "74fcd820e",
+      "pr": 11,
+      "deploy": "pending",
+      "merged": true
+    },
+    {
+      "item": "D3 batch 3: envelope en automation (21), routine (+sendRoutineError scope shape), team-resources, team-resource-share (workspace codes verbatim); web apiErrorMessage helper + 10 consumer sites",
+      "commit": "0202c835b",
+      "deploy": "pending"
+    },
+    {
+      "item": "D3 batch 3 (4 ficheros lógicos): automation/routine/team-resources/team-resource-share + project tabs/templates/artifacts/conversations + daemon db + connectors + telemetry/attribution/presence/public-metadata/critique-artifact + plugins assets/marketplaces; web apiErrorMessage helper + readErrorMessage details.errors",
+      "commit": "d011a5f76",
+      "pr": 12,
+      "merged": true,
+      "deploy": "pending"
+    },
+    {
+      "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
+      "commit": "29b4fe3bb",
+      "deploy": "pending"
+    }
+  ],
+  "blocked": [
+    {
+      "item": "G3 timer de barrido periódico de sesiones",
+      "reason": "decisión de diseño — G1 sweep-on-write lo hace opcional"
+    },
+    {
+      "item": "G4 bucket rate-limit por IP",
+      "reason": "decisión — depende de si gateway será multi-instancia"
+    },
+    {
+      "item": "G6 métricas/observabilidad gateway",
+      "reason": "decisión de diseño"
+    },
+    {
+      "item": "G7 auditoría de logins (auth_audit)",
+      "reason": "decisión — requiere schema+retención"
+    },
+    {
+      "item": "collab-context/vela/server.ts vela-proxy envelope",
+      "reason": "tokens snake_case de protocolo que clients matchean — requiere migración diseñada de ~10 consumers"
+    }
+  ],
+  "prs_open": [
+    {
+      "repo": "nexu-io/open-design",
+      "pr": 8262,
+      "note": "contribution upstream; no auto-merge posible"
+    },
+    {
+      "repo": "gruia-app/design",
+      "pr": 11,
+      "merged": "74fcd820e",
+      "note": "auto-merge squash ejecutado"
+    },
+    {
+      "repo": "gruia-app/design",
+      "pr": 12,
+      "merged": "d011a5f76",
+      "note": "auto-merge squash ejecutado"
+    },
+    {
+      "repo": "gruia-app/design",
+      "pr": 13,
+      "merged": "e10add9b4",
+      "note": "auto-merge squash ejecutado"
+    }
+  ],
+  "deploys_pending": [
+    "2cc1658f5 (upstream PR #8262)",
+    "PR #4 squash (gateway G1+G2+G9)",
+    "73b37548f (PR #6)",
+    "8089972db (PR #7)",
+    "6384ae519 (PR #8)",
+    "adefce32f (PR #9)",
+    "9b3ef04ec (PR #10)",
+    "74fcd820e (PR #11)",
+    "d011a5f76 (PR #12)",
+    "e10add9b4 (PR #13)"
+  ],
+  "notes": "bucle en repo privado gruia-app/design. Paridad upstream D1 cerrada. D3 en curso: un fichero por iteración. Siguiente candidato: design-systems.ts (sendWorkspaceScopeError propio, ejercido por explicit-workspace-scope tests vía registerDesignSystemRoutes)."
 }

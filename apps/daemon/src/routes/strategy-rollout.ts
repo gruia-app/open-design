@@ -6,6 +6,8 @@ import type {
 } from '@open-design/contracts';
 
 import { newInsertId, readAnalyticsContext, type AnalyticsService } from '../analytics.js';
+import { sendApiError } from '../http/api-errors.js';
+import type { ApiErrorCode } from '@open-design/contracts';
 import {
   readOdNextRolloutControlStatus,
   resetOdNextRolloutStop,
@@ -50,12 +52,7 @@ export function registerStrategyRolloutRoutes(app: Express, deps: {
         || !Number.isInteger(body.expectedRevision)
         || body.expectedRevision < 0
       ) {
-        res.status(400).json({
-          error: {
-            code: 'BAD_REQUEST',
-            message: 'expectedRevision must be a non-negative integer',
-          },
-        });
+        sendApiError(res, 400, 'BAD_REQUEST', 'expectedRevision must be a non-negative integer');
         return;
       }
 
@@ -71,7 +68,7 @@ export function registerStrategyRolloutRoutes(app: Express, deps: {
           error: {
             code: 'ROLLOUT_REVISION_CONFLICT',
             message: 'OD Next rollout control changed; refresh status before resetting.',
-            data: { expectedRevision: body.expectedRevision, currentRevision: result.currentRevision },
+            details: { expectedRevision: body.expectedRevision, currentRevision: result.currentRevision },
           },
           status,
         });

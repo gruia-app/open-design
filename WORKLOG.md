@@ -94,3 +94,21 @@
 - Nota: `plugins/index.ts` (38 sitios) evaluado y aplazado — mezcla tokens de
   protocolo (`missing_inputs`+fields), códigos kebab (`plugin-not-found`) y
   metadata (`warning`); requiere migración diseñada como collab-context.
+- Batch 4 (rama fleet/envelope-batch-4, PR gruia-app/design#13, merge `e10add9b4`):
+  collab-sync tokens UPPER_SNAKE -> envelope code verbatim + consumer
+  public-file-publish dual-read; stragglers (interrupt-handler, runs,
+  diagnostics-export, server.ts origin+plugin block); multiline sweep
+  (reasoning-egress error.data -> details con journaling, xai 401,
+  telemetry/genui, API_TOKEN_REQUIRED, powered-preview); media.ts residuals
+  (WORKSPACE_CONTEXT_INCOMPLETE, catches dinámicos, open-external, scaffold,
+  cross-origin, ResearchError). 305 tests verdes en el batch, typechecks OK.
+- Batch 5 (rama fleet/envelope-batch-5): plugins/index.ts (~40 sitios:
+  missing_inputs->code+details.fields con dual-read en `od plugin apply`,
+  kebab-codes verbatim, MANAGE_DENIED verbatim, warning->details);
+  daemon.ts oauth-launch + companion; comments.ts fallback+retryable;
+  plugins/assets workspace third-shape; strategy-rollout (data->details,
+  status sibling preservado); web launchAntigravityOauth dual-read.
+  Inventario final D3: sweep completo — solo quedan collab-context.ts y
+  vela.ts (tokens de protocolo, migración diseñada documentada en
+  SAAS_GAPS). ~150 tests verdes en el batch; typechecks OK. Flakes de
+  carga en od-next e2e clasificados por rerun aislado.

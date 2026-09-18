@@ -43,7 +43,7 @@ export interface RegisterProjectCommentRoutesDeps extends RouteDeps<'db' | 'proj
    */
   enforceWorkspaceProjectMutation?: BoundWorkspaceResourceMutationGate;
   /** Paired with `enforceWorkspaceProjectMutation` above — see that field. */
-  sendApiError?: (res: any, status: number, code: string, message: string) => unknown;
+  sendApiError?: (res: any, status: number, code: string, message: string, opts?: { retryable?: boolean }) => unknown;
   /**
    * Resolve and authorize the PERSISTED project's Workspace scope. Production
    * wiring verifies request headers against the membership directory and then
@@ -284,12 +284,15 @@ export function registerProjectCommentRoutes(app: Express, ctx: RegisterProjectC
         resolution.status,
         resolution.code,
         resolution.message,
+        resolution.retryable ? { retryable: true } : undefined,
       );
     }
     return res.status(resolution.status).json({
-      error: resolution.code,
-      message: resolution.message,
-      ...(resolution.retryable ? { retryable: true } : {}),
+      error: {
+        code: resolution.code,
+        message: resolution.message,
+        ...(resolution.retryable ? { retryable: true } : {}),
+      },
     });
   }
 

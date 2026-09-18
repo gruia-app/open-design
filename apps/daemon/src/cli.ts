@@ -4811,11 +4811,14 @@ async function runPluginApply(rest) {
   }
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok) {
-    if (resp.status === 422 && Array.isArray(data?.fields)) {
+    const missingFields = Array.isArray(data?.fields)
+      ? data.fields
+      : Array.isArray(data?.error?.details?.fields) ? data.error.details.fields : null;
+    if (resp.status === 422 && missingFields) {
       return exitWithStructuredError({
         code: 'missing-input',
-        message: `Plugin "${id}" is missing required inputs: ${data.fields.join(', ')}`,
-        data: { pluginId: id, missing: data.fields },
+        message: `Plugin "${id}" is missing required inputs: ${missingFields.join(', ')}`,
+        data: { pluginId: id, missing: missingFields },
       });
     }
     return structuredHttpFailure(resp);
@@ -4954,7 +4957,7 @@ Lists and formalizes persisted skill-to-plugin candidates.`);
       console.log(`[candidate] draft: ${data.draftPath}`);
       console.log(`[candidate] validation ok=${data.validation?.ok}`);
     } else {
-      console.error(`[candidate] draft failed: ${data?.message ?? JSON.stringify(data)}`);
+      console.error(`[candidate] draft failed: ${data?.message ?? data?.error?.message ?? JSON.stringify(data)}`);
     }
     process.exit(resp.ok ? 0 : resp.status === 422 ? 4 : 1);
   }
@@ -4967,7 +4970,7 @@ Lists and formalizes persisted skill-to-plugin candidates.`);
     const data = await resp.json().catch(() => null);
     if (flags.json) process.stdout.write(JSON.stringify(data, null, 2) + '\n');
     else if (resp.ok) console.log(`[candidate] dismissed ${candidateId}`);
-    else console.error(`[candidate] dismiss failed: ${data?.message ?? JSON.stringify(data)}`);
+    else console.error(`[candidate] dismiss failed: ${data?.message ?? data?.error?.message ?? JSON.stringify(data)}`);
     process.exit(resp.ok ? 0 : 1);
   }
   console.error(`unknown subcommand: od plugin candidates ${sub}`);

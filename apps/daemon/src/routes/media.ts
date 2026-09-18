@@ -946,12 +946,7 @@ export function registerMediaRoutes(app: Express, ctx: RegisterMediaRoutesDeps) 
       if (err instanceof ResearchError) {
         return sendApiError(res, err.status, err.code as ApiErrorCode, err.message);
       }
-      res.status(500).json({
-        error: {
-          code: 'RESEARCH_FAILED',
-          message: String(err && err.message ? err.message : err),
-        },
-      });
+      sendApiError(res, 500, 'RESEARCH_FAILED' as ApiErrorCode, String(err && err.message ? err.message : err));
     }
   });
 
