@@ -42,6 +42,10 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
 - [x] G19 — publisher de campaña: `verify()` recibía el sha256 aprobado pero solo
   comprobaba status+marca → ahora hashea el body remoto y exige igualdad antes
   de marcar `published` (commit `8e44af759`, tests 10/10 + 32/32 runner).
+- [x] G21 — auditoría de dependencias (`pnpm audit`): `esbuild 0.28.0` del
+  gateway caía en GHSA-g7r4-m6w7-qqqr (dev-server Windows; solo bundling aquí)
+  → bump a `0.28.1`. El resto del reporte (vite/vitest/electron/extract-zip)
+  son cadenas dev propiedad de upstream — bump local divergiría el lockfile.
 
 ## Daemon / web (línea de producto privada)
 

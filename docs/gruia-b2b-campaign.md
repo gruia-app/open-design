@@ -1,7 +1,7 @@
-# Colección de 50 prototipos B2B
+# Colección de prototipos B2B
 
 La colección se genera dentro de Design mediante su API de proyectos, mensajes y
-runs. Los briefs iniciales se repartieron entre Fable 5.1 (25 impares) y Opus 5 (25 pares). El manifiesto operativo conserva el modelo previsto cuando un límite obliga a continuar con el otro modelo autorizado. Los briefs
+runs. Los briefs iniciales se repartieron entre Fable 5.1 (25 impares) y Opus 5 (25 pares) y el manifiesto creció por extensiones hasta 73 encargos (25 Fable, 48 Opus). El manifiesto operativo conserva el modelo previsto cuando un límite obliga a continuar con el otro modelo autorizado. Los briefs
 originales y sus referencias están en
 [`manifest.json`](../deploy/gruia/campaign/manifest.json). Cada proyecto entrega
 `index.html`, `DESIGN.md` y `README.md`, y aparece con el nombre
@@ -21,7 +21,7 @@ QA recibe hasta tres intentos; los fallos persistentes requieren revisión.
 El directorio privado de operación es
 `/home/roberto/.local/state/gruia-design-b2b50`, modo 0700. Contiene:
 
-- `manifest.json`: los 50 encargos.
+- `manifest.json`: los 73 encargos.
 - `state.json` e `index.json`: progreso e identificadores recuperables.
 - `credentials.json` y `browser-session.json`: credenciales y sesión, modo 0600.
 - `gate.json`: habilitación explícita de la cola.
