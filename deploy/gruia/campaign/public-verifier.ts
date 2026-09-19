@@ -1,14 +1,20 @@
 import { execFile } from 'node:child_process';
 import type { PublicCheck } from './publisher.ts';
 
-const probe = `import json,sys,urllib.request,urllib.error
+const probe = `import json,sys,urllib.request,urllib.error,hashlib
 u=json.load(sys.stdin)['url']
 try:
  r=urllib.request.urlopen(u,timeout=35)
 except urllib.error.HTTPError as e:
  r=e
-body=r.read(2097152).decode('utf-8','replace')
-print(json.dumps({'status':r.status,'body':body}))`;
+h=hashlib.sha256();buf=b''
+while True:
+ c=r.read(65536)
+ if not c:break
+ h.update(c)
+ if len(buf)<16777216:buf+=c
+body=buf[:2097152].decode('utf-8','replace')
+print(json.dumps({'status':r.status,'body':body,'sha256':h.hexdigest()}))`;
 const quote = (value: string) => "'" + value.replaceAll("'", "'\\''") + "'";
 async function probeOnce(url: string): Promise<PublicCheck> {
   const parsed = new URL(url);

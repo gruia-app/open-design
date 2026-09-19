@@ -354,3 +354,15 @@
   deliverable-syntax, scroll-freeze, media-task contract).
 - Bloqueados por decisión humana: G6 (observabilidad), proxyAmrApiRequest
   (tokens planos — binario vela no verificable).
+
+## Lote 18 — post-review G19 + cobertura verifier (fleet/gaps-18)
+
+- Revisión del propio G19 con otro ángulo: dos edges reales — el probe
+  truncaba el body a 2MB (prototipo mayor → failed permanente) y hasheaba
+  utf-8 con reemplazo en vez de bytes crudos.
+- `98613bcdb` — el probe Python hashea el stream crudo (guard 16MB) y devuelve
+  `sha256`; `verify()` lo prefiere. `localEligibility` hashea el Buffer —
+  `qa.json` siempre fue un digest de bytes. Probe validado en vivo.
+- `ea832989f` — tests del guard SSRF del public-verifier (https,
+  `*.vercel.app`, sin credenciales; rechazo antes de execFile). 45/45.
+- EXPOSE 3006 en Dockerfile.gateway (paridad metadata con prebuilt).

@@ -13,7 +13,7 @@ import { verifyRemotePublic } from './public-verifier.ts';
 
 type DesignApi = Pick<Api, 'request'>;
 type VercelFetch = (input: string, init?: RequestInit) => Promise<Response>;
-export type PublicCheck = { status: number; body: string };
+export type PublicCheck = { status: number; body: string; sha256?: string };
 export type VerifyPublic = (url: string, expectedBrand: string, sha256: string) => Promise<PublicCheck>;
 
 interface Qa { ok?: unknown; localHTMLSHA256?: unknown; expectedBrand?: unknown; }
@@ -46,7 +46,7 @@ export interface PublisherSummary { eligible: number; published: number; deferre
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VERCEL = 'https://api.vercel.com';
 
-function sha256(value: string) { return createHash('sha256').update(value).digest('hex'); }
+function sha256(value: import('node:crypto').BinaryLike) { return createHash('sha256').update(value).digest('hex'); }
 function at(now: () => number) { return new Date(now()).toISOString(); }
 function briefError(error: unknown) {
   // Never persist a provider response or a bearer token in the durable ledger.
@@ -128,15 +128,22 @@ async function verify(check: VerifyPublic, url: string, brand: string, digest: s
   const lower = body.toLowerCase();
   if (!lower.includes(brand.toLowerCase())) throw new Error('public URL does not contain the expected example brand');
   if (/authentication required|vercelsecuritycheckpoint|security checkpoint/i.test(body)) throw new Error('public URL is protected by an authentication checkpoint');
-  if (sha256(body) !== digest) throw new Error('public URL content differs from the approved local HTML');
+  // Prefer the probe's hash of the raw byte stream when it reports one; the
+  // returned body is a capped utf-8 preview that cannot pin large or
+  // non-utf-8 payloads. Test doubles that omit sha256 still pin the body.
+  const remoteSha = typeof result?.sha256 === 'string' ? result.sha256 : sha256(body);
+  if (remoteSha !== digest) throw new Error('public URL content differs from the approved local HTML');
 }
 async function localEligibility(dir: string, job: { id: string; projectId: string; status: string }) {
   if (job.status !== 'succeeded' || !UUID.test(job.projectId)) return undefined;
   const output = join(dir, 'outputs', job.id);
   const qa = await readJson<Qa>(join(output, 'qa.json'), {});
   if (qa.ok !== true || typeof qa.localHTMLSHA256 !== 'string' || !/^[a-f0-9]{64}$/i.test(qa.localHTMLSHA256)) return undefined;
-  const html = await readFile(join(output, 'index.html'), 'utf8').catch(() => '');
-  if (!html || sha256(html) !== qa.localHTMLSHA256) return undefined;
+  const raw = await readFile(join(output, 'index.html')).catch(() => null);
+  // qa.json's localHTMLSHA256 is a hash of the raw file bytes (browser-qa
+  // digests the Buffer), so compare bytes to bytes — not utf-8 text.
+  if (!raw || sha256(raw) !== qa.localHTMLSHA256) return undefined;
+  const html = raw.toString('utf8');
   const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
   return { sha256: qa.localHTMLSHA256.toLowerCase(), brand: typeof qa.expectedBrand === 'string' && qa.expectedBrand.trim() ? qa.expectedBrand : title || undefined };
 }

@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-18T23:56:10.937360+00:00",
+ "updated_at": "2026-09-19T00:50:02.311529+00:00",
  "current": {
-  "item": "converged — private surfaces audited (G1-G20), upstream queue exhausted",
-  "state": "done"
+  "item": "post-review fix committed; hunting next bounded gap",
+  "state": "in_progress"
  },
  "done": [
   {
@@ -455,6 +455,21 @@
    "item": "Docs: sync gruia-auth + gruia-b2b-campaign con código",
    "commit": "886b75c85+7d7369001",
    "deploy": "n/a"
+  },
+  {
+   "item": "G19 follow-up: pin remoto por stream sha256 + elegibilidad byte-exacta (edges 2MB/utf-8)",
+   "commit": "98613bcdb",
+   "deploy": "n/a"
+  },
+  {
+   "item": "tests: URL guard SSRF del public-verifier (3 tests)",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "EXPOSE 3006 en Dockerfile.gateway (paridad con prebuilt)",
+   "commit": "HEAD",
+   "deploy": "pending"
   }
  ],
  "blocked": [
