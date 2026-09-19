@@ -366,3 +366,50 @@
 - `ea832989f` — tests del guard SSRF del public-verifier (https,
   `*.vercel.app`, sin credenciales; rechazo antes de execFile). 45/45.
 - EXPOSE 3006 en Dockerfile.gateway (paridad metadata con prebuilt).
+
+## Lote 19 — probe acotado fail-closed (fleet/gaps-20)
+
+- Post-review #2 del stream-pin: el loop de hash del probe leia el body sin
+  cota — un endpoint drip-feeding podia mantenerlo (timeout por chunk).
+  Stream acotado a 16MB con byte de overflow → `truncated`; `verify()`
+  falla cerrado (body parcial nunca pinable). Test de regresion. 46/46.
+- PR #35 `056699a32`.
+
+## Lote 20-21 — auditoria de superficie completa (fleet/gaps-21/22)
+
+- `vercel-sync.ts`: rehusa sobrescribir si la conexion no existe o cambio
+  de teamId; errores sanitizados; status 0600.
+- Dockerfiles (studio/gateway), units vercel-sync (UMask 0077,
+  NoNewPrivileges), scripts con 0755, cero secretos commiteados.
+- G21 `pnpm audit`: `esbuild 0.28.0` del gateway caia en GHSA-g7r4-m6w7-qqqr
+  → bump `0.28.1`. Resto del reporte (vite/vitest/electron/extract-zip):
+  cadenas dev de upstream — bump local divergiria el lockfile.
+- Doc drift: `gruia-b2b-campaign.md` decia "50 encargos"; el manifest crecio
+  a 73 (25 Fable + 48 Opus) via extensiones → sincronizado.
+- PR #37 `4c8c2e447`.
+
+## Lote 22 — deps + cobertura browser-qa (fleet/gaps-24)
+
+- G22 deps del gateway: `pg` 8.16.3→8.23.0 (runtime), `@types/pg` 8.23.1,
+  `@types/node` 24.13.6 (linea Node 24), `esbuild` 0.28.2. Majors
+  typescript/vitest omitidos — siguen el pin del repo. 34/34.
+- G23 tests del scope guard de `browser-qa.ts` (`^\d{2}$` id, `^[\w-]+$`
+  projectId) — rechazo antes de lanzar chromium. 48/48.
+- PR #39 `c73a2ee2e`.
+
+## Lotes 23-26 — integridad de coordinacion (fleet/gaps-25/26)
+
+- Auditoria del ledger: commits/PRs citados en WORKLOG/SAAS_GAPS todos
+  existen y mergeados.
+- `deploys_pending` se detuvo en PR #28 — backfill de PRs #29-#40 (PR #41
+  `70abe0844`).
+- Verificacion de prod: `design.gruia.app` corre Caddy pre-G18 (sin HSTS,
+  nosniff duplicado) → deploys son backlog real, no artefacto del ledger.
+- `pnpm install --frozen-lockfile` consistente tras los bumps.
+
+## Lote 27 — protocolo operativo (fleet/gaps-27)
+
+- FLEET_PROTOCOL.md era anterior al flujo real: documentado §5 — rama
+  fleet/*, PR >=5 (o batch real), `gh --repo` por los 3 remotes,
+  auto-merge deshabilitado → merge directo, ramas locales "unmerged" tras
+  squash, sync-PRs de coordinacion, probe HSTS de verificacion de deploys.

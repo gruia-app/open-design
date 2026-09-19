@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T08:53:53.277558+00:00",
+ "updated_at": "2026-09-19T13:52:21.107074+00:00",
  "current": {
-  "item": "ledger corregido; convergencia confirmada",
+  "item": "bucle continuo",
   "state": "in_progress"
  },
  "done": [
@@ -508,6 +508,11 @@
   },
   {
    "item": "ledger fix — deploys_pending completado con PRs #29-#40",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "FLEET_PROTOCOL §5 — flujo de publicación operativo documentado",
    "commit": "HEAD",
    "deploy": "n/a"
   }
