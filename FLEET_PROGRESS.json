@@ -1,6 +1,6 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T00:50:02.311529+00:00",
+ "updated_at": "2026-09-19T00:50:26.896918+00:00",
  "current": {
   "item": "post-review fix committed; hunting next bounded gap",
   "state": "in_progress"
@@ -568,5 +568,5 @@
   "PR #27 / 9937e7e34 (gateway org_not_admitted)",
   "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)"
  ],
- "notes": "PRs #28-31 merged. Convergencia: upstream 142 commits triageados (resto requiere maquinaria ausente), superficie privada auditada completa."
+ "notes": "PR #33 merged (9403968111) — G19 stream-pin + verifier tests + EXPOSE."
 }
