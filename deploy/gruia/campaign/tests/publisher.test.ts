@@ -163,6 +163,20 @@ test('a public deployment serving different bytes than the approved HTML is neve
   assert.equal(ledger.publications['03'].error, 'public URL content differs from the approved local HTML');
 });
 
+test('a truncated public body can never be pinned and is never published', async () => {
+  const dir = await fixture(); const calls: ApiCall[] = [];
+  await main({
+    stateDir: dir,
+    api: nativeApi(calls, { raw: { '03': html('03') } }),
+    vercelFetch: vercel().fetcher,
+    verifyPublic: async () => ({ status: 200, body: html('03'), sha256: sha(html('03')), truncated: true }),
+    now: fixedNow,
+  });
+  const ledger = JSON.parse(await readFile(join(dir, 'publications.json'), 'utf8'));
+  assert.notEqual(ledger.publications['03'].stage, 'published');
+  assert.equal(ledger.publications['03'].error, 'public URL body exceeded the verification size limit');
+});
+
 test('a changed local HTML cannot reuse an older published deployment under a new digest', async()=>{
   const dir=await fixture();const calls:ApiCall[]=[];const vf=vercel();
   const options={stateDir:dir,api:nativeApi(calls,{raw:{'03':html('03')}}),vercelFetch:vf.fetcher,verifyPublic:verifier(),now:fixedNow};

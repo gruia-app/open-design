@@ -13,7 +13,7 @@ import { verifyRemotePublic } from './public-verifier.ts';
 
 type DesignApi = Pick<Api, 'request'>;
 type VercelFetch = (input: string, init?: RequestInit) => Promise<Response>;
-export type PublicCheck = { status: number; body: string; sha256?: string };
+export type PublicCheck = { status: number; body: string; sha256?: string; truncated?: boolean };
 export type VerifyPublic = (url: string, expectedBrand: string, sha256: string) => Promise<PublicCheck>;
 
 interface Qa { ok?: unknown; localHTMLSHA256?: unknown; expectedBrand?: unknown; }
@@ -131,6 +131,8 @@ async function verify(check: VerifyPublic, url: string, brand: string, digest: s
   // Prefer the probe's hash of the raw byte stream when it reports one; the
   // returned body is a capped utf-8 preview that cannot pin large or
   // non-utf-8 payloads. Test doubles that omit sha256 still pin the body.
+  // A truncated stream can never be pinned — fail closed.
+  if (result?.truncated === true) throw new Error('public URL body exceeded the verification size limit');
   const remoteSha = typeof result?.sha256 === 'string' ? result.sha256 : sha256(body);
   if (remoteSha !== digest) throw new Error('public URL content differs from the approved local HTML');
 }

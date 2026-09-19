@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T00:50:26.896918+00:00",
+ "updated_at": "2026-09-19T01:28:02.819182+00:00",
  "current": {
-  "item": "post-review fix committed; hunting next bounded gap",
+  "item": "bucle continuo tras fix del probe",
   "state": "in_progress"
  },
  "done": [
@@ -470,6 +470,11 @@
    "item": "EXPOSE 3006 en Dockerfile.gateway (paridad con prebuilt)",
    "commit": "HEAD",
    "deploy": "pending"
+  },
+  {
+   "item": "post-review #2: probe con stream acotado (16MB) + truncated fail-closed",
+   "commit": "HEAD",
+   "deploy": "n/a"
   }
  ],
  "blocked": [

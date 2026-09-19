@@ -7,14 +7,14 @@ try:
  r=urllib.request.urlopen(u,timeout=35)
 except urllib.error.HTTPError as e:
  r=e
-h=hashlib.sha256();buf=b''
-while True:
- c=r.read(65536)
+h=hashlib.sha256();buf=b'';total=0;cap=16777216
+while total<cap:
+ c=r.read(min(65536,cap-total))
  if not c:break
- h.update(c)
- if len(buf)<16777216:buf+=c
+ total+=len(c);h.update(c);buf+=c
+overflow=r.read(1)!=b''
 body=buf[:2097152].decode('utf-8','replace')
-print(json.dumps({'status':r.status,'body':body,'sha256':h.hexdigest()}))`;
+print(json.dumps({'status':r.status,'body':body,'sha256':h.hexdigest(),'truncated':overflow}))`;
 const quote = (value: string) => "'" + value.replaceAll("'", "'\\''") + "'";
 async function probeOnce(url: string): Promise<PublicCheck> {
   const parsed = new URL(url);
