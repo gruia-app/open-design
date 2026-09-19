@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T13:52:21.107074+00:00",
+ "updated_at": "2026-09-19T16:41:37.311563+00:00",
  "current": {
-  "item": "bucle continuo",
-  "state": "in_progress"
+  "item": "convergencia verificada con upstream actualizado",
+  "state": "merged_and_synced"
  },
  "done": [
   {
@@ -515,6 +515,11 @@
    "item": "FLEET_PROTOCOL §5 — flujo de publicación operativo documentado",
    "commit": "HEAD",
    "deploy": "n/a"
+  },
+  {
+   "item": "upstream re-triage post-fetch-fix: 144 commits, 2 nuevos (CMS + test ChatPanel) inaplicables; d992e09fb/900d01c61/127ec0f02 verificados ya aplicados",
+   "commit": "f5707c8ca",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
@@ -625,5 +630,5 @@
   "PR #39 / c73a2ee2e (dep refresh+tests)",
   "PR #40 / 045afeadf (sync)"
  ],
- "notes": "PR #33 merged (9403968111) — G19 stream-pin + verifier tests + EXPOSE."
+ "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A."
 }
