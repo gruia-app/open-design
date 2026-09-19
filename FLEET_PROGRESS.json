@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T03:53:43.087182+00:00",
+ "updated_at": "2026-09-19T03:54:10.994711+00:00",
  "current": {
-  "item": "bucle continuo tras G22",
-  "state": "in_progress"
+  "item": "convergencia post PR #39",
+  "state": "merged_and_synced"
  },
  "done": [
   {
@@ -500,6 +500,11 @@
    "item": "G23 tests del scope guard de browser-qa (id/projectId)",
    "commit": "HEAD",
    "deploy": "n/a"
+  },
+  {
+   "item": "PR #39 mergeado (c73a2ee2e) — dep refresh + browser-qa tests",
+   "commit": "c73a2ee2e",
+   "deploy": "pending"
   }
  ],
  "blocked": [
