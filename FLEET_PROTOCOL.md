@@ -47,4 +47,5 @@ Si tu sesion anterior murio (lo sabras porque WORKLOG/FLEET_PROGRESS cortan a mi
 - Tras squash-merge, la rama remota se auto-borra pero la local queda "unmerged" para git — su contenido ya esta en main; el reflog conserva el tip.
 - Commits de solo coordinacion (sync de FLEET_PROGRESS) tambien van por PR propio, igual que el resto.
 - `deploys_pending` solo crece: verificable desde fuera con `curl -sI https://design.gruia.app` (p.ej. header `strict-transport-security` presente = Caddyfile actual desplegado).
+- `git fetch upstream` completo cuelga en negociacion de pack — usa `git fetch upstream --filter=blob:none` (funciona; el repo sigue publico y activo).
 - `deploy: "pending"` = toca prod via Jenkins; `"n/a"` = coordinacion/tests/docs sin despliegue.
