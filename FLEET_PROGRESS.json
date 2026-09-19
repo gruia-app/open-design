@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T03:54:10.994711+00:00",
+ "updated_at": "2026-09-19T08:53:53.277558+00:00",
  "current": {
-  "item": "convergencia post PR #39",
-  "state": "merged_and_synced"
+  "item": "ledger corregido; convergencia confirmada",
+  "state": "in_progress"
  },
  "done": [
   {
@@ -505,6 +505,11 @@
    "item": "PR #39 mergeado (c73a2ee2e) — dep refresh + browser-qa tests",
    "commit": "c73a2ee2e",
    "deploy": "pending"
+  },
+  {
+   "item": "ledger fix — deploys_pending completado con PRs #29-#40",
+   "commit": "HEAD",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
@@ -601,7 +606,19 @@
   "PR #25 / 640974bf8 (lote 11)",
   "PR #26 / af43be3b5 (gateway audit context)",
   "PR #27 / 9937e7e34 (gateway org_not_admitted)",
-  "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)"
+  "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)",
+  "PR #29 / 543f080a3 (G17-G19 gateway+campaign)",
+  "PR #30 / 4e336c2c0 (G20 CI + docs)",
+  "PR #31 / 06731e717 (sync)",
+  "PR #32 / ef50042c8 (convergence)",
+  "PR #33 / 940396811 (sha256 pin)",
+  "PR #34 / f627a6ef6 (sync)",
+  "PR #35 / 056699a32 (bounded probe)",
+  "PR #36 / 0dce59798 (sync)",
+  "PR #37 / 4c8c2e447 (esbuild+docs)",
+  "PR #38 / 970ed794f (sync)",
+  "PR #39 / c73a2ee2e (dep refresh+tests)",
+  "PR #40 / 045afeadf (sync)"
  ],
  "notes": "PR #33 merged (9403968111) — G19 stream-pin + verifier tests + EXPOSE."
 }
