@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T03:09:04.781341+00:00",
+ "updated_at": "2026-09-19T03:09:58.459434+00:00",
  "current": {
-  "item": "bucle continuo tras G21",
-  "state": "in_progress"
+  "item": "convergencia post PR #37",
+  "state": "merged_and_synced"
  },
  "done": [
   {
@@ -484,6 +484,11 @@
   {
    "item": "G21 dep audit — esbuild gateway 0.28.0→0.28.1 (GHSA-g7r4-m6w7-qqqr)",
    "commit": "649b2b256",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #37 mergeado (4c8c2e447) — esbuild bump + doc sync",
+   "commit": "4c8c2e447",
    "deploy": "pending"
   }
  ],
