@@ -181,4 +181,17 @@ describe("SqliteSessionStore", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].event).toBe("logout");
   });
+
+  it("indexes auth_audit.at so retention deletes and audit reports do not full-scan", () => {
+    const { path } = open();
+    const db = new DatabaseSync(path);
+    try {
+      const index = db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'auth_audit' AND name = 'auth_audit_at'").get();
+      expect(index).toBeTruthy();
+      const plan = db.prepare("EXPLAIN QUERY PLAN DELETE FROM auth_audit WHERE at < 0").all() as Array<{ detail: string }>;
+      expect(plan.map((row) => row.detail).join(" ")).toContain("auth_audit_at");
+    } finally {
+      db.close();
+    }
+  });
 });

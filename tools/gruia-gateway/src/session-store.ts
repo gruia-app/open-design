@@ -24,7 +24,7 @@ export class SqliteSessionStore implements SessionStore {
   private readonly sweepTimer: NodeJS.Timeout | undefined;
   constructor(path: string, secret: string, sweepIntervalMs = SESSION_SWEEP_INTERVAL_MS) {
     this.key = Buffer.from(secret, "base64"); this.db = new DatabaseSync(path);
-    this.db.exec("PRAGMA journal_mode=WAL; PRAGMA trusted_schema=OFF; CREATE TABLE IF NOT EXISTS password_sessions (id_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, organization_id TEXT NOT NULL, role TEXT NOT NULL, csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS login_csrf (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS auth_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, event TEXT NOT NULL, at INTEGER NOT NULL, email TEXT, user_id TEXT, organization_id TEXT, ip TEXT, user_agent TEXT, detail TEXT);");
+    this.db.exec("PRAGMA journal_mode=WAL; PRAGMA trusted_schema=OFF; CREATE TABLE IF NOT EXISTS password_sessions (id_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, organization_id TEXT NOT NULL, role TEXT NOT NULL, csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS login_csrf (token_hash TEXT PRIMARY KEY, expires_at INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS auth_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, event TEXT NOT NULL, at INTEGER NOT NULL, email TEXT, user_id TEXT, organization_id TEXT, ip TEXT, user_agent TEXT, detail TEXT); CREATE INDEX IF NOT EXISTS auth_audit_at ON auth_audit(at);");
     // Sweep-on-write only covers orgs that keep logging in; a quiet org would
     // accumulate expired rows forever. An unref'd interval reaps them without
     // holding the process open. Pass 0 to disable (tests, embedded callers).

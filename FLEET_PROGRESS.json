@@ -2,9 +2,9 @@
   "app": "design",
   "updated_at": "2026-09-20T16:46:38.671634+00:00",
   "current": {
-    "branch": "fleet/gaps-35",
+    "branch": "fleet/gaps-36",
     "state": "active",
-    "note": "audit doc gap closed"
+    "note": "audit index + PR #49 ledgered"
   },
   "done": [
     {
@@ -543,7 +543,8 @@
       "deploy": "n/a"
     },
     "lote28: gateway audit --db usage-error fix + WORKLOG sync (fleet/gaps-33)",
-    "lote28b: operator docs for auth_audit + audit subcommand (fleet/gaps-35)"
+    "lote28b: operator docs for auth_audit + audit subcommand (fleet/gaps-35)",
+    "lote28c: auth_audit.at index — retention deletes/reports no longer full-scan (fleet/gaps-36)"
   ],
   "blocked": [
     {
@@ -665,6 +666,11 @@
     {
       "pr": 47,
       "merge": "92a1667eee3b28f566c223fbc4e980ed31ad485a",
+      "deploy": "pending"
+    },
+    {
+      "pr": 49,
+      "merge": "524fd85eb26e84391a4671aabe51d873e8339c19",
       "deploy": "pending"
     }
   ],
