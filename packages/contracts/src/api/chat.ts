@@ -731,6 +731,16 @@ export interface ChatRunStatusResponse {
   failureDetail?: RunFailureDetail | null;
   /** Recommended recovery action derived from the same failure classification. */
   failureAction?: RunFailureAction | null;
+  /** The classifier's own verdict on whether re-running this can help
+   *  (`run-failure-classification.ts` → `retryable`). Published alongside
+   *  `failureAction` because the two are written independently: a failure can be
+   *  `retryable: false` and still carry an action other than `'none'`
+   *  (install the CLI, switch model, recharge). Absent on success / older
+   *  daemons, and an absent verdict must be read as "no verdict" rather than
+   *  as `false` — the classifier's own last-resort `unknown` row is stamped
+   *  `retryable: false` by default, so treating absence as a verdict would
+   *  strip Retry from precisely the unclassified failures that deserve it. */
+  retryable?: boolean | null;
   /** True when this terminal failure can be recovered by resuming the agent's
    *  existing CLI session (a transient upstream drop / inactivity timeout on a
    *  session-resuming runtime), rather than only restarting from scratch. The
@@ -954,6 +964,56 @@ export type PersistedAgentEvent =
       outputTokens?: number;
       cacheCreationInputTokens?: number;
       cacheReadInputTokens?: number;
+    }
+  /**
+   * This turn's one-time done key. The daemon mints it per run, injects it into
+   * the system prompt, and emits this event BEFORE any model output; the chat
+   * client then only accepts `<od-done key="…"/>` markers carrying this exact
+   * value as the process/conclusion boundary.
+   *
+   * It exists because the boundary used to be a bare `<done/>` that no prompt
+   * ever taught — so any turn whose content happened to contain that string
+   * (agent quoting HTML, explaining the tag) flipped the boundary and threw the
+   * rest of the answer out of the execution shell. A model cannot reproduce a
+   * nonce it was never shown, which is what makes the keyed form unforgeable.
+   *
+   * Persisted with the turn's other events so a reloaded conversation validates
+   * against the same key it was recorded with. Messages from before this event
+   * existed simply have none — clients MUST fall back to the legacy bare-marker
+   * heuristic there rather than treating "no key" as "no boundary".
+   */
+  | {
+      kind: 'done_key';
+      key: string;
+      /**
+       * This physical Run's own wall-clock span.
+       *
+       * A logical OD Next task runs as several physical Runs, and the client
+       * folds them into one turn when history is reloaded
+       * (`foldStrategyTaskTurns`). That fold concatenates every Run's events
+       * into a single stream but can only keep ONE message row, so the first
+       * Run's `createdAt` and the last Run's `endedAt` survive and every
+       * boundary in between is lost. The renderer then has one clock for N
+       * Runs: a Run whose events carry no timestamps of their own (a
+       * clarification Run typically has none, and the plain-stream agent
+       * family never emits any) has no boundary left to fall back on and shows
+       * no duration at all, while a thinking gap — inferred from "last stamped
+       * event until the next one" — runs straight across the boundary and
+       * charges earlier Runs' wall-clock time to the current one.
+       *
+       * `done_key` is already emitted once per Run and is already what the
+       * renderer uses to detect a Run boundary, so the span belongs here: it
+       * travels with the boundary it describes and needs no parallel channel.
+       *
+       * Optional because turns recorded before this existed carry none, and
+       * because a Run that is still in flight has no end yet. An absent boundary
+       * is unknown. Clients may still use timestamps belonging to the same Run,
+       * but MUST NOT substitute a preceding Run's timestamps or the aggregate
+       * folded turn's span for a missing successor-Run boundary. If no own timing
+       * data is available, leave the duration unknown rather than inventing one.
+       */
+      runStartedAt?: number;
+      runEndedAt?: number;
     }
   | { kind: 'raw'; line: string };
 

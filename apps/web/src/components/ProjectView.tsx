@@ -60,6 +60,8 @@ import { requestAmrArtifactUpgrade } from '../runtime/amr-artifact-upgrade';
 import {
   resolveQuestionFormStrategyTaskExecutionId,
   strategySettledMessageFields,
+  strategyTaskParkedOnSucceededRun,
+  strategyTaskRunIndex,
 } from '../runtime/strategy-question-continuation';
 import {
   type AmrWalletSnapshot,
@@ -5333,8 +5335,9 @@ export function ProjectView({
           recoverableGenericDisconnectFailed;
         // A predecessor can be persisted as physically succeeded immediately
         // before the logical task advances. Probe daemon task truth even when
-        // this row otherwise looks terminal; completed task rows bail out
-        // below without replaying their final Run again.
+        // this row otherwise looks terminal; completed task rows, and rows whose
+        // task is parked on the user, bail out below without replaying their
+        // final Run again.
         const needsTaskProjectionProbe = Boolean(
           message.strategyTaskExecutionId
           && message.runId
@@ -5469,7 +5472,11 @@ export function ProjectView({
           needsTaskProjectionProbe
           && !needsReplayForMessage
           && !taskRunAdvanced
-          && (!status.strategyTask || status.strategyTask.terminal)
+          && (
+            !status.strategyTask
+            || status.strategyTask.terminal
+            || strategyTaskParkedOnSucceededRun(status, runId)
+          )
         ) {
           completedReattachRunsRef.current.add(runId);
           continue;
@@ -5941,8 +5948,15 @@ export function ProjectView({
                 lastRunEventId: undefined,
                 strategyTaskPrefixLength: replayedContent.length,
                 strategyTaskPrefixEventCount: replayedEvents.length,
+                // The row now streams `nextRunId`, so its logical task
+                // position is that Run's — spreading `prev` would leave the
+                // predecessor's index on it. Same exact-map rule as the live
+                // send path: no daemon mapping, no position.
                 ...(strategyTask?.taskExecutionId
-                  ? { strategyTaskExecutionId: strategyTask.taskExecutionId }
+                  ? {
+                    strategyTaskExecutionId: strategyTask.taskExecutionId,
+                    strategyTaskRunIndex: strategyTaskRunIndex(strategyTask, nextRunId),
+                  }
                   : {}),
               }),
               true,
@@ -8377,7 +8391,10 @@ export function ProjectView({
               runId,
               runStatus: 'queued' as const,
               taskAnalytics: resolvedTaskAnalytics,
-              ...(strategyTaskExecutionId ? { strategyTaskExecutionId } : {}),
+              ...(strategyTaskExecutionId ? {
+                strategyTaskExecutionId,
+                strategyTaskRunIndex: strategyTaskRunIndex(strategyTask, runId),
+              } : {}),
               ...(isTaskSuccessor
                 ? {
                     strategyTaskPrefixLength: latestAssistantMsg.content.length,
@@ -8398,7 +8415,10 @@ export function ProjectView({
               runId,
               runStatus: 'queued',
               taskAnalytics: resolvedTaskAnalytics,
-              ...(strategyTaskExecutionId ? { strategyTaskExecutionId } : {}),
+              ...(strategyTaskExecutionId ? {
+                strategyTaskExecutionId,
+                strategyTaskRunIndex: strategyTaskRunIndex(strategyTask, runId),
+              } : {}),
               ...(isTaskSuccessor
                 ? {
                     strategyTaskPrefixLength: prev.content.length,
@@ -8587,7 +8607,10 @@ export function ProjectView({
               runId,
               runStatus: 'queued' as const,
               taskAnalytics: resolvedTaskAnalytics,
-              ...(strategyTaskExecutionId ? { strategyTaskExecutionId } : {}),
+              ...(strategyTaskExecutionId ? {
+                strategyTaskExecutionId,
+                strategyTaskRunIndex: strategyTaskRunIndex(strategyTask, runId),
+              } : {}),
               ...(isTaskSuccessor
                 ? {
                     strategyTaskPrefixLength: latestAssistantMsg.content.length,
@@ -8605,7 +8628,10 @@ export function ProjectView({
               runId,
               runStatus: 'queued',
               taskAnalytics: resolvedTaskAnalytics,
-              ...(strategyTaskExecutionId ? { strategyTaskExecutionId } : {}),
+              ...(strategyTaskExecutionId ? {
+                strategyTaskExecutionId,
+                strategyTaskRunIndex: strategyTaskRunIndex(strategyTask, runId),
+              } : {}),
               ...(isTaskSuccessor
                 ? {
                     strategyTaskPrefixLength: prev.content.length,

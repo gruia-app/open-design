@@ -434,3 +434,35 @@
   TypeError crudo desde resolve(undefined); ahora error de uso en una línea.
 
 Verificación: gateway 37/37 (3 tests nuevos de audit-report), typecheck limpio.
+
+## Lote 38 — picks upstream lote 30 + fixes de contrato (fleet/gaps-38)
+
+- Revision post-muerte del predecesor: picks de PR #51 verbatim upstream,
+  indice `auth_audit_at` verificado con EXPLAIN QUERY PLAN, tests verdes
+  (gateway 38/38, collab 74/74, srcdoc 44/44). Trabajo sano.
+- `7438807de` — Vela CLI 0.1.3 (upstream #8299). Lockfile regenerado con
+  pnpm; solo entradas vela-cli, integrity hashes identicos a upstream.
+- `7413c6daa` (Home Prototype/type picker) SKIP: feature de producto,
+  y Home divergio en el fork (GRUIA_MANAGED/GruiaDesignWorkflow, f0a1f8b12).
+- `66c226c7a` — manifest-backed artifacts (upstream #7586): sidecars
+  `<file>.artifact.json` validados via parsePersistedManifest cuentan como
+  artifacts aunque la extension no este en la allowlist (Markdown exports).
+  Incluye la maquinaria de coverage de #8172 local al fichero
+  (snapshotCoverage/complete/filesWrittenUnknown). `.cjs`/`.mjs` excluido:
+  pertenece a #7801 (deliverable syntax, ausente). 23/23 tests.
+- `fb5fd4a35` — fix de contrato preexistente: el test OPEND-2953 llevaba
+  rojo desde parity batch 8 (asercion `retryable: false` sin el campo).
+  Port parcial de #7518: `run.retryable` en ChatRun + ChatRunStatusResponse,
+  asignacion del clasificador, emission en statusBody y frame SSE `end`,
+  reset en resume, stamping en el evento status:error persistido (con
+  `failureAction`, tambien ausente), y variante `done_key` del contrato.
+- `eeceb1b56` — strategy continuations (upstream #8195 + guard #8250):
+  posiciones de run solo desde runMappings daemon-issued; sin herencia del
+  strategyTaskRunIndex del predecesor; posicion descartada con mappings
+  ausentes/wrong-run/duplicados; runs succeeded aparcados en el usuario se
+  sellan tras el probe sin replay. Adaptaciones: sin executionIntent
+  (cadena #8172 ausente), testid `assistant-role` en AssistantMessage,
+  caso `done_key` en el switch de visibilidad de ChatPane.
+
+Verificacion: web fold tests 10/10, runtime+sse 104/104, contracts 512/512,
+daemon typecheck + web typecheck verdes, test OPEND-2953 verde.

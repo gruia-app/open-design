@@ -896,7 +896,7 @@ function AssistantMessageImpl({
       tabIndex={-1}
     >
       {showRole ? (
-        <div className="role">
+        <div className="role" data-testid="assistant-role">
           <AgentIcon id={roleIconId} size={20} className="role-agent-icon" />
           <span className="role-name">{roleName}</span>
         </div>

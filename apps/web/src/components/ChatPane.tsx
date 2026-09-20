@@ -938,6 +938,7 @@ function hasVisibleBrandAssistantEvent(event: NonNullable<ChatMessage['events']>
     case 'request_usage':
     case 'diagnostic':
     case 'conversation_title':
+    case 'done_key':
       return false;
   }
 }

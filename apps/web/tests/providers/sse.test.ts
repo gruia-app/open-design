@@ -2054,6 +2054,7 @@ describe('streamViaDaemon', () => {
       route: 'full_plan',
       executionMode: null,
       activeRunId: 'run-request',
+      runMappings: [{ runId: 'run-request', taskRunIndex: 0 }],
       terminal: false,
     };
     const productionProjection = {
@@ -2063,6 +2064,10 @@ describe('streamViaDaemon', () => {
       executionMode: 'simple',
       activeRunId: 'run-production',
       nextRunId: 'run-production',
+      runMappings: [
+        { runId: 'run-request', taskRunIndex: 0 },
+        { runId: 'run-production', taskRunIndex: 1 },
+      ],
     };
     const completedProjection = {
       ...productionProjection,
