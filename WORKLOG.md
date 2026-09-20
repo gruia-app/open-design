@@ -413,3 +413,24 @@
   fleet/*, PR >=5 (o batch real), `gh --repo` por los 3 remotes,
   auto-merge deshabilitado → merge directo, ramas locales "unmerged" tras
   squash, sync-PRs de coordinacion, probe HSTS de verificacion de deploys.
+
+## Lote 28 — fleet WORK_BACKLOG mapeado sobre design
+
+- Backlog de flota triageado contra la superficie real del fork:
+  pago/checkout/billing/planes/dunning/emails transaccionales = ausentes por
+  diseño (identidad y admisión de orgs viven en el ecosistema externo; sin
+  mailer ni comercio). Documentado en SAAS_GAPS.md para que futuros ticks no
+  re-deriven; mailer y URL de soporte añadidos a blocked como decisiones.
+- G24 analytics por tenant (versión honesta mínima): la única señal
+  por-tenant del fork es auth_audit → `gruia-gateway audit --db <path>
+  [--days N] [--org <id>]`, reporte read-only de operador (totales por evento,
+  usuarios distintos, por-org, última actividad, top IPs). Subcomando local a
+  propósito: exponer auditoría por HTTP filtraría metadatos de auth a
+  cualquier sesión; el operador lo corre vía SSH o contra copia montada.
+- Data lifecycle verificado: borrar un usuario en la BD de identidad externa
+  ya está cubierto — authorize() re-resuelve identidad en cada request →
+  identity_mismatch → sesión revocada + auditada. Sin código nuevo.
+- Fix de revisión: `audit` sin --db y sin GRUIA_GATEWAY_CONFIG lanzaba
+  TypeError crudo desde resolve(undefined); ahora error de uso en una línea.
+
+Verificación: gateway 37/37 (3 tests nuevos de audit-report), typecheck limpio.

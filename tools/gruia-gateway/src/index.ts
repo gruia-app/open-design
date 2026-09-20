@@ -14,6 +14,7 @@ if (process.argv[2] === "audit") {
   const args = process.argv.slice(3);
   const flag = (name: string) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
   const databasePath = flag("--db");
+  if (!databasePath && !process.env.GRUIA_GATEWAY_CONFIG) throw new Error("audit needs --db <path> or GRUIA_GATEWAY_CONFIG");
   const report = buildAuditReport(databasePath ?? loadConfig(resolve(process.env.GRUIA_GATEWAY_CONFIG!)).databasePath, { days: flag("--days") === undefined ? undefined : Number(flag("--days")), organizationId: flag("--org") });
   process.stdout.write(JSON.stringify(report, null, 2) + "\n");
   process.exit(0);
