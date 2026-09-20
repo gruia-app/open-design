@@ -2,9 +2,9 @@
   "app": "design",
   "updated_at": "2026-09-20T16:46:38.671634+00:00",
   "current": {
-    "branch": "fleet/gaps-36",
+    "branch": "fleet/gaps-37",
     "state": "active",
-    "note": "audit index + PR #49 ledgered"
+    "note": "2 clean upstream picks; queue now 150, triaged"
   },
   "done": [
     {
@@ -544,7 +544,8 @@
     },
     "lote28: gateway audit --db usage-error fix + WORKLOG sync (fleet/gaps-33)",
     "lote28b: operator docs for auth_audit + audit subcommand (fleet/gaps-35)",
-    "lote28c: auth_audit.at index — retention deletes/reports no longer full-scan (fleet/gaps-36)"
+    "lote28c: auth_audit.at index — retention deletes/reports no longer full-scan (fleet/gaps-36)",
+    "lote29: upstream picks — AMR subscription reset on profile switch (287357b12) + preview snapshot blank-page fix (1aa228115); skipped d5eddcb59/0ffafb3d7 (diverged conflicts)"
   ],
   "blocked": [
     {
