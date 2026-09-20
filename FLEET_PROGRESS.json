@@ -1,9 +1,9 @@
 {
  "app": "design",
- "updated_at": "2026-09-19T18:26:18.226974+00:00",
+ "updated_at": "2026-09-20T16:46:38.671634+00:00",
  "current": {
-  "item": "converged — superficie privada 100% auditada, cola upstream agotada (144 commits, tip f5707c8ca), solo G6 + proxyAmrApiRequest bloqueados por decision",
-  "state": "converged"
+  "item": "backlog SaaS mapeado a design; audit subcommand implementado",
+  "state": "in_progress"
  },
  "done": [
   {
@@ -530,6 +530,16 @@
    "item": "tick final — convergencia declarada tras re-verificar cola upstream y superficie privada",
    "commit": "HEAD",
    "deploy": "n/a"
+  },
+  {
+   "item": "G24 audit subcommand — reporte auth por org (read-only, operator-only)",
+   "commit": "aa796f61b",
+   "deploy": "pending"
+  },
+  {
+   "item": "SAAS_GAPS — mapeo backlog flota → design (aplicable vs N/A vs decision)",
+   "commit": "6b85cdf1d",
+   "deploy": "n/a"
   }
  ],
  "blocked": [
@@ -541,6 +551,16 @@
   {
    "item": "proxyAmrApiRequest — 6 tokens planos",
    "reason": "binario vela ELF compilado; parsing de errores no verificable desde fuente/strings",
+   "needs": "decision"
+  },
+  {
+   "item": "emails transaccionales en gateway",
+   "reason": "sin mailer; SMTP requiere credenciales y decision de producto",
+   "needs": "decision"
+  },
+  {
+   "item": "canal de soporte/help in-app",
+   "reason": "falta destino real (URL/email) para enlazar",
    "needs": "decision"
   }
  ],

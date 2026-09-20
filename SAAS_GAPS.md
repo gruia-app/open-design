@@ -100,3 +100,32 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   `gruia-app/open-design` (main = mirror limpio de upstream). PR upstream #8262 intacto.
 - [x] Jenkins lane: Jenkinsfile + ci/app.yml en main (`1c44980f`), jobs.groovy
   mergeado (jenkins-platform#304), profile acv2 → jenkins (PR #4254).
+
+## Mapeo del backlog de flota SaaS (WORK_BACKLOG) a design
+
+Evaluado 2026-09-20 — la mayoría de corrientes no aplican al fork porque
+el billing/email/identidad viven fuera de él (AMR wallet upstream, login
+contra BD externa). Lo aplicable:
+
+- [x] **Analytics por tenant (mínimo honesto)** — `gruia-gateway audit`
+  agrega `auth_audit` por org (eventos, usuarios distintos, última
+  actividad, top IPs). Read-only, operator-only, sin superficie nueva
+  (commit pendiente en fleet/gaps-32, tests 3/3).
+- [x] **Security pass** — G1-G23 completos (auth, rate limits, cifrado
+  at-rest, forense, headers, CI).
+- [x] **Data lifecycle (GDPR, parcial)** — borrado de usuario ya resuelto:
+  `authorize` re-resuelve la identidad en cada request; un usuario
+  eliminado de la BD externa muere en `identity_mismatch` con revocación
+  + audit. La exportación de datos es daemon-side upstream.
+- [~] **Onboarding/activation** — existe la galería GruiaExamples como
+  primer valor; un checklist post-signup sería trabajo de producto en la
+  web divergida (coste alto, bajo retorno para ~usuarios internos).
+- [ ] **Pago/billing** — N/A: el fork no tiene checkout ni planes; el
+  wallet AMR es servicio upstream hospedado.
+- [ ] **Emails transaccionales** — N/A sin decisión: el gateway no tiene
+  mailer; añadir SMTP requiere credenciales y decisión de producto.
+- [ ] **Limits/metering** — N/A: sin planes ni cuotas en el fork.
+- [ ] **Soporte mínimo** — N/A sin decisión: falta un destino real de
+  help/docs/contacto para enlazar.
+- [ ] **Growth loops** — N/A: acceso por org concedido externamente; no
+  hay flujo de invitación en el fork.
