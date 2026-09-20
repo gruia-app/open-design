@@ -2,9 +2,9 @@
   "app": "design",
   "updated_at": "2026-09-20T16:46:38.671634+00:00",
   "current": {
-    "branch": "main",
+    "branch": "fleet/gaps-35",
     "state": "active",
-    "note": "PR #47 merged; WORK_BACKLOG mapped — remaining streams are decisions or absent surfaces"
+    "note": "audit doc gap closed"
   },
   "done": [
     {
@@ -542,7 +542,8 @@
       "commit": "6b85cdf1d",
       "deploy": "n/a"
     },
-    "lote28: gateway audit --db usage-error fix + WORKLOG sync (fleet/gaps-33)"
+    "lote28: gateway audit --db usage-error fix + WORKLOG sync (fleet/gaps-33)",
+    "lote28b: operator docs for auth_audit + audit subcommand (fleet/gaps-35)"
   ],
   "blocked": [
     {

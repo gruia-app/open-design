@@ -56,3 +56,23 @@ The gateway and the TLS proxy must both send `Referrer-Policy: same-origin`.
 With `no-referrer`, browsers can send `Origin: null` for a form POST, which the
 login correctly rejects. Keep the exact-origin check and use the Caddy fragment
 in `deploy/gruia/Caddyfile`.
+
+## Operator auth-activity report
+
+Auth events (logins, denials, session revocations, expirations) are written to
+the `auth_audit` table in the gateway SQLite database, retained for 90 days or
+100,000 rows, whichever bound hits first. For per-tenant usage or incident
+triage, run the read-only report locally — over SSH on the gateway host or
+against a mounted/copied database file:
+
+```bash
+gruia-gateway audit [--db <path>] [--days N] [--org <id>]
+```
+
+`--db` defaults to the configured `databasePath` when `GRUIA_GATEWAY_CONFIG` is
+set; `--days` defaults to 30 (1–365); `--org` scopes every section to one
+organization. The command prints JSON: event totals, per-organization breakdown
+with distinct user counts and last activity, and the top 10 client IPs. It
+opens the database read-only, never touches sessions or Postgres, and is
+deliberately not an HTTP endpoint — audit metadata must not ride the
+authenticated session surface.
