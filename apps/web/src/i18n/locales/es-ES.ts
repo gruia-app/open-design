@@ -3513,6 +3513,8 @@ export const esES: Dict = {
   'assistant.verbFetching': 'Obteniendo',
   'assistant.verbCalling': 'Llamando',
   'qf.answered': 'respondido',
+    "qf.unanswered": "Sin responder",
+    "qf.unansweredContinued": "Esta pregunta no se respondió. La conversación ha continuado.",
   'qf.choose': 'Elige…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

@@ -3513,6 +3513,8 @@ export const ja: Dict = {
   'assistant.verbFetching': 'フェッチ中',
   'assistant.verbCalling': '呼び出し中',
   'qf.answered': '回答済み',
+    "qf.unanswered": "未回答",
+    "qf.unansweredContinued": "この質問には回答されず、会話が続行されました。",
   'qf.choose': '選択…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

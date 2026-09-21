@@ -3513,6 +3513,8 @@ export const id: Dict = {
   'assistant.verbFetching': 'mengambil',
   'assistant.verbCalling': 'memanggil',
   'qf.answered': 'Terjawab',
+    "qf.unanswered": "Belum dijawab",
+    "qf.unansweredContinued": "Pertanyaan ini tidak dijawab. Percakapan telah berlanjut.",
   'qf.choose': 'Pilih',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

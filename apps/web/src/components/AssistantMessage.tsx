@@ -2621,6 +2621,23 @@ function ProseBlock({
     [visibleText, streaming]
   );
   const segments = useMemo(() => splitOnQuestionForms(head), [head]);
+  /**
+   * 这条消息里的问卷**还收不收提交**。
+   *
+   * 判据是「用户有没有从这张表走过去」—— 也就是这条消息之后用户还说没说过话
+   * (`nextUserContent`,由 `ChatPane` 按「下一条 user 消息」配对给出)。说过了,
+   * 这张表就是历史,重新答它会把一段错位的答案发给已经往下走的会话;没说过,
+   * 它仍然是悬着的那一问,不管后面还排了多少条消息。
+   *
+   * ⚠️ 原来这里直接写 `interactive={isLastAssistant}`,拿「是不是最后一条助手
+   * 消息」当那个判据。两者绝大多数时候一致,直到宿主在一轮结束后自己补发一条
+   * 助手消息(`ProjectView` 的 memory-applied 记忆卡)—— 问卷不再是最后一条,
+   * 于是一个字都没答就被锁住、还被标成「已回答」(OPEND-2644)。
+   *
+   * 普通 user 到达但下一条 assistant 尚未到达时,旧问卷仍可能是最后一条助手消息;
+   * 因此只看下一条 user 是否存在,不能再用 isLastAssistant 放宽。
+   */
+  const questionFormAnswerable = nextUserContent === undefined;
   // Route file-link clicks away from the default target="_blank" behavior.
   // Without this, Electron's window-open handler creates a new app window
   // whose href can't resolve, and the user lands on the home screen — the
@@ -2707,7 +2724,7 @@ function ProseBlock({
             projectId={projectId}
             conversationId={conversationId}
             nextUserContent={nextUserContent}
-            interactive={isLastAssistant}
+            interactive={questionFormAnswerable}
             onSubmit={onSubmitQuestionForm}
             submitDisabled={questionFormSubmitDisabled}
             strategyBlockedNotice={strategyBlockedNotice}
@@ -3152,6 +3169,7 @@ function FormBlock({
       <QuestionFormView
         form={form}
         interactive={interactive}
+        unanswered={nextUserContent !== undefined && !submittedFromHistory}
         draftAnswers={draftAnswers}
         onDraftChange={updateDraftAnswers}
         onAnswerChange={handleAnswerChange}

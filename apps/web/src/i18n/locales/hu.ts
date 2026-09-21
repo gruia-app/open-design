@@ -3513,6 +3513,8 @@ export const hu: Dict = {
   'assistant.verbFetching': 'Lekérés',
   'assistant.verbCalling': 'Hívás',
   'qf.answered': 'megválaszolva',
+    "qf.unanswered": "Megválaszolatlan",
+    "qf.unansweredContinued": "Ez a kérdés megválaszolatlan maradt. A beszélgetés folytatódott.",
   'qf.choose': 'Válassz…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

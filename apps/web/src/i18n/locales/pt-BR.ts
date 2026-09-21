@@ -3513,6 +3513,8 @@ export const ptBR: Dict = {
   'assistant.verbFetching': 'Buscando',
   'assistant.verbCalling': 'Chamando',
   'qf.answered': 'respondido',
+    "qf.unanswered": "Sem resposta",
+    "qf.unansweredContinued": "Esta pergunta não foi respondida. A conversa continuou.",
   'qf.choose': 'Escolha…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

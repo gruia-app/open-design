@@ -176,6 +176,22 @@ const optionalFinalFileForm = {
 describe('QuestionFormView', () => {
   afterEach(() => cleanup());
 
+  it.each(['radio', 'checkbox'] as const)('keeps %s descriptions inline without duplicating them in a native tooltip', type => {
+    const describedForm: QuestionForm = {
+      ...richForm, questions: richForm.questions.map(question => ({ ...question, type })),
+    };
+    render(<QuestionFormView form={describedForm} interactive onSubmit={vi.fn()} />);
+
+    const describedOption = screen.getByRole(type, { name: /Mobile \(iOS\/Android\)/ });
+    const chip = describedOption.closest('label');
+    expect(chip).not.toBeNull();
+    expect(chip).not.toHaveAttribute('title');
+    expect(chip).toHaveTextContent('Phone-first app prototype');
+    expect(screen.getAllByText('Phone-first app prototype')).toHaveLength(1);
+    fireEvent.click(describedOption);
+    expect(describedOption).toBeChecked();
+  });
+
   it('updates locked answers when submitted history arrives after the initial render', () => {
     const onSubmit = vi.fn();
     const { container, rerender } = render(

@@ -678,6 +678,26 @@
    "commit": "87364984b",
    "what": "fix(daemon,web): fork copies keep terminal verdict not run pointers; folded PUT carrying sibling done_key preserves stored run-owned fields; web merge producedFiles ownership; artifact_focus contract variant",
    "upstream": "1bd134dc5/#8029"
+  },
+  {
+   "commit": "782c1654f",
+   "what": "fix(web): rounded clip above chat log removed so compositor can hit-test (wheel_stall fix); OD_MOCKS_TEXT_DELTAS opt-in for claude mock",
+   "upstream": "f5a03f77a/#8228"
+  },
+  {
+   "commit": "db0c3bb87",
+   "what": "fix(web): collapse unanswered question forms after conversation continues; unanswered prop, details/summary card, answered-vs-locked split, qf.unanswered keys x19 locales",
+   "upstream": "d14b10e1f/#8158"
+  },
+  {
+   "commit": "f9ab4a745",
+   "what": "fix(web): drop native title tooltips duplicating question option descriptions (adapted: title removed from inline chip labels)",
+   "upstream": "a62d5e08c/#8033"
+  },
+  {
+   "commit": "e4fedda22",
+   "what": "fix(web): question form host controls translate through uiT while content keeps t(form.lang); 8 locale-split specs",
+   "upstream": "e10b5b487/#8010"
   }
  ],
  "blocked": [
@@ -837,8 +857,37 @@
   }
  ],
  "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
- "branch": "main (post-merge #55)",
- "skipped_upstream": [],
+ "branch": "fleet/gaps-42",
+ "skipped_upstream": [
+  {
+   "commit": "900d01c61",
+   "reason": "already applied in fork (splitCommaSeparatedIds called directly, no splitAutomationIds alias)"
+  },
+  {
+   "commit": "d992e09fb",
+   "reason": "already applied in fork (WORKSPACE_BUILD_MAX_OLD_SPACE_MB + NODE_OPTIONS present)"
+  },
+  {
+   "commit": "287357b12",
+   "reason": "no-op pick — change already present in fork"
+  },
+  {
+   "commit": "1aa228115",
+   "reason": "no-op pick — change already present in fork"
+  },
+  {
+   "commit": "127ec0f02",
+   "reason": "no-op pick — change already present in fork"
+  },
+  {
+   "commit": "b9c05695f",
+   "reason": "chat-artifacts/cover.ts deleted in fork — cover-renderer machinery absent"
+  },
+  {
+   "commit": "ad4a8fc40",
+   "reason": "depends on absent manualFileWriteRegistration/decideAgentFocusOpen/userTookOverPreviewRef machinery (#7518 chain)"
+  }
+ ],
  "prs_merged": [
   {
    "pr": 55,

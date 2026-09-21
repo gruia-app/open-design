@@ -3513,6 +3513,8 @@ export const ru: Dict = {
   'assistant.verbFetching': 'Получение',
   'assistant.verbCalling': 'Вызов',
   'qf.answered': 'отвечено',
+    "qf.unanswered": "Без ответа",
+    "qf.unansweredContinued": "Этот вопрос остался без ответа. Разговор продолжился.",
   'qf.choose': 'Выберите…',
   'qf.customLabel': 'Свой ответ',
   'qf.customPlaceholder': 'Введите свой ответ...',

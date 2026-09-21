@@ -543,3 +543,24 @@ artifact-fs 24/24, strategy-history 11/11, model-picker 6/6.
 
 Verificacion: conversation-fork-artifacts 5/5, projects 49/49,
 acp-visible-output-flush 10/10, daemon+web typecheck verde.
+
+## fleet/gaps-42 — chat compositor clip + unanswered question collapse
+
+- `782c1654f` — port `f5a03f77a` (#8228): border-radius:0 en el pane del
+  chat slot (el radio convertia el clip en rounded clip -> compositor no
+  podia hit-testear -> wheel_stall). + OD_MOCKS_TEXT_DELTAS en mock claude.
+- `db0c3bb87` — port `d14b10e1f` (#8158): form sin responder colapsa en
+  details/summary "Unanswered" cuando llega un user posterior; split
+  answered/locked; questionFormAnswerable = nextUserContent===undefined;
+  keys qf.unanswered x19 locales. Adaptado al fork (sin AnsweredSummary /
+  StepProgress / useMemoryWrittenCard / ChevronIcon -> Icon chevron-down).
+- Skips/no-ops: 900d01c61, d992e09fb, 287357b12, 1aa228115, 127ec0f02 (ya
+  aplicados), b9c05695f (cover.ts ausente), ad4a8fc40 (maquinaria #7518).
+
+Verificacion: unanswered-history 7/7, opend-2644 spec 5/5, QuestionForm+
+resubmit+jump-button 39/39, web typecheck verde.
+- `f9ab4a745` — port `a62d5e08c` (#8033): sin tooltips nativos duplicados
+  en opciones (labels inline del fork; SelectChoice upstream ausente).
+- `e4fedda22` — port `e10b5b487` (#8010): chrome del form via uiT (fork ya
+  tenia tForLanguageTag); specs de locale-split adaptadas (SelectChoice
+  ausente -> caso grouped-menu descartado).

@@ -3513,6 +3513,8 @@ export const fa: Dict = {
   'assistant.verbFetching': 'در حال دریافت',
   'assistant.verbCalling': 'در حال فراخوانی',
   'qf.answered': 'پاسخ داده شده',
+    "qf.unanswered": "بی‌پاسخ",
+    "qf.unansweredContinued": "این پرسش پاسخ داده نشد و گفتگو ادامه یافته است.",
   'qf.choose': 'انتخاب کنید…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

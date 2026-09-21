@@ -3513,6 +3513,8 @@ export const th: Dict = {
   'assistant.verbFetching': 'ชักนำผลผ่านตัวออนไลน์',
   'assistant.verbCalling': 'ตามสั่งเครื่องมือมาใช้',
   'qf.answered': 'ได้ส่งคำไปแล้ว',
+    "qf.unanswered": "ยังไม่ได้ตอบ",
+    "qf.unansweredContinued": "คำถามนี้ไม่ได้รับคำตอบ และการสนทนาได้ดำเนินต่อแล้ว",
   'qf.choose': 'จิ้มเลือกเถอะ…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

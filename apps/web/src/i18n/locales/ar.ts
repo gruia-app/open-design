@@ -3513,6 +3513,8 @@ export const ar: Dict = {
   'assistant.verbFetching': 'جلب',
   'assistant.verbCalling': 'اتصال',
   'qf.answered': 'تمت الإجابة',
+    "qf.unanswered": "لم تتم الإجابة",
+    "qf.unansweredContinued": "لم تتم الإجابة عن هذا السؤال، وقد استمرت المحادثة.",
   'qf.choose': 'اختر...',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

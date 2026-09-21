@@ -3709,6 +3709,8 @@ export const zhTW: Dict = {
   "assistant.verbFetching": "擷取",
   "assistant.verbCalling": "呼叫",
   "qf.answered": "已回答",
+    "qf.unanswered": "未回答",
+    "qf.unansweredContinued": "此問題未回覆，對話已繼續。",
   "qf.choose": "請選擇…",
   "qf.customLabel": "自定义填写",
   "qf.customPlaceholder": "输入你自己的答案…",

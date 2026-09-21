@@ -4382,6 +4382,8 @@ export interface Dict {
 
   // Question form labels
   'qf.answered': string;
+  'qf.unanswered': string;
+  'qf.unansweredContinued': string;
   'qf.choose': string;
   'qf.customLabel': string;
   'qf.customPlaceholder': string;

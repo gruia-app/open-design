@@ -28,6 +28,7 @@ import {
   type VisualStyleVariant,
 } from '../runtime/visual-style-catalog';
 import { Icon } from './Icon';
+import styles from './QuestionForm.module.css';
 
 export type QuestionFormInteraction =
   | {
@@ -63,6 +64,9 @@ interface Props {
   // disables the form when the assistant turn is no longer the most recent
   // one (i.e. the user has already moved past it).
   interactive: boolean;
+  // A later ordinary user message retired this occurrence without an answer.
+  // Read-only hosts alone must not be classified as unanswered history.
+  unanswered?: boolean;
   // Pre-existing answers — when we detect a follow-up user message that
   // begins with "[form answers — <id>]", we parse it back out and pass it
   // here so the rendered form reflects what was sent.
@@ -109,6 +113,7 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
   {
     form,
     interactive,
+    unanswered = false,
     submittedAnswers,
     hideInternalSubmit = false,
     draftAnswers,
@@ -124,10 +129,9 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
   ref,
 ) {
   const uiT = useT();
-  // Host strings inside the card follow the form's declared content language
-  // (`form.lang`, set by the model alongside the localized labels) so a
-  // Chinese form in an English UI doesn't mix scripts; without a resolvable
-  // tag they follow the app UI locale as before.
+  // Answer-content strings follow the form's declared language, falling back
+  // to the UI locale when it is absent or unsupported. Required/navigation
+  // controls use uiT independently; they are not part of the answer content.
   const t = useMemo(() => tForLanguageTag(form.lang) ?? uiT, [form.lang, uiT]);
   const initial = useMemo(
     () => buildInitialState(form, submittedAnswers, draftAnswers, visualStyleContext),
@@ -154,12 +158,26 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
     OPTIONAL_FORM_AUTO_CONTINUE_SECONDS,
   );
   const autoContinuedRef = useRef(false);
-  const locked = !interactive || !onSubmit || submittedAnswers !== undefined;
+  const unansweredHistory = unanswered && submittedAnswers === undefined;
+  const locked = unansweredHistory || !interactive || !onSubmit || submittedAnswers !== undefined;
+  /*
+   * 「已回答」是一句关于**用户做过什么**的陈述 —— 只有真的解析到提交答案才兑现。
+   *
+   * `locked` 说的是另一件事:这张表**现在收不了提交**。它有三种来路,其中两种
+   * (不是最后一条助手消息、宿主根本不收提交)跟用户答没答过毫无关系。
+   * 两句话过去共用 `locked`,于是一把锁上去就替用户宣布他答过了 ——
+   * OPEND-2644 里宿主在问卷后面补发一条记忆卡,问卷一个字没答就挂上了「已回答」,
+   * 连表单自带的默认选项都被当成「他确认过的答案」。
+   *
+   * 底部那句说明早就分好了两档(`qf.lockedSubmitted` / `qf.lockedPrev`),
+   * 卡头这一枚跟上。
+   */
+  const answered = submittedAnswers !== undefined;
   // Submitted answers are held by the host in their original wire format.
   // Use the normalized snapshot for rendering so legacy tone values select
   // the same visual card that a new submission will send.
   const currentAnswers = submittedAnswers !== undefined ? initial : answers;
-  const stepped = !locked && !hideInternalSubmit && form.questions.length > 1;
+  const stepped = (unansweredHistory || !locked) && !hideInternalSubmit && form.questions.length > 1;
   const activeQuestion = form.questions[activeQuestionIndex];
   const isLastQuestion = activeQuestionIndex === form.questions.length - 1;
   const questionsToRender = stepped && activeQuestion ? [activeQuestion] : form.questions;
@@ -386,7 +404,7 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
   }
 
   function handleNextQuestion() {
-    if (!activeQuestion || isLastQuestion || !currentQuestionReady) return;
+    if (!activeQuestion || isLastQuestion || (!unansweredHistory && !currentQuestionReady)) return;
     onInteraction?.({
       element: 'step_next',
       questionId: activeQuestion.id,
@@ -460,9 +478,17 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
     finalizeSubmission('auto');
   }, [answers, autoContinueEnabled, autoContinueRemaining, fileAnswers, form, onSubmit]);
 
+  // Native details preserves a user-opened history card through rerenders.
+  // Switching from the active div to details starts it closed without
+  // remounting this component's answer/draft state or adding another card.
+  const FormContainer = unansweredHistory ? 'details' : 'div';
+  const FormHead = unansweredHistory ? 'summary' : 'div';
   return (
-    <div className={`question-form${locked ? ' question-form-locked' : ''}`} data-form-id={form.id}>
-      <div className="question-form-head">
+    <FormContainer
+      className={`question-form${locked ? ' question-form-locked' : ''}${unansweredHistory ? ` ${styles.unanswered}` : ''}`}
+      data-form-id={form.id}
+    >
+      <FormHead className="question-form-head">
         <span className="question-form-icon" aria-hidden>?</span>
         <div className="question-form-titles">
           <div className="question-form-title">{form.title}</div>
@@ -478,8 +504,14 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
             {activeQuestionIndex + 1} / {form.questions.length}
           </span>
         ) : null}
-        {locked ? <span className="question-form-pill">{t('qf.answered')}</span> : null}
-      </div>
+        {answered ? <span className="question-form-pill">{t('qf.answered')}</span> : null}
+        {unansweredHistory ? (
+          <>
+            <span className="qf-picked"><span className="qf-picked-label">{uiT('qf.unanswered')}</span></span>
+            <span className={styles.chevron} aria-hidden><Icon name="chevron-down" /></span>
+          </>
+        ) : null}
+      </FormHead>
       <div className="question-form-body">
         {questionsToRender.map((q) => {
           const value = currentAnswers[q.id];
@@ -497,7 +529,7 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
             >
               <label className="qf-label">
                 <span>{q.label}</span>
-                {q.required ? <span className="qf-required">{t('qf.required')}</span> : null}
+                {q.required && !unansweredHistory ? <span className="qf-required">{uiT('qf.required')}</span> : null}
               </label>
               {q.help ? <div className="qf-help">{q.help}</div> : null}
               {q.type === 'radio' && q.options && !visualStyleCards ? (
@@ -506,7 +538,6 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
                     <label
                       key={opt.value}
                       className={`qf-chip${value === opt.value ? ' qf-chip-on' : ''}`}
-                      title={opt.description}
                     >
                       <input
                         type="radio"
@@ -547,7 +578,6 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
                     return (
                       <label
                         key={opt.value}
-                        title={opt.description}
                         className={`qf-chip${on ? ' qf-chip-on' : ''}${maxed ? ' qf-chip-disabled' : ''}`}
                       >
                         <input
@@ -795,17 +825,35 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
       </div>
       {hideInternalSubmit ? null : (
         <div className="question-form-foot">
-          {locked ? (
+          {unansweredHistory ? (
+            <>
+              <span className="qf-locked-note">{uiT('qf.unansweredContinued')}</span>
+              {stepped ? (
+                <span className="qf-submit-actions">
+                  {activeQuestionIndex > 0 ? (
+                    <Button type="button" variant="ghost" onClick={handlePreviousQuestion}>
+                      {uiT('settings.onboardingBack')}
+                    </Button>
+                  ) : null}
+                  {!isLastQuestion ? (
+                    <Button type="button" variant="primary" onClick={handleNextQuestion}>
+                      {uiT('nextStep.title')}
+                    </Button>
+                  ) : null}
+                </span>
+              ) : null}
+            </>
+          ) : locked ? (
             <span className="qf-locked-note">
-              {submittedAnswers ? t('qf.lockedSubmitted') : t('qf.lockedPrev')}
+              {submittedAnswers ? t('qf.lockedSubmitted') : uiT('qf.lockedPrev')}
             </span>
           ) : stepped ? (
             <>
               {autoContinueEnabled ? (
                 <span
                   className="qf-auto-continue"
-                  title={t('questions.autoSkipHint')}
-                  aria-label={`${t('questions.autoSkipHint')} ${autoContinueCountdown}`}
+                  title={uiT('questions.autoSkipHint')}
+                  aria-label={`${uiT('questions.autoSkipHint')} ${autoContinueCountdown}`}
                 >
                   {autoContinueCountdown}
                 </span>
@@ -816,7 +864,7 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
                 onClick={handleSkipCurrent}
                 disabled={submitDisabled}
               >
-                {t('questionForm.skip')}
+                {uiT('questionForm.skip')}
               </Button>
               <span className="qf-submit-actions">
                 <Button
@@ -825,7 +873,7 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
                   onClick={handlePreviousQuestion}
                   disabled={submitDisabled || activeQuestionIndex === 0}
                 >
-                  {t('settings.onboardingBack')}
+                  {uiT('settings.onboardingBack')}
                 </Button>
                 <Button
                   type="button"
@@ -840,29 +888,29 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
                   }
                   title={
                     !submitDisabled && activeQuestion?.required === true && !currentQuestionReady
-                      ? t('qf.submitDisabledTitle')
+                      ? uiT('qf.submitDisabledTitle')
                       : isLastQuestion && !submitDisabled && ready
-                        ? t('qf.submitTitle')
+                        ? uiT('qf.submitTitle')
                         : undefined
                   }
                 >
                   {isLastQuestion
-                    ? form.submitLabel ?? t('qf.submitDefault')
-                    : t('nextStep.title')}
+                    ? form.submitLabel ?? uiT('qf.submitDefault')
+                    : uiT('nextStep.title')}
                 </Button>
               </span>
             </>
           ) : autoContinueEnabled || !hasRequiredQuestions ? (
             <span
               className={autoContinueEnabled ? 'qf-auto-continue' : 'qf-hint'}
-              title={autoContinueEnabled ? t('questions.autoSkipHint') : undefined}
+              title={autoContinueEnabled ? uiT('questions.autoSkipHint') : undefined}
               aria-label={
                 autoContinueEnabled
-                  ? `${t('questions.autoSkipHint')} ${autoContinueCountdown}`
+                  ? `${uiT('questions.autoSkipHint')} ${autoContinueCountdown}`
                   : undefined
               }
             >
-              {autoContinueEnabled ? autoContinueCountdown : t('qf.hint')}
+              {autoContinueEnabled ? autoContinueCountdown : uiT('qf.hint')}
             </span>
           ) : null}
           {!locked && !stepped ? (
@@ -874,7 +922,7 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
                   onClick={handleSkipAll}
                   disabled={submitDisabled}
                 >
-                  {t('questions.skipAll')}
+                  {uiT('questions.skipAll')}
                 </Button>
               ) : null}
               <Button
@@ -882,15 +930,15 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
                 variant="primary"
                 onClick={handleSubmit}
                 disabled={submitDisabled || !ready}
-                title={!submitDisabled && ready ? t('qf.submitTitle') : t('qf.submitDisabledTitle')}
+                title={!submitDisabled && ready ? uiT('qf.submitTitle') : uiT('qf.submitDisabledTitle')}
               >
-                {form.submitLabel ?? t('qf.submitDefault')}
+                {form.submitLabel ?? uiT('qf.submitDefault')}
               </Button>
             </span>
           ) : null}
         </div>
       )}
-    </div>
+    </FormContainer>
   );
 });
 

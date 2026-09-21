@@ -3527,6 +3527,8 @@ export const en: Dict = {
   'assistant.verbFetching': 'Fetching',
   'assistant.verbCalling': 'Calling',
   'qf.answered': 'answered',
+    "qf.unanswered": "Unanswered",
+    "qf.unansweredContinued": "This question was not answered. The conversation has continued.",
   'qf.choose': 'Choose…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',

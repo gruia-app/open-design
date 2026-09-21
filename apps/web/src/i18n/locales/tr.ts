@@ -3513,6 +3513,8 @@ export const tr: Dict = {
   'assistant.verbFetching': 'Getiriyor',
   'assistant.verbCalling': 'Çağırıyor',
   'qf.answered': 'cevapladı',
+    "qf.unanswered": "Yanıtlanmadı",
+    "qf.unansweredContinued": "Bu soru yanıtlanmadı. Konuşma devam etti.",
   'qf.choose': 'Se.…',
   'qf.customLabel': 'Custom answer',
   'qf.customPlaceholder': 'Type your own answer...',
