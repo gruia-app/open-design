@@ -515,3 +515,31 @@ Verificacion: web typecheck verde; 17/17 hydration, 4/4 scroll-moves-anchor,
 
 Verificacion: web typecheck verde; transcript 104/104, ProjectView 145/145,
 artifact-fs 24/24, strategy-history 11/11, model-picker 6/6.
+
+## fleet/gaps-41 — media-failure + ACP + fork-artifacts (publicado como PR pendiente)
+
+- `0992a712e` — port `f95b9a6ee` (#7933): routes/media.ts reporta fallos
+  host-observados al run origen (options.grant.runId); runs.ts guarda
+  mediaTaskFailures acotadas/idempotentes; completitud terminal las trata
+  como evidencia unfinished; contrato RunMediaTaskFailure + emissions en
+  ChatRunStatusResponse/ChatSseEndPayload; reset en resume. Test adaptado a
+  fork-native (sin maquinaria <od-done>): fallo host manda sobre prosa del
+  modelo; exito intacto; todo-pendiente sigue unfinished.
+- `5ede573e1` — chore fleet: registro del port + skip diagnostics-evidence.
+- `805f218ed` — e2e ACP: inferencia de archivo por titulo excluyendo URLs
+  (fixture 9/9; el fix daemon ya estaba — delta real = test adaptado).
+- `8bfbbbc84` — port `810cbe058` (#8015): flushForVisibleOutputCheck preserva
+  texto ACP bufferizado antes del chequeo empty-output; supresion de prefijos
+  tool-call incompletos vs pseudo-tags literales; cadena DSML suppressor;
+  re-entry preservado.
+- `0b98c16af` — REPARACION: la normalizacion TodoWrite de #8015 quedo en el
+  working tree al commitear 8bfbbbc84 — el branch commiteado estaba rojo en
+  acp-visible-output-flush. Lands el fix faltante.
+- `87364984b` — port `1bd134dc5` (#8029): PUT plegado que trae done_key de
+  fila hermana preserva campos run-owned de la fila almacenada; fork copies
+  conservan verdict terminal (settledForkVerdict) pero no punteros; web merge
+  producedFiles ownership; variante artifact_focus en contrato + clasificada
+  no-visible en ChatPane.
+
+Verificacion: conversation-fork-artifacts 5/5, projects 49/49,
+acp-visible-output-flush 10/10, daemon+web typecheck verde.

@@ -10,7 +10,7 @@ import type {
 } from './comments';
 import type { ResearchOptions } from './research';
 import type { RunContextSelection } from './context.js';
-import type { MediaExecutionPolicy } from './media.js';
+import type { MediaExecutionPolicy, RunMediaTaskFailure } from './media.js';
 import type { AppliedPluginSnapshot } from '../plugins/apply.js';
 import type { McpAuthMode, McpServerConfig, McpTransport } from './mcp';
 import type {
@@ -757,6 +757,12 @@ export interface ChatRunStatusResponse {
    *  Judged by the canonical `todoSnapshotHasUnfinishedWork` predicate so it can
    *  never diverge from the chat footer's `unfinishedTodosFromEvents`. */
   endedWithUnfinishedWork?: boolean;
+  /** Media generations this run dispatched that the DAEMON itself recorded as
+   *  failed. Empty/absent means the host watched none fail — never that the
+   *  agent said so. Present so a terminal turn can render the real failure card
+   *  (with the task's own retryability verdict) instead of leaving the user with
+   *  a green check and an apology in prose. */
+  mediaTaskFailures?: RunMediaTaskFailure[];
   /** Authoritative artifact files created or modified by this run. Mirrors
    *  ChatSseEndPayload.artifactCount and run_finished.artifact_count. */
   artifactCount?: number;
@@ -907,6 +913,20 @@ export type PersistedAgentEvent =
       failureDetail?: RunFailureDetail;
     }
   | { kind: 'text'; text: string }
+  /**
+   * This turn's display intent — which file the preview opened and which
+   * produced files earned a card. Parsed by the daemon out of the agent's
+   * `<od-focus …/>` marker, key-checked against the turn nonce, and resolved to
+   * project-relative paths inside the project root, so the client stores
+   * conclusions and never raw protocol.
+   *
+   * Persisted with the turn's other events so a reloaded conversation shows the
+   * same card set it showed live. Turns recorded before this event existed have
+   * none, and MUST fall back to the host's own produced-file inference —
+   * unlike `next_steps`, "no event" here has a well-defined legacy meaning and
+   * rendering nothing would blank a panel that used to work.
+   */
+  | { kind: 'artifact_focus'; open?: string; show?: string[] }
   | { kind: 'conversation_title'; title: string }
   | { kind: 'thinking'; text: string }
   | {

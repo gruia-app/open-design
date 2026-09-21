@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-21T01:32:22Z",
+ "updated_at": "2026-09-21T01:49:12Z",
  "current": {
-  "branch": "main",
+  "branch": "fleet/gaps-41",
   "state": "idle",
   "note": "PR #53 squash-mergeado (ca16b9a42); lote 39 completo"
  },
@@ -657,6 +657,27 @@
    "commit": "43f2eadf2",
    "deploy": "pending",
    "note": "squash merge directo (--auto no-op: repo sin auto-merge habilitado, merge inmediato); gh apuntaba a nexu-io/open-design por defecto -> usar --repo gruia-app/design"
+  },
+  {
+   "item": "SKIP 7fa06a408 (#7951): diagnostics environment evidence — ya aplicado en batch 11 (640974bf8, PR #25); cherry-pick resulto no-op tras resolver (unico delta era el resumen scroll-forensics de diagnostics-client-evidence.ts, ausente en el fork)",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "fix(daemon): let a failed media generation reach its run terminal",
+   "commit": "0992a712e",
+   "deploy": "pending",
+   "note": "port f95b9a6ee (#7933) adaptado: noteMediaTaskFailure + mediaTaskFailures acotado/idempotente en el record + verdict hostRecordedDeliveryFailure + emissions statusBody/end + contrato media.ts converge a upstream. Excluido: clausulas marker/askUser (#7518) y tipos deliverable-syntax (#7801); spec adaptado a semantica del fork (todo pendiente=unfinished). Tests 6/6 e2e daemon + regresion 19/19+4/4"
+  },
+  {
+   "commit": "0b98c16af",
+   "what": "fix(daemon): normalize vela ACP TodoWrite names — lands the piece 8bfbbbc84 left uncommitted (branch was red on acp-visible-output-flush)",
+   "upstream": "810cbe058/#8015"
+  },
+  {
+   "commit": "87364984b",
+   "what": "fix(daemon,web): fork copies keep terminal verdict not run pointers; folded PUT carrying sibling done_key preserves stored run-owned fields; web merge producedFiles ownership; artifact_focus contract variant",
+   "upstream": "1bd134dc5/#8029"
   }
  ],
  "blocked": [
@@ -810,5 +831,7 @@
   },
   "PR #54 (43f2eadf2): produced-files dedupe + .cjs/.mjs render deps + blocked fields en historial + model-picker anchor + retryable transcript reads — Jenkins"
  ],
- "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12)."
+ "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
+ "branch": "fleet/gaps-41",
+ "skipped_upstream": []
 }

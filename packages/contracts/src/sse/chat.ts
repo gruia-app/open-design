@@ -1,5 +1,6 @@
 import type { LiveArtifactRefreshStatus } from '../api/live-artifacts.js';
-import type { RunFailureCategory, RunFailureDetail } from '../api/chat.js';
+import type { RunFailureAction, RunFailureCategory, RunFailureDetail } from '../api/chat.js';
+import type { RunMediaTaskFailure } from '../api/media.js';
 import type { StrategyTaskProjectionV2 } from '../plugins/strategy-v2.js';
 import type { SseErrorPayload } from '../errors.js';
 import type { SseTransportEvent } from './common.js';
@@ -102,6 +103,13 @@ export interface ChatSseEndPayload {
    *  assistant message so every status surface avoids showing "Completed" for an
    *  incomplete run. Mirrors ChatRunStatusResponse.endedWithUnfinishedWork. */
   endedWithUnfinishedWork?: boolean;
+  /** Media generations this run dispatched that the daemon itself recorded as
+   *  failed. Carried on the terminal frame for the same reason the failure
+   *  classification below is: the chat decides what the finished turn says
+   *  without a status refetch, and "the host watched a generation fail" is the
+   *  one thing that must not be re-derived from the agent's prose.
+   *  Mirrors ChatRunStatusResponse.mediaTaskFailures. */
+  mediaTaskFailures?: RunMediaTaskFailure[];
   /** Daemon failure classification for a `failed` run, so the chat can render
    *  specific guidance straight off the terminal frame without a status refetch.
    *  Mirror ChatRunStatusResponse.failureCategory / failureDetail. */

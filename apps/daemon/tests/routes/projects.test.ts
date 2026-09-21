@@ -215,6 +215,18 @@ describe('GET /api/projects/:id resolvedDir', () => {
         runId: 'source-run-1',
         runStatus: 'succeeded',
         lastRunEventId: 'evt-1',
+        events: [
+          { kind: 'status', label: 'completed', detail: 'first version' },
+          { kind: 'artifact_focus', show: ['pangu-kaitian-lesson.html'] },
+        ],
+        producedFiles: [
+          { name: 'pangu-kaitian-lesson.html', size: 1, mtime: 1, kind: 'html' },
+          { name: 'pangu-kaitian-cover.png', size: 1, mtime: 1, kind: 'image' },
+          { name: 'pangu-kaitian-slide-01.png', size: 1, mtime: 1, kind: 'image' },
+          { name: 'pangu-kaitian-slide-02.png', size: 1, mtime: 1, kind: 'image' },
+          { name: 'pangu-kaitian-slide-03.png', size: 1, mtime: 1, kind: 'image' },
+          { name: 'pangu-kaitian-slide-04.png', size: 1, mtime: 1, kind: 'image' },
+        ],
       },
       { id: 'fork-user-2', role: 'user', content: 'second ask' },
       { id: 'fork-assistant-2', role: 'assistant', content: 'second answer' },
@@ -259,6 +271,8 @@ describe('GET /api/projects/:id resolvedDir', () => {
         runId?: string;
         runStatus?: string;
         lastRunEventId?: string;
+        events?: unknown[];
+        producedFiles?: unknown[];
       }>;
     };
     expect(forkMessagesBody.messages.map((message) => message.content)).toEqual([
@@ -273,8 +287,12 @@ describe('GET /api/projects/:id resolvedDir', () => {
       content: 'first answer',
     });
     expect(forkMessagesBody.messages[1]?.runId).toBeUndefined();
-    expect(forkMessagesBody.messages[1]?.runStatus).toBeUndefined();
+    expect(forkMessagesBody.messages[1]?.runStatus).toBe('succeeded');
     expect(forkMessagesBody.messages[1]?.lastRunEventId).toBeUndefined();
+    // Historical deliveries and execution records survive the fork. Only
+    // their source run pointers are cleared; supporting files remain reachable.
+    expect(forkMessagesBody.messages[1]?.events).toEqual(seedMessages[1]?.events);
+    expect(forkMessagesBody.messages[1]?.producedFiles).toEqual(seedMessages[1]?.producedFiles);
   });
 
   it('forks from a client-supplied snapshot when the fork point was never persisted', async () => {
@@ -370,11 +388,13 @@ describe('GET /api/projects/:id resolvedDir', () => {
       'enrich it',
       'partial answer before reset',
     ]);
-    // Fresh ids, and the dead run pointers are not inherited.
+    // Fresh ids, and the dead run pointers are not inherited — though the
+    // terminal verdict travels with the copy so the turn does not re-render
+    // as an unknown/live state.
     expect(forkMessages.map((m) => m.id)).not.toContain('ghost-assistant-1');
     expect(forkMessages[1]).toMatchObject({ role: 'assistant', content: 'partial answer before reset' });
     expect(forkMessages[1]?.runId).toBeUndefined();
-    expect(forkMessages[1]?.runStatus).toBeUndefined();
+    expect(forkMessages[1]?.runStatus).toBe('failed');
     expect(forkMessages[1]?.lastRunEventId).toBeUndefined();
   });
 

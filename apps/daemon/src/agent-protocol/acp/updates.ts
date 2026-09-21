@@ -5,6 +5,7 @@
  * integration; consumed exclusively by acp/session.ts.
  */
 import { createHash } from 'node:crypto';
+import { isTodoWriteToolName } from '@open-design/contracts';
 import type { JsonObject } from './types.js';
 import { asObject, acpValueKind, objectKeys, extractAcpUpdateText } from './json.js';
 import { classifyAmrAccountFailure, amrAccountFailureDetails } from '../../integrations/vela-errors.js';
@@ -565,6 +566,14 @@ export function acpToolName(update: JsonObject): string {
   const kindName = kindRaw ? acpToolNameFromKind(kindRaw) : null;
   // "other" is a valid ACP kind for custom tools, not a canonical family.
   const kindIsCanonicalFamily = recognizedKind && kindToken !== 'other';
+
+  // vela's ACP bridge never sends `name`, only the raw opencode tool name in
+  // `kind` (`mapOpenCodeToolPart`). `todowrite` is not in the canonical family
+  // allowlist, so it fell to the title heuristic and emitted `Todowrite` — and
+  // the todo card vanished. Normalize to the contract's canonical name.
+  if (isTodoWriteToolName(kindRaw) || isTodoWriteToolName(update.name)) {
+    return 'TodoWrite';
+  }
 
   let name: string | null = null;
   if (kindIsCanonicalFamily && kindName) {

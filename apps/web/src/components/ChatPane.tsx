@@ -939,6 +939,10 @@ function hasVisibleBrandAssistantEvent(event: NonNullable<ChatMessage['events']>
     case 'diagnostic':
     case 'conversation_title':
     case 'done_key':
+    // The display intent is a directive ABOUT the turn's output — which
+    // artifacts to show and which file to open — never output itself, so a
+    // turn carrying only this is still empty.
+    case 'artifact_focus':
       return false;
   }
 }

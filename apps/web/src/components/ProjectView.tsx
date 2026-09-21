@@ -527,7 +527,18 @@ function mergeServerMessageWithLocal(
       merged.events = local.events;
     }
   }
-  if (!server.producedFiles?.length && local.producedFiles?.length) {
+  // A live task can reuse this row for a successor Run. Once the server
+  // restores the row's physical Run, successor files must not be saved under
+  // that restored identity. Same-Run late files (and legacy rows without Run
+  // identity) still need the ordinary freshness fallback.
+  const producedFilesBelongToAnotherRun = Boolean(
+    server.runId && local.runId && server.runId !== local.runId,
+  );
+  if (
+    !producedFilesBelongToAnotherRun
+    && !server.producedFiles?.length
+    && local.producedFiles?.length
+  ) {
     merged.producedFiles = local.producedFiles;
   }
   if (!server.preTurnFileNames?.length && local.preTurnFileNames?.length) {
