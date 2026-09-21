@@ -1115,7 +1115,8 @@ function AssistantMessageImpl({
                   hideRunStatus:
                     taskActivity !== null ||
                     hasTodoSnapshot ||
-                    message.id === errorCardOwnerId,
+                    message.id === errorCardOwnerId ||
+                    (message.runStatus === "failed" && !hasEmptyResponse),
                 }}
               />
             ) : (
@@ -1133,7 +1134,8 @@ function AssistantMessageImpl({
                 hideRunStatus={
                   taskActivity !== null ||
                   hasTodoSnapshot ||
-                  message.id === errorCardOwnerId
+                  message.id === errorCardOwnerId ||
+                  (message.runStatus === "failed" && !hasEmptyResponse)
                 }
               />
             )}

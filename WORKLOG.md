@@ -785,3 +785,51 @@ resubmit+jump-button 39/39, web typecheck verde.
 - Skips: `5a3f0c892` (codex-app-server ausente), `8be9b0fca` (artifacts/
   deliverable-syntax ausente), `9f73dcebf`/`eca7c7ab9` (RunErrorCard
   ausente), `00c12c645` (chat-health ausente), `8fb94d28e` (CMS ausente).
+
+## fleet/gaps-51 — triage: 7 candidatos upstream convergen (no-ops)
+
+Revisión escéptica del trabajo previo: `fb85d134b` (queue drop bar) correcto —
+JSX/CSS/typecheck verificados, no hay que revertir. Cherry-pick de
+`ea58bd752` resuelto a convergencia total: HEAD ya contiene
+`strategyTaskParkedOnSucceededRun` + guard de reattach vía `eeceb1b56`
+(port combinado #8195+#8250 de un batch anterior). Markers resueltos,
+25/25 tests continuation + 55/55 workspace-identity + typecheck verdes;
+el único delta era cosmético (seam de spy en test) — revertido.
+
+Convergencias verificadas en gaps-51:
+- `d5eddcb59` — manifest-backed artifacts ya en run-artifact-fs del fork.
+- `441ab84b0` — malformed <od-card> hiding ya en split-shell-cards + tests.
+- `1bd134dc5` — fork-artifact ownership ya en fork (gaps-41); el test
+  upstream `forkedInto` es feature ausente.
+- `287357b12` — AMR workspace subscription reset ya presente.
+- `1aa228115` — preview snapshot bridge ya presente.
+- `0ffafb3d7` — runMappings ya en fork; `executionIntent` pertenece a
+  #8172 (feature ausente, no importable).
+- `ea58bd752` — parked-on-succeeded-run guard ya en fork (eeceb1b56).
+
+### gaps-51 — puertos y fixes
+
+- `da163fe5f` — fix(platform): `selectOwnedProcessTree` faltaba en el
+  re-export de index.ts desde el squash gaps-47 (mismo defecto que
+  cce990941); daemon typecheck roto en HEAD (TS2305).
+- `6c7830976` — `4e460eae4` (#7982): coordinate shutdown + observe update
+  handoff. Contrato update-lifecycle en contracts, scan de installer-apply
+  en telemetría del daemon (10s), coordinación shutdown/desktop-ready,
+  espera de handoff en packaged, simplificación UpdaterPopup. Tests:
+  daemon 4/4, desktop 84/84, packaged 82/82, web 19/19; typechecks verdes.
+- `21523f989` — `4c5873c7c` (#7863, parcial): turno fallido ya no se
+  anuncia "Done" — `hideRunStatus` gana la excepción de turno fallido
+  (adaptada; parte A upstream). Resto del batch requiere
+  host-authored-message/ChatPanel-redesign (ausente). Red-capable: falla
+  sin el fix, 4/4 con él.
+- `cae98d77a` — `057aa62ce` (#7754): refresh docs core en francés; aplica
+  limpio.
+- Convergencias adicionales (14 no-ops): `6734dbba2`, `933dc9603`,
+  `a10e4671b`, `7abe49c85`, `066f9cd93`, `d18ada9e3`, `be0887b39`,
+  `e02d0adbd`, `93b09911d`, `cce680d29`, `c4da48a74` — el fork ya contiene
+  cada cambio (batches anteriores o adelantado a upstream: vela 0.1.3,
+  cobertura fr).
+- Skips: `46be6eacc` (#8172 executionIntent), `7245f543a`+`b5c9723ac`
+  (Home refresh + su propio revert), `ad09d3883` (ChatPanel rebuild),
+  `81044a03c` (whats-new.json ausente), `92bf0b7ad` + 14 commits de
+  release-pipeline/e2e-lane upstream.

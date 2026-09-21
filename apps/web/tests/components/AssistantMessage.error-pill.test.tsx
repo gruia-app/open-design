@@ -83,4 +83,18 @@ describe('AssistantMessage error-pill suppression', () => {
     );
     expect(screen.queryByText('boom-401')).toBeNull();
   });
+
+  it('does not announce a failed turn as done in the footer status row', () => {
+    render(
+      <AssistantMessage
+        message={failedMessage()}
+        streaming={false}
+        projectId="p1"
+        errorCardOwnerId="some-other-message"
+        onFeedback={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('Done')).toBeNull();
+    expect(screen.getByText('boom-401')).toBeTruthy();
+  });
 });

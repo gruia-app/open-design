@@ -57,6 +57,7 @@ export {
   readProcessIdentities,
   readProcessStamp,
   readProcessStampFromCommand,
+  selectOwnedProcessTree,
   signalProcesses,
   spawnBackgroundProcess,
   spawnLoggedProcess,
