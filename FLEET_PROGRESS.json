@@ -852,6 +852,13 @@
    "state": "MERGED",
    "mergedAt": "2026-09-21T03:10:37Z",
    "url": "https://github.com/gruia-app/design/pull/57"
+  },
+  {
+   "number": 58,
+   "branch": "fleet/gaps-44",
+   "state": "MERGED",
+   "mergedAt": "2026-09-21T03:28:25Z",
+   "url": "https://github.com/gruia-app/design/pull/58"
   }
  ],
  "deploys_pending": [
@@ -920,6 +927,10 @@
   },
   {
    "pr": 57,
+   "note": "squash merge immediate; Jenkins deploy pending"
+  },
+  {
+   "pr": 58,
    "note": "squash merge immediate; Jenkins deploy pending"
   }
  ],
