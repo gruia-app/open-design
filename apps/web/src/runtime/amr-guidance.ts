@@ -8,6 +8,7 @@ import {
   readMembershipConcurrencyResetAt,
   readModelWindowResetAt,
 } from '@open-design/contracts';
+import { byokApiKeyIsEditableInSettings } from '../utils/byokProvider';
 
 // AMR model-gateway console (account, balance, top-up, plans).
 // `source=open_design` tags the landing page_view so vela analytics can
@@ -166,6 +167,7 @@ export type RunFailurePrimaryAction =
   | 'authorize'
   | 'recharge'
   | 'upgrade'
+  | 'open-settings'
   | 'launch-terminal-auth'
   | 'launch-terminal-switch-model'
   // No self-contained recovery button. Used when retrying is futile (e.g. a
@@ -194,6 +196,7 @@ export type RunFailureMessageKey =
   | 'chat.runError.toolLoopMessage'
   | 'chat.runError.outputInvalidMessage'
   | 'chat.runError.runtimeConfigMessage'
+  | 'chat.runError.apiKeyInvalidMessage'
   | 'chat.runError.quotaExhaustedMessage'
   | 'chat.runError.workspaceCreditsMessage'
   | 'chat.runError.timedOutMessage'
@@ -226,6 +229,7 @@ export type RunFailureTitleKey =
   | 'chat.runError.title.toolLoop'
   | 'chat.runError.title.outputInvalid'
   | 'chat.runError.title.runtimeConfig'
+  | 'chat.runError.title.apiKeyInvalid'
   | 'chat.runError.title.quotaExhausted'
   | 'chat.runError.title.timedOut'
   | 'chat.runError.title.emptyOutput'
@@ -428,6 +432,55 @@ const DETAIL_FAILURE_UI: Record<string, RunFailureUi> = {
     'chat.runError.cliMissingMessage',
   ),
 };
+
+/**
+ * S05 · misconfigured own API key — claimed only when WE hold that key.
+ *
+ * The daemon classifies this slot exactly right already: `authDetail`'s
+ * regex ("invalid api key" / "api key … invalid", run-failure-classification)
+ * lifts it out of `auth_required` — category `auth`, user_action `login`,
+ * retryable false. The web side had no slot for it, so a BYOK run fell to
+ * the generic card — "task failed" title, fallback body, and the only
+ * exit-like button pointed at support. A wrong API key sending the user to
+ * customer support — with no path to "fix the key" anywhere on the card —
+ * is the worst thing this card can do.
+ *
+ * ⚠️ The criterion is not "this detail" but "whose key this is".
+ *
+ * `authDetail()` reads the flattened stderr of ANY agent, so local CLIs
+ * report `invalid_api_key` too — `claude`'s `Invalid API key · Please run
+ * /login` hits both `AGENT_AUTH_FAILURE_RE` (→ `AGENT_AUTH_REQUIRED`) and
+ * this detail. A local CLI's sign-in lives in the user's own terminal:
+ * sending those to Settings lands them on a screen where that key cannot
+ * be changed (`opencode` / `kimi` / `qwen` have no key field there at all)
+ * and steals the S02 "{agent} not signed in" + terminal-login guidance
+ * they should have seen.
+ *
+ * So this slot narrows to the BYOK / API-provider tier via
+ * `byokApiKeyIsEditableInSettings` — the same line the send-time BYOK gate
+ * draws; agents outside it return null and keep the path they had
+ * (`AGENT_AUTH_REQUIRED` / `UNAUTHORIZED` fall to S02, the rest to their
+ * original fallback).
+ *
+ * Placement: resolved where DETAIL_FAILURE_UI resolves — after the AMR /
+ * Antigravity branches (their bespoke auth flows win), before the generic
+ * code branches (the too-coarse `AGENT_AUTH_REQUIRED` is why this layer
+ * exists).
+ *
+ * The 〔Open Settings〕 primary action lands on the `execution` section —
+ * the same destination the send-time BYOK preflight gate already uses —
+ * and there is no Retry: the key fails identically until it is changed.
+ */
+function apiKeyInvalidCardFor(agentId: string | null | undefined): RunFailureUi | null {
+  if (!byokApiKeyIsEditableInSettings(agentId)) return null;
+  return {
+    primaryAction: 'open-settings',
+    titleKey: 'chat.runError.title.apiKeyInvalid',
+    messageKey: 'chat.runError.apiKeyInvalidMessage',
+    secondaryRetry: false,
+    showSwitchCard: false,
+  };
+}
 
 // Agent-agnostic failure causes keyed by the daemon's `failure_detail`, resolved
 // BEFORE the AMR/Antigravity agent branches (unlike DETAIL_FAILURE_UI above).
@@ -640,6 +693,13 @@ export function resolveRunFailureUi(
         showSwitchCard: false,
       };
     }
+  }
+  // A misconfigured own API key — claimed only when WE hold that key (BYOK /
+  // API-provider tier). Agents outside that tier return null and keep the
+  // path they had (AGENT_AUTH_REQUIRED / UNAUTHORIZED fall to S02).
+  if (detail === 'invalid_api_key') {
+    const apiKeyCard = apiKeyInvalidCardFor(agentId);
+    if (apiKeyCard) return apiKeyCard;
   }
   // Fine-grained daemon classification overrides a too-coarse code (e.g.
   // hard_quota vs a transient 429 both arriving as RATE_LIMITED). Placed after

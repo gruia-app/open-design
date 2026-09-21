@@ -2318,9 +2318,14 @@
   opacity: 0.45;
 }
 
-.chat-queued-send-row-drop-before::before,
-.chat-queued-send-row-drop-after::after {
-  content: '';
+/* The drag-reorder insertion bar lives on the unclipped slot around the row
+   (OPEND-3203): a pseudo-element on the row itself sat at ±2px, which the
+   row's own `overflow: hidden` clipped down to its halo. */
+.chat-queued-send-slot {
+  position: relative;
+}
+
+.chat-queued-send-drop-bar {
   position: absolute;
   left: 28px;
   right: 8px;
@@ -2328,13 +2333,15 @@
   border-radius: var(--radius-pill);
   background: var(--selected);
   box-shadow: 0 0 0 2px var(--selected-soft);
+  pointer-events: none;
+  z-index: 1;
 }
 
-.chat-queued-send-row-drop-before::before {
+.chat-queued-send-drop-bar[data-edge='before'] {
   top: -2px;
 }
 
-.chat-queued-send-row-drop-after::after {
+.chat-queued-send-drop-bar[data-edge='after'] {
   bottom: -2px;
 }
 

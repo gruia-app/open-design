@@ -711,3 +711,18 @@ resubmit+jump-button 39/39, web typecheck verde.
 - Regresiones preexistentes detectadas (HEAD, no de este batch):
   EntryShell.amr-home-balance-memory 2/2 (de cd17a44a1/#8240 — revisar
   el port del memory verdict) y transcript-authority-refresh refused-read.
+
+## gaps-49 (2026-09-21)
+
+- Regresiones preexistentes de HEAD corregidas:
+  - `1c33c2fee` — restaura `data-testid="chat-log"` en el contenedor de scroll
+    del transcript (upstream lo marca; la divergencia del fork lo perdió).
+    Arregla el refused-read de transcript-authority-refresh y desbloquea el
+    selector `[data-testid="chat-log"] .msg.user` del e2e home-send-split-width.
+    13/13.
+  - `9b4d7d1c9` — el spec AMR memory-gate clicaba Send con la primera lectura
+    del catálogo de plugins del scope team aún diferida a la activación del
+    snapshot (fallback 250ms de useWorkspaceSnapshotActivation):
+    defaultTypePending mantiene el botón deshabilitado y el click era no-op —
+    2/2 rojo desde gaps-46. El test ahora espera a que el botón se habilite
+    (la misma ventana breve que ve un usuario). 2/2.

@@ -2765,6 +2765,7 @@ export function ChatPane({
                 shouldBalanceFinishedTranscript ? 'is-balanced-transcript' : '',
               ].filter(Boolean).join(' ')}
               ref={logRef}
+              data-testid="chat-log"
               aria-busy={loading}
               onClickCapture={(e) => {
                 // Expanding an accordion (tool card / thinking block) should
@@ -2896,7 +2897,12 @@ export function ChatPane({
                   detailsLabel={t('brand.viewDetails')}
                   details={
                     <div className="run-error__details">
-                      <p className="run-error__description">{displayError}</p>
+                      <p
+                        className="run-error__description"
+                        data-testid="chat-run-error-description"
+                      >
+                        {displayError}
+                      </p>
                       {errorDiagnosticText ? (
                         <div className="run-error__diagnostic">
                           <div className="run-error__diagnostic-head">
@@ -2989,6 +2995,20 @@ export function ChatPane({
                               }}
                             >
                               {t('chat.antigravityError.launchSwitchModelCta')}
+                            </button>
+                          ) : runFailureUi.primaryAction === 'open-settings' ? (
+                            // The fix lives on the Settings screen (e.g. a
+                            // misconfigured BYOK API key) — same `execution`
+                            // section the send-time BYOK preflight gate uses.
+                            // No retry: the run fails identically until the
+                            // credential is changed.
+                            <button
+                              type="button"
+                              className="chat-error-action"
+                              data-testid="chat-error-open-settings"
+                              onClick={() => onOpenSettings?.('execution')}
+                            >
+                              {t('chat.runError.openSettingsCta')}
                             </button>
                           ) : runFailureUi.primaryAction === 'recharge' ? (
                             <button
@@ -4349,20 +4369,29 @@ function QueuedSendStrip({
       <div className={`chat-queued-send-list${overflowCount > 0 ? ' is-scrollable' : ''}`}>
         {items.map((item, index) => {
           const isDragging = dragState?.draggingId === item.id;
-          const dropClass = dragState?.overId === item.id
-            && dragState.draggingId !== item.id
-            && dragState.edge
-            ? ` chat-queued-send-row-drop-${dragState.edge}`
-            : '';
+          // OPEND-3203: the insertion bar is drawn on the unclipped slot
+          // around the row — a pseudo-element on the row itself sat at ±2px,
+          // which the row's own overflow: hidden cut down to its halo.
+          const dropEdge = dragState?.overId === item.id && dragState.draggingId !== item.id
+            ? dragState.edge
+            : null;
           return (
-            <div
-              className={`chat-queued-send-row${index === 0 ? ' chat-queued-send-row-active' : ''}${
-                editingId === item.id ? ' chat-queued-send-row-editing' : ''
-              }${isDragging ? ' chat-queued-send-row-dragging' : ''}${dropClass}`}
-              key={item.id}
-              onDragOver={(event) => handleDragOver(event, item.id)}
-              onDrop={(event) => handleDrop(event, item.id)}
-            >
+            <div className="chat-queued-send-slot" key={item.id}>
+              {dropEdge === 'before' ? (
+                <div
+                  className="chat-queued-send-drop-bar"
+                  data-testid="chat-queued-send-drop-indicator"
+                  data-edge="before"
+                  aria-hidden
+                />
+              ) : null}
+              <div
+                className={`chat-queued-send-row${index === 0 ? ' chat-queued-send-row-active' : ''}${
+                  editingId === item.id ? ' chat-queued-send-row-editing' : ''
+                }${isDragging ? ' chat-queued-send-row-dragging' : ''}`}
+                onDragOver={(event) => handleDragOver(event, item.id)}
+                onDrop={(event) => handleDrop(event, item.id)}
+              >
               <button
                 type="button"
                 className="chat-queued-send-drag-handle chat-queued-send-tooltip od-tooltip"
@@ -4422,6 +4451,15 @@ function QueuedSendStrip({
                   </button>
                 ) : null}
               </div>
+              </div>
+              {dropEdge === 'after' ? (
+                <div
+                  className="chat-queued-send-drop-bar"
+                  data-testid="chat-queued-send-drop-indicator"
+                  data-edge="after"
+                  aria-hidden
+                />
+              ) : null}
             </div>
           );
         })}

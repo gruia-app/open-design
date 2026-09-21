@@ -2867,6 +2867,7 @@ export interface Dict {
   'chat.runError.title.toolLoop': string;
   'chat.runError.title.outputInvalid': string;
   'chat.runError.title.runtimeConfig': string;
+  'chat.runError.title.apiKeyInvalid': string;
   'chat.runError.title.quotaExhausted': string;
   'chat.runError.title.timedOut': string;
   'chat.runError.title.emptyOutput': string;
@@ -2891,6 +2892,8 @@ export interface Dict {
   'chat.runError.toolLoopMessage': string;
   'chat.runError.outputInvalidMessage': string;
   'chat.runError.runtimeConfigMessage': string;
+  'chat.runError.apiKeyInvalidMessage': string;
+  'chat.runError.openSettingsCta': string;
   'chat.runError.quotaExhaustedMessage': string;
   'chat.runError.workspaceCreditsMessage': string;
   'chat.runError.timedOutMessage': string;

@@ -260,6 +260,11 @@ describe('EntryShell AMR home memory balance gate (OPEND-3300)', () => {
     await reads.settled();
     const submitButton = await screen.findByTestId('home-hero-submit');
     setHomeHeroPrompt('Create a launch poster.');
+    // A Team scope defers its first plugin-catalog read to the snapshot
+    // activation (250ms fallback in useWorkspaceSnapshotActivation), and Send
+    // stays disabled until that read settles the default task type — the same
+    // brief disable a user sees. Wait for it like a user would.
+    await waitFor(() => expect((submitButton as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(submitButton);
 
     // The dialog opens on the cached reading while the authoritative gate
@@ -286,6 +291,7 @@ describe('EntryShell AMR home memory balance gate (OPEND-3300)', () => {
     await reads.settled();
     const submitButton = await screen.findByTestId('home-hero-submit');
     setHomeHeroPrompt('Create a quiet reading room scene.');
+    await waitFor(() => expect((submitButton as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(submitButton);
 
     expect(await screen.findByTestId('amr-balance-dialog')).toBeTruthy();

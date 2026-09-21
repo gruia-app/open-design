@@ -1718,6 +1718,57 @@ Expected output:
     ]);
   });
 
+  it('draws the drop indicator between rows, outside the clipped row (OPEND-3203)', () => {
+    const onReorderQueuedSends = vi.fn();
+    const { container } = render(
+      <ChatPane
+        messages={[]}
+        streaming
+        error={null}
+        projectId="project-1"
+        projectFiles={[]}
+        queuedItems={[
+          { id: 'queued-1', prompt: 'Make the export button larger' },
+          { id: 'queued-2', prompt: 'Then adjust the title spacing' },
+          { id: 'queued-3', prompt: 'Reduce the subtitle size' },
+        ]}
+        onReorderQueuedSends={onReorderQueuedSends}
+        onEnsureProject={async () => 'project-1'}
+        onSend={vi.fn()}
+        onStop={vi.fn()}
+        conversations={conversations}
+        activeConversationId="conv-1"
+        onSelectConversation={vi.fn()}
+        onDeleteConversation={vi.fn()}
+        projectMetadata={projectMetadata}
+      />,
+    );
+
+    const rows = container.querySelectorAll('.chat-queued-send-row');
+    const handles = screen.getAllByRole('button', { name: 'Drag to reorder' });
+    const dataTransfer = mockDataTransfer();
+    Object.defineProperty(rows[0]!, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        top: 0, height: 30, bottom: 30, left: 0, right: 300, width: 300, x: 0, y: 0,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent.dragStart(handles[2]!, { dataTransfer });
+    // clientY 29 lands in the lower half of row one: drop edge "after" it.
+    fireEvent.dragOver(rows[0]!, { dataTransfer, clientY: 29 });
+
+    const indicator = screen.getByTestId('chat-queued-send-drop-indicator');
+    expect(indicator.getAttribute('data-edge')).toBe('after');
+    // The bar must not be inside the row — overflow: hidden clipped it there.
+    expect(indicator.closest('.chat-queued-send-row')).toBeNull();
+    expect(container.querySelector('.chat-queued-send-slot')?.contains(indicator)).toBe(true);
+
+    fireEvent.dragEnd(handles[2]!);
+    expect(screen.queryByTestId('chat-queued-send-drop-indicator')).toBeNull();
+  });
+
   it('falls back to the localized queued follow-up label for blank prompts', () => {
     render(
       <ChatPane
