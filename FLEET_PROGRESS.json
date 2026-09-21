@@ -793,6 +793,13 @@
    "pr": 53,
    "merged": "ca16b9a42",
    "note": "squash merge directo (auto-merge deshabilitado); lote 39"
+  },
+  {
+   "number": 56,
+   "branch": "fleet/gaps-42",
+   "state": "MERGED",
+   "mergedAt": "2026-09-21T02:47:35Z",
+   "url": "https://github.com/gruia-app/design/pull/56"
   }
  ],
  "deploys_pending": [
@@ -854,6 +861,10 @@
    "pr": 55,
    "what": "jenkins deploy pending",
    "at": "2026-09-21"
+  },
+  {
+   "pr": 56,
+   "note": "squash merge immediate; Jenkins deploy pending"
   }
  ],
  "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
