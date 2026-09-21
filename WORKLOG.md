@@ -628,3 +628,53 @@ resubmit+jump-button 39/39, web typecheck verde.
   conservando direction-cards del fork. Skips: turnEndedByAskingUser
   (cadena #7518 ausente), group/trailingLabel de select (no renderizado).
   9/9 + 5/5 + 14/14 daemon, 55/55 + 3/3 web.
+
+## gaps-46 (2026-09-21)
+
+- `744749878` — waitFor determinista en clarification reattach test (race
+  resuelta). Publicado en PR #60.
+- `f2738983a` — completa #8008: probe projectDeliverableForBlockedStrategyTask
+  en GET status (veredicto retained en recovery/reload); el resto del commit
+  ya convergia en d8a217878. 11/11 cold-projection + 32/32 web.
+- `cd17a44a1` — port 6fd2f6080 (#8240) adaptado: wallet $0 definitivo
+  respondido en el tick del click via amrBalanceGateFromMemory; sin frame
+  optimista (OPEND-2614 ausente). 43/43 + 61/61.
+- `c6f703806` — port 863b62b39 (#8225) adaptado: replay SSE durable. (Registrado
+  bajo gaps-45 por el predecesor.)
+- Skips: CMS x4 (ficheros ausentes), `30d184ac4` (#8007 receipt chain),
+  `a4775ecea` (vela-cli ya en 0.1.3), `894d55466` (version bump),
+  `1aa228115` (ya en `672cfec8d`), `425a33237`/`e285cca2b` (tests ausentes).
+
+## gaps-47 (2026-09-21)
+
+- `bda2aad77` — port 7413c6daa (#8278) adaptado: Home default Prototype +
+  dropdown de tipos en composer (helper retry-safe; reachable-set del fork).
+  39/39 + 66/66 + 41/41 web.
+- `220f3baf9` — port 792480fe2 (#8170) adaptado: run events bounded
+  (64 KiB/evento, truncado head/tail con AgentEventPayloadTruncation), raw
+  lines bounded en parsers (claude/json/qoder/copilot), proyecciones
+  completeness/sibling-done-key en SQLite sin cargar event logs en JS, heal
+  de filas oversized legacy (una por tx, skip runs activos), prompt como
+  stdin file-backed via spawnAgentProcess, reap de agentes huerfanos por
+  identidad de proceso, mapeo done_key en persistencia. Excluido:
+  artifactRefs, scrub DSML, intent resolution, app-server transport,
+  withCodexTransport, conclusion autenticada od-done (cadena #7518 ausente).
+  41/41 + 19/19 daemon nuevos, 4/4 platform, e2e leftover-agent-reap verde
+  end-to-end (prompt completo file-backed + reap real), typechecks + guard.
+- `22a9d2864` — port parcial b419463f9 (#8223/OPEND-3284): ring de card
+  seleccionada eliminado (check badge es el estado). 3/3 CSS spec. Resto:
+  OPEND-3283 (menu dock ausente), OPEND-3203 (QueuedSendStack borrada),
+  Test modal (CMS).
+- `e322f550c` — pick limpio 9180cfdb3 (#7428): banner read-only espera
+  isSharedNonOwner probado; preview containment routes para proyectos
+  unbound. 3/3 claim + 98/98 FileWorkspace + 16/16 daemon.
+- `754314d9a` — fix del spec #8170: refs withCodexTransport (app-server
+  ausente) eliminadas; el spec aserta el def plano. 5/5 + typecheck.
+- `c4bee8c50` — pick limpio c5ae6292c (#7720): boundary read-only de
+  skills declarado en system prompts. 13/13 + 3/3 matrix.
+- `3c94a9077` — pick limpio 46700f6e8 (#7701): catalog del reference
+  picker scoped al workspace del caller. 22/22.
+- Skips: `2acb7f6f6` (vela 0.1.3 ya), `8fb94d28e`/`46be6eacc`/`8e372744d`
+  (cadenas ausentes), `c764b21e5`/`6b60b567a`/`00fb31145`/`6788a8667`
+  no-ops, `78f389a05` (i18n 19-locales, fork es-only), `819c10d49` (43
+  conflictos, estructura divergente), `92f27d1fc` (57 ficheros sin triage).

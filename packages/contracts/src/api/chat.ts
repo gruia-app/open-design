@@ -897,6 +897,25 @@ export interface ChatCommentAttachment {
   source?: 'saved-comment' | 'board-batch';
 }
 
+/**
+ * Present on a run event whose payload the daemon shortened so the event stays
+ * within its storage budget (a persisted run event never carries an unbounded
+ * payload — see `apps/daemon/src/runtimes/run-event-payload-budget.ts`).
+ *
+ * The shortened text itself also carries an inline `[open-design: …]` marker
+ * naming what was cut, so a client that rebuilds the event without this field
+ * still shows that the payload is incomplete. Absent on events that fit, and on
+ * every event written before the budget existed.
+ */
+export interface AgentEventPayloadTruncation {
+  /**
+   * UTF-8 byte length of the payload before it was shortened: `line` for
+   * `raw`, `content` for `tool_result`, the serialized `input` for
+   * `tool_use`, the whole serialized event for any other kind.
+   */
+  originalBytes: number;
+}
+
 export type PersistedAgentEvent =
   // `code` carries the structured API error code for `label: 'error'`
   // status events (e.g. AGENT_AUTH_REQUIRED, RATE_LIMITED). Clients use it to
@@ -954,8 +973,10 @@ export type PersistedAgentEvent =
       input: unknown;
       /** Optional wall-clock ms when the tool first started (e.g. ACP first frame). */
       startedAt?: number;
+      /** See {@link AgentEventPayloadTruncation}. */
+      truncated?: AgentEventPayloadTruncation;
     }
-  | { kind: 'tool_result'; toolUseId: string; content: string; isError: boolean }
+  | { kind: 'tool_result'; toolUseId: string; content: string; isError: boolean; truncated?: AgentEventPayloadTruncation }
   | {
       kind: 'diagnostic';
       name: string;
@@ -1052,7 +1073,7 @@ export type PersistedAgentEvent =
       runStartedAt?: number;
       runEndedAt?: number;
     }
-  | { kind: 'raw'; line: string };
+  | { kind: 'raw'; line: string; truncated?: AgentEventPayloadTruncation };
 
 export interface ChatMessage {
   id: string;

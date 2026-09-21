@@ -1,10 +1,10 @@
 {
   "app": "design",
-  "updated_at": "2026-09-21T04:56:16Z",
+  "updated_at": "2026-09-21T06:10:00Z",
   "current": {
-    "branch": "fleet/gaps-46",
+    "branch": "fleet/gaps-47",
     "state": "working",
-    "note": "5 commits (4 product): 744749878, f2738983a, cd17a44a1, c6f703806 + bookkeeping. Publishing."
+    "note": "6 product commits on gaps-47: bda2aad77, 220f3baf9, 22a9d2864, e322f550c, c4bee8c50, 3c94a9077 + test fix 754314d9a. Publishing."
   },
   "done": [
     {
@@ -788,6 +788,36 @@
       "commit": "c6f703806",
       "what": "fix: durable SSE replay (eventsLogFinalFlush + events.jsonl journal replay + pending queue) + discovery-question-form default/prefill guidance; skips turnEndedByAskingUser (needs #7518 askUserScanText) and select group/trailingLabel doc (unrendered); test adapted to flat .prose-block surface",
       "upstream": "863b62b39/#8225 (adapted)"
+    },
+    {
+      "commit": "bda2aad77",
+      "what": "feat(web): Home defaults to Prototype + composer dropdown type switcher (retry-safe picker helper, fork reachable-set, onViewAllProjects prop)",
+      "upstream": "7413c6daa/#8278 (adapted)"
+    },
+    {
+      "commit": "220f3baf9",
+      "what": "fix(daemon): bounded stored run events (64KiB/event JSON, head/tail truncation metadata) + raw lines bounded at parser sources + SQL-subset completeness/sibling-done-key projections + legacy oversized-row heal pass + file-backed prompt stdin (spawnAgentProcess) + orphan-agent reap by process identity + done_key persistence mapping",
+      "upstream": "792480fe2/#8170 (adapted: artifactRefs, DSML scrub, intent resolution, app-server transport, withCodexTransport test case, od-done authenticated conclusion (#7518) excluded — absent subsystems; process identity kept generic in packages/platform)"
+    },
+    {
+      "commit": "e322f550c",
+      "what": "fix(web): read-only banner waits for proven isSharedNonOwner instead of fail-closed viewerOnly; unbound projects get preview containment routes",
+      "upstream": "9180cfdb3/#7428 (clean)"
+    },
+    {
+      "commit": "754314d9a",
+      "what": "test(daemon): drop withCodexTransport refs (app-server chain absent) from stdin lifecycle spec",
+      "upstream": "792480fe2/#8170 follow-up fix"
+    },
+    {
+      "commit": "c4bee8c50",
+      "what": "fix(daemon): skill read-only boundary stated in system prompts instead of letting agents guess",
+      "upstream": "c5ae6292c/#7720 (clean)"
+    },
+    {
+      "commit": "3c94a9077",
+      "what": "fix(web): reference-project picker catalog scoped to caller workspace (listProjects forwarded workspaceContext)",
+      "upstream": "46700f6e8/#7701 (clean)"
     }
   ],
   "blocked": [
@@ -991,7 +1021,7 @@
     }
   ],
   "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
-  "branch": "fleet/gaps-46",
+  "branch": "fleet/gaps-47",
   "skipped_upstream": [
     {
       "commit": "900d01c61",
@@ -1188,6 +1218,38 @@
     {
       "commit": "425a33237",
       "reason": "test-only cascade parse; target test files deleted in fork"
+    },
+    {
+      "commit": "c764b21e5",
+      "reason": "no-op — already converged (#7793 in b7f649f15)"
+    },
+    {
+      "commit": "6b60b567a",
+      "reason": "no-op — already converged"
+    },
+    {
+      "commit": "00fb31145",
+      "reason": "no-op — already converged"
+    },
+    {
+      "commit": "6788a8667",
+      "reason": "no-op — DSH 0.1.2-rc.1 already in b789272e5"
+    },
+    {
+      "commit": "78f389a05",
+      "reason": "19-locale i18n copy refresh — fork is es-only by decision"
+    },
+    {
+      "commit": "819c10d49",
+      "reason": "43 conflicts — ChatPanel/dock-actions structure divergent (#7518 chain)"
+    },
+    {
+      "commit": "92f27d1fc",
+      "reason": "57 files — deliverable-syntax finalize chain, untriaged residual"
+    },
+    {
+      "commit": "8e372744d",
+      "reason": "#8141 telemetry evidence-delivery/eval-context/telemetry-outbox chain absent"
     }
   ],
   "prs_merged": [
@@ -1219,6 +1281,13 @@
         "921caeecd",
         "8734a8047"
       ]
+    },
+    {
+      "repo": "gruia-app/design",
+      "pr": 60,
+      "mergedAt": "2026-09-21T04:57:52Z",
+      "branch": "fleet/gaps-46",
+      "note": "squash directo; auto-merge deshabilitado en repo"
     }
   ]
 }

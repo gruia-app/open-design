@@ -1,5 +1,10 @@
 import type { LiveArtifactRefreshStatus } from '../api/live-artifacts.js';
-import type { RunFailureAction, RunFailureCategory, RunFailureDetail } from '../api/chat.js';
+import type {
+  AgentEventPayloadTruncation,
+  RunFailureAction,
+  RunFailureCategory,
+  RunFailureDetail,
+} from '../api/chat.js';
 import type { RunMediaTaskFailure } from '../api/media.js';
 import type { StrategyTaskProjectionV2 } from '../plugins/strategy-v2.js';
 import type { SseErrorPayload } from '../errors.js';
@@ -182,7 +187,9 @@ export type DaemonAgentPayload =
       signature: string;
       count: number;
     }
-  | { type: 'raw'; line: string };
+  // A stdout line the parser did not recognise. The daemon bounds it before it
+  // is streamed or stored; `truncated` is present when it was shortened.
+  | { type: 'raw'; line: string; truncated?: AgentEventPayloadTruncation };
 
 /**
  * Out-of-band run diagnostics. The payload is discriminated by `type` and is
