@@ -459,6 +459,52 @@ export function workspaceContextHasWorkspaceIdentity(
   return Boolean(context && context.workspaceId && context.workspaceMemberId);
 }
 
+export type WorkspacePrincipal = Pick<
+  WorkspaceCollabContext,
+  'workspaceId' | 'workspaceType' | 'workspaceMemberId'
+>;
+
+/**
+ * A stable partition token for one workspace principal, or `null` when the
+ * context is absent or its identity incomplete.
+ *
+ * `null` is deliberately not a token: an absent identity is not equal to
+ * another absent identity, so callers that store this key can compare it
+ * directly without accidentally letting two unknowns match.
+ */
+export function workspacePrincipalKey(
+  context: WorkspacePrincipal | null | undefined,
+): string | null {
+  if (!context) return null;
+  // Blankness disqualifies, but the token itself keys on the raw values so this
+  // stays exactly as strict as the field-by-field `!==` comparisons it
+  // replaced. `JSON.stringify` keeps the three fields unambiguous even if an id
+  // ever contains the separator.
+  if (!context.workspaceId?.trim() || !context.workspaceMemberId?.trim()) return null;
+  return JSON.stringify([
+    context.workspaceId,
+    context.workspaceType,
+    context.workspaceMemberId,
+  ]);
+}
+
+/**
+ * Whether two workspace contexts name the same person in the same workspace.
+ *
+ * Fail-closed: an absent or incomplete identity on either side is never "the
+ * same person", including when both sides are absent.
+ *
+ * See {@link WorkspacePrincipal} for why this exists and why `role` is not part
+ * of the answer.
+ */
+export function isSameWorkspacePrincipal(
+  a: WorkspacePrincipal | null | undefined,
+  b: WorkspacePrincipal | null | undefined,
+): boolean {
+  const key = workspacePrincipalKey(a);
+  return key !== null && key === workspacePrincipalKey(b);
+}
+
 export function isWorkspaceLifecycleWritable(state: WorkspaceLifecycleState): boolean {
   return state === 'active';
 }

@@ -78,6 +78,7 @@ import { agentDisplayName } from '../utils/agentLabels';
 import { commentTargetDisplayName, commentsToAttachments, simplePositionLabel } from '../comments';
 import { AssistantMessage, type QuestionFormSubmitHandler } from './AssistantMessage';
 import { TodoCard } from './ToolCard';
+import { isDirectionForm, parseSubmittedAnswers } from './QuestionForm';
 import type { BrandBrowserAssistConfirm } from './OdCard';
 import {
   DESIGN_SYSTEM_NEXT_STEP_ACTIONS,
@@ -578,6 +579,10 @@ interface Props {
   amrAuthRetryContinuation?: AmrAuthRetryContinuation | null;
   amrAuthRetryMountId?: string;
   amrAuthRetryWorkspaceIdentityKey?: string;
+  /** A same-principal directory projection awaits the authoritative scope. */
+  amrAuthRetryAuthorityPending?: boolean;
+  /** The host can accept a retry against the current authoritative transcript. */
+  amrAuthRetryReady?: boolean;
   amrAuthRetryPersonalAdoptionWitness?: AmrAuthRetryPersonalAdoptionWitness | null;
   onArmAmrAuthRetryContinuation?: (
     continuation: Omit<AmrAuthRetryContinuation, 'accountIdAtArm' | 'createdAtMs'>,
@@ -977,6 +982,8 @@ export function ChatPane({
   amrAuthRetryContinuation = null,
   amrAuthRetryMountId,
   amrAuthRetryWorkspaceIdentityKey,
+  amrAuthRetryAuthorityPending = false,
+  amrAuthRetryReady = true,
   amrAuthRetryPersonalAdoptionWitness = null,
   onArmAmrAuthRetryContinuation,
   onConsumeAmrAuthRetryContinuation,
@@ -1414,6 +1421,7 @@ export function ChatPane({
         && amrAuthRetryContinuation.workspaceIdentityKey
           !== amrAuthRetryWorkspaceIdentityKey
         && !personalAdoptionAuthorityTransition
+        && !amrAuthRetryAuthorityPending
       );
     if (mismatched) {
       onDiscardAmrAuthRetryContinuation(amrAuthRetryContinuation);
@@ -1421,6 +1429,7 @@ export function ChatPane({
   }, [
     activeConversationId,
     amrAuthRetryContinuation,
+    amrAuthRetryAuthorityPending,
     amrAuthRetryMountId,
     amrAuthRetryPersonalAdoptionWitness,
     amrAuthRetryWorkspaceIdentityKey,
@@ -1445,6 +1454,8 @@ export function ChatPane({
     if (
       !isAmrSessionAuthenticated(status)
       || !amrAuthRetryContinuation
+      || !amrAuthRetryReady
+      || loading
       || !amrAuthRetryMountId
       || !amrAuthRetryWorkspaceIdentityKey
       || !projectId
@@ -1486,6 +1497,7 @@ export function ChatPane({
   }, [
     activeConversationId,
     amrAuthRetryContinuation,
+    amrAuthRetryReady,
     amrAuthRetryMountId,
     amrAuthRetryPersonalAdoptionWitness,
     amrAuthRetryWorkspaceIdentityKey,
@@ -1493,6 +1505,7 @@ export function ChatPane({
     onRetry,
     projectId,
     retryAssistant,
+    loading,
   ]);
   useEffect(() => {
     if (!amrAuthRetryContinuation || !isAmrSessionAuthenticated(inlineAmrLoginStatus)) return;
@@ -3106,6 +3119,7 @@ export function ChatPane({
             streaming={streaming}
             conversationId={activeConversationId}
             onContinueRemainingTasks={onContinueRemainingTasks}
+            suppressDirectionForms={hasActiveDesignSystem}
             containerRef={pinnedTodoRef}
           />
           <QueuedSendStrip
@@ -4077,6 +4091,7 @@ function PinnedTodoSlot({
   streaming,
   conversationId,
   onContinueRemainingTasks,
+  suppressDirectionForms = false,
   containerRef,
 }: {
   messages: ChatMessage[];
@@ -4086,6 +4101,7 @@ function PinnedTodoSlot({
     assistantMessage: ChatMessage,
     todos: TodoItem[],
   ) => boolean | void | Promise<boolean | void>;
+  suppressDirectionForms?: boolean;
   containerRef?: MutableRefObject<HTMLDivElement | null>;
 }) {
   const storageKey = `od:chat:continued-todo:${conversationId ?? 'none'}`;
@@ -4126,6 +4142,27 @@ function PinnedTodoSlot({
   if (snapshotKey != null && snapshotKey === dismissedSnapshotKey) return null;
   const unfinishedTodos = continuableUnfinishedTodos(owner);
 
+  // Continuing unfinished work must wait for a complete pending clarification
+  // form on the latest assistant turn. A terminal truncated form has no
+  // answerable control, so it does not block this recovery action.
+  const latestAssistantIndex = messages.reduce(
+    (acc, m, i) => (m.role === 'assistant' ? i : acc),
+    -1,
+  );
+  const latestAssistant = latestAssistantIndex >= 0 ? messages[latestAssistantIndex] : undefined;
+  const nextUserContent = latestAssistant
+    ? messages.slice(latestAssistantIndex + 1).find((m) => m.role === 'user')?.content
+    : undefined;
+  const hasPendingCompleteQuestionForm = Boolean(
+    latestAssistant
+    && splitOnQuestionForms(latestAssistant.content).some(
+      (seg) =>
+        seg.kind === 'form'
+        && !(suppressDirectionForms && isDirectionForm(seg.form))
+        && (!nextUserContent || !parseSubmittedAnswers(seg.form, nextUserContent)),
+    ),
+  );
+
   return (
     <div
       className="chat-pinned-todo"
@@ -4137,6 +4174,7 @@ function PinnedTodoSlot({
         runSucceeded={!streaming}
         onContinue={
           owner && snapshotKey && unfinishedTodos.length > 0 && onContinueRemainingTasks
+            && !hasPendingCompleteQuestionForm
             ? () => {
                 void Promise.resolve(onContinueRemainingTasks(owner, unfinishedTodos))
                   .then((accepted) => {

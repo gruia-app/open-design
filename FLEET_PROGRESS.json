@@ -718,6 +718,31 @@
    "commit": "3d5cfc765",
    "what": "fix(daemon): durableRunState serializes appliedPluginSnapshotId strictly (recovery side already converged in parity batch 7)",
    "upstream": "01726d9fc/#7575"
+  },
+  {
+   "commit": "0994968a3",
+   "what": "fix(i18n): translate French Library and Memory keys",
+   "upstream": "7dc55872b/#8034"
+  },
+  {
+   "commit": "34e4587d2",
+   "what": "fix(chat): preserve read offset/limit ranges per file op (repeated reads distinguishable)",
+   "upstream": "ab009b1a3/#8019"
+  },
+  {
+   "commit": "239f1c6a1",
+   "what": "fix(chat): Cloud retry survives authority handoff (workspacePrincipal + amrAuthRetryReady/AuthorityPending; contracts gain WorkspacePrincipal helpers)",
+   "upstream": "9c5ee3c91/#7953"
+  },
+  {
+   "commit": "7acbe32c4",
+   "what": "fix(chat): pinned todo continue waits for complete pending clarification form; isDirectionForm shared via QuestionForm.tsx",
+   "upstream": "5f814a5cd/#7989"
+  },
+  {
+   "commit": "2b3b4e8ce",
+   "what": "fix(chat): .assistant-footer-controls flex-wrap+min-width subset (footer-time/continue-remaining rules lack markup here)",
+   "upstream": "ad9078b87/#8001"
   }
  ],
  "blocked": [
@@ -996,6 +1021,10 @@
   {
    "commit": "0af03070e",
    "reason": "chat/primitives/record.module.css deleted in fork"
+  },
+  {
+   "commit": "d06eb1efe",
+   "reason": "no-op after resolution — fork already converged (OD_CODEX_TRANSPORT machinery absent, test deltas HEAD-side)"
   }
  ],
  "prs_merged": [

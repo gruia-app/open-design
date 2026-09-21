@@ -582,3 +582,20 @@ resubmit+jump-button 39/39, web typecheck verde.
   6d1d91a30, 9f76c3a9c, 75840861f, e2944daba, 6b0692f86, eb7fbd817,
   c333324da); 393ecfe9e/50e9c0fcc (cadenas #7863/#8007 ausentes);
   875d0b95a/6801f25c0/bf60362db/6086bbfd9/0af03070e (ficheros borrados).
+
+## fleet/gaps-44 — i18n fr, read ranges, Cloud retry authority, pending-form todo gate, footer wrap
+
+- `0994968a3` — port `7dc55872b` (#8034): ~70 claves library.* en fr.
+- `34e4587d2` — port `ab009b1a3` (#8019): readRanges por file op
+  (extractReadRange + merge por path). Spec adaptada. 15/15.
+- `239f1c6a1` — port `9c5ee3c91` (#7953): retry Cloud preservado entre
+  proyeccion directory->scope (workspacePrincipal + matchesRouteContext +
+  amrAuthRetryReady/Pending). Contracts: WorkspacePrincipal/Key/isSame
+  verbatim. Sin recovery-gating (OPEND-2821 ausente). 5/5 + 71/71 + 25/25.
+- `7acbe32c4` — port `5f814a5cd` (#7989) adaptado: el continue del fork
+  vive en PinnedTodoSlot (no boton por-mensaje); gate de form completo
+  pendiente sobre el ultimo assistant. Spec reescrita a .op-todo-continue.
+  4/4 + ChatPane.streaming 34/34.
+- `2b3b4e8ce` — subset de `ad9078b87` (#8001): flex-wrap+min-width en
+  .assistant-footer-controls (unicas reglas con markup en el fork).
+- Skips: `d06eb1efe` no-op tras resolucion.

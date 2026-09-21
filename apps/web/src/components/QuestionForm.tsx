@@ -1734,6 +1734,12 @@ function fileValueLabel(value: string | string[] | undefined): string {
   return typeof value === 'string' ? value : '';
 }
 
+export function isDirectionForm(form: QuestionForm): boolean {
+  if (form.id.toLowerCase() === "direction") return true;
+  if (form.title.toLowerCase().includes("visual direction")) return true;
+  return form.questions.some((q) => q.type === "direction-cards");
+}
+
 /**
  * Reverse of formatFormAnswers — when we render an old assistant message
  * that contained a form, look at the next user message in the conversation

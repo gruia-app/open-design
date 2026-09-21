@@ -56,6 +56,7 @@ import {
 } from "@open-design/contracts";
 import { OdCardView, type BrandBrowserAssistConfirm } from "./OdCard";
 import {
+  isDirectionForm,
   normalizeVisualStyleQuestionValue,
   parseSubmittedAnswers,
   QuestionFormView,
@@ -2743,12 +2744,6 @@ function ProseBlock({
       {hadOpenForm ? <QuestionFormLoading /> : null}
     </div>
   );
-}
-
-function isDirectionForm(form: QuestionForm): boolean {
-  if (form.id.toLowerCase() === "direction") return true;
-  if (form.title.toLowerCase().includes("visual direction")) return true;
-  return form.questions.some((q) => q.type === "direction-cards");
 }
 
 function FormBlock({

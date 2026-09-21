@@ -185,6 +185,7 @@ import {
 } from './runtime/amr-balance-gate';
 import {
   AMR_AUTH_RETRY_CONTINUATION_TTL_MS,
+  amrAuthRetryMatchesRouteContext,
   routeStillMatchesAmrAuthRetryContinuation,
   type AmrAuthRetryContinuation,
 } from './runtime/amr-auth-retry-continuation';
@@ -4443,8 +4444,7 @@ function AppInner() {
     // fresh exact witness rather than borrowing or latching the old one.
     if (
       activeProjectWorkspaceContext
-      && workspaceIdentityCacheKey(activeProjectWorkspaceContext)
-        !== pending.workspaceIdentityKey
+      && !amrAuthRetryMatchesRouteContext(pending, activeProjectWorkspaceContext)
     ) {
       clearAmrAuthRetryContinuation(pending);
     }
