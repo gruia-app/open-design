@@ -1,8 +1,18 @@
+import { useLayoutEffect, useMemo, useRef } from 'react';
+
 import { AgentIcon } from './AgentIcon';
 import { Icon } from './Icon';
 import { useI18n } from '../i18n';
 import { agentDisplayName, agentIconId } from '../utils/agentLabels';
 import type { Project } from '../types';
+import {
+  MIN_WORKSPACE_PANEL_WIDTH,
+  projectSplitStyle,
+  readSavedChatPanelWidth,
+  resolveProjectSplitLayout,
+  workspacePanelTrackForMinWidth,
+  writeProjectSplitLayout,
+} from './project-split-layout';
 import styles from './ProjectCreationPendingView.module.css';
 
 interface Props {
@@ -29,12 +39,48 @@ export function ProjectCreationPendingView({
   const agentName = agentDisplayName(agentId) ?? t('assistant.role');
   const iconId = agentIconId(agentId);
 
+  // OPEND-3207 · this frame and the ProjectView that replaces it must show
+  // the chat column at the same width, or the column moves at the hand-off.
+  // Both resolve it through `resolveProjectSplitLayout`: the saved width
+  // first (already in the inline style below, so even the pre-measure paint
+  // is right), clamped to what the measured container allows.
+  const splitRef = useRef<HTMLDivElement | null>(null);
+  const savedChatPanelWidth = useMemo(readSavedChatPanelWidth, []);
+  useLayoutEffect(() => {
+    const split = splitRef.current;
+    if (!split) return undefined;
+    const apply = (options: { animate?: boolean } = {}) => {
+      const layout = resolveProjectSplitLayout(split.clientWidth, savedChatPanelWidth);
+      writeProjectSplitLayout(split, layout.chatPanelWidth, layout.workspacePanelTrack, options);
+    };
+    // Settle the first write without the `.split` transition; the
+    // `clientWidth` read has already committed the provisional inline width.
+    apply({ animate: false });
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => apply());
+      observer.observe(split);
+      return () => observer.disconnect();
+    }
+    const onWindowResize = () => apply();
+    window.addEventListener('resize', onWindowResize);
+    return () => window.removeEventListener('resize', onWindowResize);
+  }, [savedChatPanelWidth]);
+
   // The `.app` shell belongs to App.tsx, which wraps this view and ProjectView
   // in the same element so React reconciles one `div.app` across the hand-off
   // instead of mounting a second one and replaying its entrance animation.
   return (
     <>
-      <div className={`split ${styles.split}`} data-testid="project-creation-pending-view">
+      <div
+        ref={splitRef}
+        className={`split ${styles.split}`}
+        style={projectSplitStyle(
+          false,
+          savedChatPanelWidth,
+          workspacePanelTrackForMinWidth(MIN_WORKSPACE_PANEL_WIDTH),
+        )}
+        data-testid="project-creation-pending-view"
+      >
         <div className="split-chat-slot">
           <div className={`pane ${styles.chatPane}`}>
             <div className="chat-project-header">
