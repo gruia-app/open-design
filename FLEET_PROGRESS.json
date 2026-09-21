@@ -829,9 +829,31 @@
    "commit": "ca16b9a42",
    "note": "squash mergeado; deploy pendiente de Jenkins"
   },
-  "PR #54 (43f2eadf2): produced-files dedupe + .cjs/.mjs render deps + blocked fields en historial + model-picker anchor + retryable transcript reads — Jenkins"
+  "PR #54 (43f2eadf2): produced-files dedupe + .cjs/.mjs render deps + blocked fields en historial + model-picker anchor + retryable transcript reads — Jenkins",
+  {
+   "pr": 55,
+   "what": "jenkins deploy pending",
+   "at": "2026-09-21"
+  }
  ],
  "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
- "branch": "fleet/gaps-41",
- "skipped_upstream": []
+ "branch": "main (post-merge #55)",
+ "skipped_upstream": [],
+ "prs_merged": [
+  {
+   "pr": 55,
+   "branch": "fleet/gaps-41",
+   "merged": true,
+   "at": "2026-09-21",
+   "commits": [
+    "0992a712e",
+    "5ede573e1",
+    "805f218ed",
+    "8bfbbbc84",
+    "0b98c16af",
+    "87364984b",
+    "fd8c9c04e"
+   ]
+  }
+ ]
 }
