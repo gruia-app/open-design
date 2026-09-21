@@ -499,15 +499,33 @@ const PROCESS_CRASH_SIGNALS = new Set([
 // stream disconnect is caught by the upstream branch. By the time control
 // reaches here a signal is the strongest evidence we have, so map it to a
 // non-retryable process_exit instead of laundering it into a retryable timeout.
+function forcedSignalName(errorCode: string, signal: unknown): string | null {
+  const named = errorCode.startsWith('AGENT_SIGNAL_')
+    ? errorCode.slice('AGENT_SIGNAL_'.length)
+    : typeof signal === 'string'
+      ? signal
+      : '';
+  if (!named) return null;
+  if (named === 'SIGKILL' || PROCESS_CRASH_SIGNALS.has(named)) return named;
+  return null;
+}
+
 function signalInterruptClassification(
   errorCode: string,
   text: string,
   retryableHint: boolean | undefined,
+  /**
+   * The signal when the caller already knows it. A killed run does NOT reliably
+   * carry an `AGENT_SIGNAL_*` code — a real `kill -9` lands as
+   * `AGENT_EXECUTION_FAILED` with the signal only on `status.signal` — so the
+   * code alone is not enough to recognize one.
+   */
+  signalOverride?: string | null,
 ): RunFailureClassification | null {
   const isInterruptExit = errorCode === 'AGENT_EXIT_130';
   const signal = errorCode.startsWith('AGENT_SIGNAL_')
     ? errorCode.slice('AGENT_SIGNAL_'.length)
-    : '';
+    : (signalOverride ?? '');
   if (!signal && !isInterruptExit) return null;
 
   if (signal === 'SIGKILL') {
@@ -654,6 +672,52 @@ function readRuntimeCloseReason(
     }
   }
   return null;
+}
+
+/**
+ * True when the DAEMON itself declared this run timed out.
+ *
+ * Invariant: a verdict the daemon reached on its own survives without its own
+ * prose. The ACP stage watchdog decides a stage is over and kills the child —
+ * nothing upstream reported anything — and it stamps that decision as
+ * `error.details.kind === 'acp_stage_timeout'` (see `agent-protocol/acp/session.ts`).
+ * Reading the marker rather than regex-matching the sentence it happened to
+ * write is what stops a reworded, wrapped, localized or dropped message from
+ * silently re-filing a watchdog kill as an opaque `process_exit / exit_code` —
+ * which is `retryable: false` / `user_action: 'none'`, the one verdict this
+ * failure must never get, since a retry is its entire remedy.
+ *
+ * The value is matched exactly, and it is namespaced to the mechanism that
+ * writes it. `error.details` is NOT a daemon-private slot — `fail()` copies an
+ * agent's JSON-RPC `error.data` straight into it — so the marker's protection
+ * comes from being a name no upstream payload emits, not from the slot being
+ * unreachable. A generic `kind: 'timeout'`, which any vendor SDK might send for
+ * its own timeout, would have been read here as a watchdog kill that never
+ * happened, and would additionally have outranked the forced-signal guard below.
+ *
+ * This is collision resistance, not authentication: an adapter that deliberately
+ * sent `kind: 'acp_stage_timeout'` would still be believed. Making the verdict
+ * unforgeable requires carrying it in a field agent payload can never reach —
+ * see the note on `fail()` in `agent-protocol/acp/session.ts`.
+ */
+function hasDaemonTimeoutVerdict(
+  events: RunEventForFailureClassification[] = [],
+): boolean {
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const rec = events[i];
+    if (!rec || rec.event !== 'error') continue;
+    const payload = rec.data && typeof rec.data === 'object'
+      ? rec.data as Record<string, unknown>
+      : null;
+    const nested = payload?.error && typeof payload.error === 'object'
+      ? payload.error as Record<string, unknown>
+      : null;
+    const details = nested?.details && typeof nested.details === 'object'
+      ? nested.details as Record<string, unknown>
+      : null;
+    if (details?.kind === 'acp_stage_timeout') return true;
+  }
+  return false;
 }
 
 // Promote the opaque `execution_failed` detail to the specific close reason when
@@ -889,6 +953,11 @@ function classifyRunFailureBase(
     return classification('process_exit', 'continuation_incomplete',
       inferFailureStageFromEvents(events, 'post_tool_resume'), false, 'none');
   }
+  // The daemon's own watchdog verdict, read structurally. Computed here beside
+  // the other once-only signals because two branches consult it: the forced
+  // signal guard below (a watchdog kill IS a signal, and the reason it was
+  // killed outranks the bare signal) and the timeout branch itself.
+  const daemonTimeoutVerdict = hasDaemonTimeoutVerdict(events);
   const amrFailure = classifyAmrAccountFailure(text);
   const byokOpenCodeProviderNotFound = isByokOpenCodeProviderNotFoundText(
     input.agentId,
@@ -957,6 +1026,36 @@ function classifyRunFailureBase(
         ? { evidenceLevel: 'structured_code' }
         : {},
     );
+  }
+
+  /*
+   * A forced signal is a STRUCTURAL fact — the child did not report it, the OS
+   * or an operator ended the process — so no amount of leftover stderr can
+   * explain it away. Claimed here, ahead of every text heuristic below.
+   *
+   * Found on a real run (2026-08-27): `kill -9` on the agent child produced
+   * `signal: SIGKILL, exitCode: null`, and the classifier answered
+   * `auth / stale_profile` because a half-written line about local profiles
+   * happened to be in the buffer. The chat card then told the user to run
+   * `/login` — sending them to fix something that was never broken.
+   *
+   * `signalInterruptClassification` already carries the right reasoning ("a
+   * signal is the strongest evidence we have"); it just sat 300 lines too late
+   * to win. Deliberately narrow:
+   *  · only SIGKILL and the crash signals — SIGTERM/SIGINT genuinely accompany
+   *    graceful shutdown and interrupts, where the text does carry more meaning;
+   *  · timeout still wins, because the daemon's watchdog writes its own reason
+   *    before escalating to a kill, and WHY it was killed beats the bare signal.
+   */
+  const forcedSignal = forcedSignalName(errorCode, input.status.signal);
+  if (
+    forcedSignal &&
+    !isTimeoutText(text) &&
+    errorCode !== 'TIMEOUT' &&
+    !daemonTimeoutVerdict
+  ) {
+    const forced = signalInterruptClassification(errorCode, text, retryableHint, forcedSignal);
+    if (forced) return forced;
   }
 
   const promptSizeDetail = promptTooLargeDetail(text);
@@ -1229,7 +1328,7 @@ function classifyRunFailureBase(
     );
   }
 
-  if (isTimeoutText(text) || errorCode === 'TIMEOUT') {
+  if (isTimeoutText(text) || errorCode === 'TIMEOUT' || daemonTimeoutVerdict) {
     const retryable = retryableHint ?? true;
     const inactivityTimeout = /inactivity|stalled|hung|no new output|without emitting any new output/i.test(text);
     // `attachAcpSession`'s stage watchdog fails the turn with
@@ -1238,7 +1337,12 @@ function classifyRunFailureBase(
     // trigger the terminal reads as a bare AGENT_EXIT_130 — indistinguishable
     // from a user interrupt, which is how the 2026-07-28 AMR stall got
     // attributed to the wrong watchdog and the wrong 15-minute window.
-    const acpStageTimeout = /\bACP\b[^\n]*timed out after \d+\s*ms/i.test(text);
+    //
+    // The structured verdict counts too: it is emitted by that same watchdog
+    // and by nothing else, so the trigger keeps naming the watchdog even when
+    // the sentence it wrote is gone.
+    const acpStageTimeout =
+      daemonTimeoutVerdict || /\bACP\b[^\n]*timed out after \d+\s*ms/i.test(text);
     const terminalTrigger: TrackingRunTerminalTrigger | undefined =
       /without emitting a first output/i.test(text)
         ? 'first_output_deadline'

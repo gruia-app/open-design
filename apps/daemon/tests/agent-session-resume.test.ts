@@ -671,22 +671,33 @@ describe('isAmrOpencodeEventStreamResumeFailure', () => {
     ).toBe(true);
   });
 
-  it('keeps compaction continuation out of destructive reseed', () => {
+  // vela 0.0.35 (#1847) moved the compaction continuation onto its own request
+  // and worded its EOF differently. Before this the phrase matched nothing in
+  // the repository, so the SAME bridge-level stream EOF — one phase later —
+  // could not reach the re-seed path at all and ended the conversation on a
+  // hard failure instead of one transparent cold turn.
+  it('matches the compaction-continuation EOF vela 0.0.35 introduced', () => {
     expect(
       isAmrOpencodeEventStreamResumeFailure(
         'json-rpc id 4: opencode event stream: opencode compaction continuation ended before prompt completion',
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isAmrOpencodeEventStreamResumeFailure(
         'opencode compaction continuation ended before prompt completion',
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('ignores unrelated AMR/opencode output', () => {
     expect(isAmrOpencodeEventStreamResumeFailure('opencode auth failed')).toBe(false);
     expect(isAmrOpencodeEventStreamResumeFailure('')).toBe(false);
+    // A compaction that merely RAN is not a compaction that died. The phrase
+    // has to name the EOF, or every successful compaction log line would send
+    // the turn through a cold re-seed.
+    expect(
+      isAmrOpencodeEventStreamResumeFailure('opencode compaction continuation started'),
+    ).toBe(false);
   });
 });
 
@@ -793,7 +804,7 @@ describe('resolveAgentResumeFailurePolicy', () => {
     });
   });
 
-  it('never reseeds a compaction continuation failure', () => {
+  it('routes the compaction-continuation EOF into the same re-seed recovery', () => {
     expect(
       resolveAgentResumeFailurePolicy({
         agentId: 'amr',
@@ -804,10 +815,10 @@ describe('resolveAgentResumeFailurePolicy', () => {
         resumeSessionId: 'ses-old',
       }),
     ).toEqual({
-      resumeFailed: false,
-      clearStaleSession: false,
-      autoReseedFullTranscript: false,
-      reason: null,
+      resumeFailed: true,
+      clearStaleSession: true,
+      autoReseedFullTranscript: true,
+      reason: 'resume_failed',
     });
   });
 
