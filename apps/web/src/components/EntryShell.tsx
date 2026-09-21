@@ -118,6 +118,7 @@ import { AmrBalanceDialog } from './AmrBalanceDialog';
 import { installDeepSeekHarnessCompanion } from '../providers/agent-companion';
 import { AmrLowBalanceDialog, type AmrLowBalanceDecision } from './AmrLowBalanceDialog';
 import {
+  amrBalanceGateFromMemory,
   amrBalanceGateScopeForWorkspaceContext,
   checkAmrBalanceGate,
   retryUnavailableAmrBalanceGate,
@@ -1392,11 +1393,54 @@ export function EntryShell({
     // in ProjectView.handleSend.
     let amrGatePrecheckWitness: AmrBalanceGateScope | undefined;
     let amrGatePrecheckPassed = false;
-    if (config.mode === 'daemon' && config.agentId === 'amr') {
-      const amrModelId = effectiveAgentModelId(
-        agents.find((agent) => agent.id === 'amr'),
-        config.agentModels?.amr,
-      );
+    const isAmrSend = config.mode === 'daemon' && config.agentId === 'amr';
+    const amrModelId = isAmrSend
+      ? effectiveAgentModelId(
+          agents.find((agent) => agent.id === 'amr'),
+          config.agentModels?.amr,
+        )
+      : undefined;
+    // OPEND-3300 / 3309: a wallet this shell already knows is empty is
+    // answered on the click tick, before the authoritative gate's retry/read
+    // budget runs — the dialog lands on Home, no project, no request. The
+    // reading is the one the rail's balance pill shows for the exact scope
+    // the send would run in. One background confirmation re-reads the
+    // wallet; only a non-blocking answer (a recharge the projection had not
+    // seen) moves the send forward, and a dismiss in the meantime wins.
+    const memoryWorkspaceState = workspaceContextStateRef.current;
+    const memoryWorkspaceContext = isAmrSend && memoryWorkspaceState.failure !== 'unsupported'
+      ? workspaceResourceReadContext(memoryWorkspaceState)
+      : null;
+    const memoryVerdict = isAmrSend
+      ? amrBalanceGateFromMemory(
+          workspaceBillingBalanceUsd(workspaceBillingResponse, memoryWorkspaceContext),
+          { updatedAt: workspaceBillingResponse?.workspaceBalance?.updatedAt ?? null },
+        )
+      : null;
+    if (memoryVerdict) {
+      const memoryScope = amrBalanceGateScopeForWorkspaceContext(memoryWorkspaceContext);
+      const decision = await new Promise<'retry' | 'dismiss'>((resolve) => {
+        setAmrBalanceGateBlock({
+          reason: memoryVerdict.reason,
+          snapshot: memoryVerdict.snapshot,
+          resolve,
+        });
+        void checkAmrBalanceGate(memoryScope, amrModelId)
+          .then((confirmed) => {
+            // Still empty, or unreadable: the in-memory answer stands and
+            // the dialog stays. Anything else proved the projection stale.
+            if (confirmed.kind !== 'hard' && confirmed.kind !== 'unavailable') {
+              resolve('retry');
+            }
+          })
+          .catch(() => undefined);
+      });
+      setAmrBalanceGateBlock(null);
+      if (decision === 'dismiss') return 'blocked' as const;
+      // 'retry': the wallet proved fundable (recharge landed, or the
+      // confirmation read positive). Fall through to the ordinary gate.
+    }
+    if (isAmrSend) {
       // PRODUCT INVARIANT: Send never starts Workspace identity discovery.
       // Billing consumes the shell's current in-memory snapshot; if it has not
       // arrived yet, the existing account-scoped gate is used. The daemon's

@@ -148,6 +148,43 @@ function matchesAcceptedKinds(
   return !acceptedKinds || acceptedKinds.has(fileKind);
 }
 
+/** Values `validateProjectDeliverable` can actually produce, narrowed to the
+ *  wire union. Run-scoped outcomes are unreachable there; returning null for
+ *  one keeps a future enum addition from being reported as a wire value the
+ *  client's type does not admit. */
+export function projectDeliverableValidation(
+  validation: RunDeliverableValidation,
+): 'valid' | 'project_missing' | 'entry_missing' | 'entry_unreadable' | 'type_mismatch' | null {
+  switch (validation) {
+    case 'valid':
+    case 'project_missing':
+    case 'entry_missing':
+    case 'entry_unreadable':
+    case 'type_mismatch':
+      return validation;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Does this project hold a usable canonical deliverable right now?
+ *
+ * Same entry resolution, kind contract and readability check as
+ * `validateRunDeliverable`, minus every gate that asks about a particular run.
+ * Never use it to accept a completion claim — the run-scoped gates are skipped
+ * by construction so this answers a presentation question only.
+ */
+export async function validateProjectDeliverable(
+  input: Omit<ValidateRunDeliverableInput, 'runStatus' | 'artifactCount' | 'touchedPaths'>,
+): Promise<RunDeliverableValidationResult> {
+  return validateRunDeliverable({
+    ...input,
+    runStatus: 'succeeded',
+    artifactCount: 1,
+  });
+}
+
 /**
  * Resolve and verify the one canonical file a successful run can deliver.
  *

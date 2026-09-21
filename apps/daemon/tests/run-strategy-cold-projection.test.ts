@@ -239,3 +239,33 @@ describe('GET run strategy projection after real durable-service restart', () =>
     },
   );
 });
+
+describe('GET run blocked deliverable probe (OPEND-2928)', () => {
+  it('reports a present project deliverable on a blocked terminal verdict', async () => {
+    const fixture = await seed();
+    const projectDir = path.join(fixture.root, 'projects', PROJECT);
+    fs.mkdirSync(projectDir, { recursive: true });
+    fs.writeFileSync(path.join(projectDir, 'index.html'), '<html><body>deck</body></html>');
+    const status = await coldStatus(fixture);
+    expect(status).toMatchObject({
+      status: 'succeeded',
+      deliverableValid: false,
+      deliverableValidation: 'no_artifact',
+      projectDeliverableValid: true,
+      projectDeliverableValidation: 'valid',
+    });
+    expect(status.strategyTask).toMatchObject({ outcome: 'blocked', terminal: true });
+  });
+
+  it('reports the absent deliverable and stays silent without a blocked verdict', async () => {
+    const fixture = await seed();
+    const status = await coldStatus(fixture);
+    expect(status.projectDeliverableValid).toBe(false);
+    expect(typeof status.projectDeliverableValidation).toBe('string');
+
+    const plain = await seed(false);
+    const plainStatus = await coldStatus(plain, false);
+    expect(plainStatus.projectDeliverableValid).toBeUndefined();
+    expect(plainStatus.projectDeliverableValidation).toBeUndefined();
+  });
+});

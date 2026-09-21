@@ -622,3 +622,9 @@ resubmit+jump-button 39/39, web typecheck verde.
   `0ffafb3d7`/`441ab84b0` no-ops ya converged, `e3400d2d0`/`1424be972`/
   `39d9eb593`/`dcfd44eed`/`13d3676f8`/`954f304dd`/`98f2fd1a4` maquinaria
   ausente.
+- `c6f703806` — port `863b62b39` (#8225) adaptado: replay SSE durable
+  (eventsLogFinalFlush + journal events.jsonl + cola pending) en
+  createChatRunService; guia default/defaultValue en discovery-question-form
+  conservando direction-cards del fork. Skips: turnEndedByAskingUser
+  (cadena #7518 ausente), group/trailingLabel de select (no renderizado).
+  9/9 + 5/5 + 14/14 daemon, 55/55 + 3/3 web.
