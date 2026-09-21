@@ -44,9 +44,9 @@ import {
   stripTrailingOpenQuestionForm,
   type QuestionForm,
 } from "../artifacts/question-form";
+import { splitShellCards } from "../runtime/chat/split-shell-cards";
 import {
   hasOdCard,
-  splitOnOdCards,
   stripTrailingOpenOdCard,
   type ChatSessionMode,
   type OdCard,
@@ -2645,7 +2645,7 @@ function ProseBlock({
       return [{ key: `f-${idx}`, kind: "form", form: seg.form }];
     }
     if (seg.text.trim().length === 0) return [];
-    return splitOnOdCards(seg.text).flatMap((cardSeg, c): Renderable[] => {
+    return splitShellCards(seg.text, false).flatMap((cardSeg, c): Renderable[] => {
       if (cardSeg.kind === "card") {
         return [{ key: `c-${idx}-${c}`, kind: "od-card", card: cardSeg.card }];
       }
@@ -3446,6 +3446,38 @@ function SystemReminderBlock({
   );
 }
 
+/**
+ * Thinking prose goes through the same od-card parser as visible prose: the
+ * system prompt never restricts the card chip to the answer body, so a card
+ * written into reasoning must decode here too rather than paint raw tag text.
+ * With no card the whole text renders in one Markdown pass so cross-card
+ * structures (lists, fences) are not needlessly split.
+ */
+function decodedThinkingProse(
+  text: string,
+  live: boolean,
+  onLinkClick?: MarkdownLinkClickHandler,
+): ReactNode {
+  const segments = splitShellCards(text, live);
+  if (!segments.some((seg) => seg.kind === 'card')) {
+    return renderMarkdown(
+      segments.map((seg) => (seg.kind === 'text' ? seg.text : '')).join(''),
+      { onLinkClick },
+    );
+  }
+  return segments.map((seg, i) => {
+    if (seg.kind === 'card') {
+      return <OdCardView key={`card-${i}`} card={seg.card} />;
+    }
+    if (!seg.text.trim()) return null;
+    return (
+      <Fragment key={`text-${i}`}>
+        {renderMarkdown(seg.text, { onLinkClick })}
+      </Fragment>
+    );
+  });
+}
+
 function ThinkingBlock({
   text,
   streaming,
@@ -3496,7 +3528,7 @@ function ThinkingBlock({
       </button>
       <div className={`accordion-collapsible${open ? ' open' : ''}`}>
         <div className="accordion-collapsible-inner">
-          <div className="thinking-body">{renderMarkdown(text, { onLinkClick })}</div>
+          <div className="thinking-body">{decodedThinkingProse(text, streaming === true, onLinkClick)}</div>
         </div>
       </div>
     </div>

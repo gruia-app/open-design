@@ -2194,7 +2194,10 @@ describe('streamViaDaemon', () => {
     expect(onRunStatus).toHaveBeenLastCalledWith(expectedStatus);
     if (expectsError) {
       expect(handlers.onError).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'The strategy task could not continue.' }),
+        expect.objectContaining({
+          message: "The agent's reply did not carry the machine-readable state "
+            + 'Open Design needs to record this step, so the task could not continue.',
+        }),
       );
       expect(handlers.onDone).not.toHaveBeenCalled();
     } else {

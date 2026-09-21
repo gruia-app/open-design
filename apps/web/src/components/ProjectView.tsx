@@ -20,6 +20,7 @@ import { recoverHtmlDocumentFromMarkdownFence, recoverStandaloneHtmlDocument, re
 import { createArtifactParser } from '../artifacts/parser';
 import { useI18n } from '../i18n';
 import {
+  createStrategyTaskBlockedError,
   fetchChatRunStatus,
   GENERIC_DAEMON_DISCONNECT_CODE,
   GENERIC_DAEMON_DISCONNECT_MESSAGE,
@@ -30,6 +31,7 @@ import {
   reportChatRunFeedback,
   streamViaDaemon,
 } from '../providers/daemon';
+import { canRetainSuccessfulRunForBlockedStrategy } from '../runtime/blocked-strategy-result';
 import { normalizeCustomReason } from '@open-design/contracts/analytics';
 import {
   deletePreviewComment,
@@ -5458,6 +5460,39 @@ export function ProjectView({
               status: projectedTaskStatus,
             }
           : physicalStatus;
+        const projectedRunAlreadyHydrated = Boolean(
+          taskRunAdvanced
+          && messages.some(
+            (candidate) =>
+              candidate.id !== message.id
+              && candidate.role === 'assistant'
+              && candidate.runId === reattachRunId,
+          ),
+        );
+        if (projectedRunAlreadyHydrated) {
+          // A normal hydration contains one persisted assistant message per
+          // physical strategy Run. The predecessor's status probe still
+          // projects the task's active successor, but that successor must own
+          // its own replay/reattach. Replaying it into this predecessor would
+          // append the final answer here while its hydrated sibling already
+          // renders the same answer, producing a duplicate conclusion after a
+          // hard refresh. Keep the crash-window recovery below for the case
+          // where the successor message has not been persisted yet.
+          if (status.strategyTask?.taskExecutionId) {
+            const settledFields = strategySettledMessageFields(status.strategyTask);
+            updateMessageById(
+              message.id,
+              (prev) => ({
+                ...prev,
+                strategyTaskExecutionId: status.strategyTask!.taskExecutionId,
+                ...(settledFields ?? {}),
+              }),
+              true,
+            );
+          }
+          completedReattachRunsRef.current.add(runId);
+          continue;
+        }
         if (
           taskRunAdvanced
           && (
@@ -5478,6 +5513,40 @@ export function ProjectView({
             || strategyTaskParkedOnSucceededRun(status, runId)
           )
         ) {
+          const strategyTask = status.strategyTask;
+          if (
+            status.status === 'succeeded'
+            && status.id === runId
+            && status.projectId === project.id
+            && status.conversationId === reattachConversationId
+            && status.assistantMessageId === message.id
+            && strategyTask?.outcome === 'blocked'
+            && strategyTask.taskExecutionId === message.strategyTaskExecutionId
+            && strategyTask.activeRunId === runId
+            && !canRetainSuccessfulRunForBlockedStrategy(
+              status.status, strategyTask, status.deliverableValid,
+              status.projectDeliverableValid, message.content,
+            )
+          ) {
+            // A cold history row keeps the daemon's physical success. Restore
+            // the same logical failure/reason as live SSE from this existing
+            // authorized probe, without rewriting the persisted physical row.
+            const failure = createStrategyTaskBlockedError(strategyTask);
+            updateMessageById(message.id, (prev) => {
+              if (
+                activeConversationIdRef.current !== reattachConversationId
+                || projectRunAuthorityKeyRef.current !== projectRunAuthorityKey
+                || prev.runId !== runId
+                || prev.strategyTaskExecutionId !== strategyTask.taskExecutionId
+                || prev.runStatus !== 'succeeded'
+              ) return prev;
+              return appendErrorStatusEvent({
+                ...prev,
+                ...(strategySettledMessageFields(strategyTask) ?? {}),
+                runStatus: 'failed',
+              }, failure.message, failure.code);
+            });
+          }
           completedReattachRunsRef.current.add(runId);
           continue;
         }
@@ -6539,6 +6608,7 @@ export function ProjectView({
     daemonLive,
     config.mode,
     activeConversationId,
+    projectRunAuthorityKey,
     currentProject.metadata,
     streaming,
     messages,
@@ -6683,6 +6753,16 @@ export function ProjectView({
             latestRunStatus,
             projectRunWorkspaceContext,
           );
+          if (cancelled) return;
+          const strategyTask = latestRunStatus?.strategyTask;
+          const taskBlocked = strategyTask?.terminal === true && strategyTask.outcome === 'blocked';
+          // Saving the inline file repairs delivery, not the strategy verdict.
+          // Apply the same success exceptions as the normal provider path.
+          const blockedRunCanSucceed = latestRunStatus != null
+            && canRetainSuccessfulRunForBlockedStrategy(
+              latestRunStatus.status, strategyTask, latestRunStatus.deliverableValid,
+              latestRunStatus.projectDeliverableValid, sourceText,
+            );
           updateMessageById(
             message.id,
             (prev) => ({
@@ -6692,6 +6772,7 @@ export function ProjectView({
               resultDeliveryState: 'delivered',
               runStatus:
                 latestRunStatus?.status === 'succeeded'
+                  && ((prev.strategyTaskBlocked !== true && !taskBlocked) || blockedRunCanSucceed)
                   ? 'succeeded'
                   : prev.runStatus,
               endedAt: prev.endedAt ?? recoveredArtifactEndedAt,

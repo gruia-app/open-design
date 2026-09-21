@@ -466,3 +466,30 @@ Verificación: gateway 37/37 (3 tests nuevos de audit-report), typecheck limpio.
 
 Verificacion: web fold tests 10/10, runtime+sse 104/104, contracts 512/512,
 daemon typecheck + web typecheck verdes, test OPEND-2953 verde.
+
+## Lote 39 — re-triage de skips upstream (fleet/gaps-39)
+
+- `441ab84b0`+#8258 via `b529b235d` (ya registrado arriba): splitShellCards.
+- `5b50e9e4b` via `d8a217878`: verdicts blocked en recovery/reload (ya registrado).
+- `4891d62b3` — subset de #8240 (6fd2f6080): headers de autoridad workspace
+  (type/role/lifecycle/member-status) en reads locales de /api/workspace/context.
+  El resto no porta: EntryShell del fork gatea antes de crear proyecto, sin la
+  arquitectura optimistic-frame (onBeginProjectCreation). El mismo commit
+  repara el spec blocked-history-hydration que d8a217878 dejo roto en
+  typecheck (helpers upstream ChatPanel -> runStatus pre-fold + card
+  data-user-action-card="run-recovery").
+- `5bf4ba2a6` — spec de los headers (test seam explicitWorkspaceHeaders).
+- `8fe36928f` — subset OPEND-3283 de #8223 (b419463f9): scrollMovesAnchor +
+  gating en RailRecentRow. El row menu del dock no existe en el fork;
+  RailRecentRow tenia el mismo bug de dismiss-por-scroll.
+- SKIP `792480fe2` (#8170): subsistema completo (spawn file-backed stdin,
+  reaping via packages/platform, payload heal) con 11 conflictos incl.
+  run-steering borrado en el fork. Sin subset coherente seguro.
+- SKIP `7413c6daa`: feature Home Prototype; Home divergio (Gruia).
+- SKIPs `f5707c8ca`, `3d76f3c94`, `e35e6542f`: subsistema campaign/touchpoint
+  ausente del fork.
+- SKIPs `3c7b16b44` (project-split-layout ausente), `053abdc1b`/`425a33237`
+  (test-only, ficheros ausentes).
+
+Verificacion: web typecheck verde; 17/17 hydration, 4/4 scroll-moves-anchor,
+2/2 explicit-workspace-headers.

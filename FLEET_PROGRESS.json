@@ -1,719 +1,760 @@
 {
-  "app": "design",
-  "updated_at": "2026-09-20T23:05:22.959140+00:00",
-  "current": {
-    "branch": "main",
-    "state": "idle",
-    "note": "PR #52 mergeado (e61ba1a3c); siguiente gap pendiente de seleccion"
+ "app": "design",
+ "updated_at": "2026-09-21T00:07:56.010082+00:00",
+ "current": {
+  "branch": "fleet/gaps-39",
+  "state": "in_progress",
+  "note": "lote 39: 441ab84b0+c3ec5fda7 (od-card), 5b50e9e4b (verdicts blocked), headers workspace de 6fd2f6080; resto de cola re-triageado con skips documentados"
+ },
+ "done": [
+  {
+   "item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado",
+   "commit": "n/a",
+   "deploy": "n/a"
   },
-  "done": [
-    {
-      "item": "revision post-muerte: PR #8262 limpio (sin Gruia), trabajo MCP envelope verificado",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5",
-      "commit": "2cc1658f5",
-      "deploy": "pending",
-      "note": "upstream PR #8262"
-    },
-    {
-      "item": "gateway G1+G2+G9: sweep sesiones, anti-framing, sessionTtl config",
-      "commit": "squash via PR #4",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 batch 2: sidecar IPC, records, resilience",
-      "commit": "73b37548f",
-      "deploy": "pending",
-      "pr": 6
-    },
-    {
-      "item": "D1 batch 3: pack/serve/release quoting+validation",
-      "commit": "8089972db",
-      "deploy": "pending",
-      "pr": 7
-    },
-    {
-      "item": "D1 batch 4: web resilience, envelopes, timeouts",
-      "commit": "6384ae519",
-      "deploy": "pending",
-      "pr": 8
-    },
-    {
-      "item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n",
-      "commit": "adefce32f",
-      "deploy": "pending",
-      "pr": 9
-    },
-    {
-      "item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING",
-      "commit": "6b878c4e2",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 sweep: memory (072b65d02), media+xai, collab-context — PR #10 squash 9b3ef04ec",
-      "commit": "9b3ef04ec",
-      "deploy": "pending",
-      "pr": 10
-    },
-    {
-      "item": "D3: envelope en genui route errors (14 sitios, import directo)",
-      "commit": "406a03aae",
-      "deploy": "pending",
-      "pr": 11,
-      "merged": "74fcd820e"
-    },
-    {
-      "item": "D3: envelope en comment route errors (24 sitios, ctx.sendApiError + fallback)",
-      "commit": "07d14a7b2",
-      "deploy": "pending",
-      "pr": 11,
-      "merged": "74fcd820e"
-    },
-    {
-      "item": "D3: envelope en static-resource (28 sitios + sendWorkspaceScopeError local; atom/install codes en details; fixtures con sender real; bootstrap-regression al día)",
-      "commit": "0fa8652de",
-      "deploy": "pending",
-      "pr": 11,
-      "merged": "74fcd820e"
-    },
-    {
-      "item": "D3: envelope en design-systems (35 sitios + sendWorkspaceScopeError propio; workspace codes preservados; consumers dual-read)",
-      "commit": "74fcd820e",
-      "pr": 11,
-      "deploy": "pending",
-      "merged": true
-    },
-    {
-      "item": "D3 batch 3: envelope en automation (21), routine (+sendRoutineError scope shape), team-resources, team-resource-share (workspace codes verbatim); web apiErrorMessage helper + 10 consumer sites",
-      "commit": "0202c835b",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 batch 3 (4 ficheros lógicos): automation/routine/team-resources/team-resource-share + project tabs/templates/artifacts/conversations + daemon db + connectors + telemetry/attribution/presence/public-metadata/critique-artifact + plugins assets/marketplaces; web apiErrorMessage helper + readErrorMessage details.errors",
-      "commit": "d011a5f76",
-      "pr": 12,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
-      "commit": "29b4fe3bb",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 batch 4: collab-sync + stragglers + multiline sweep + media residuals",
-      "commit": "e10add9b4",
-      "pr": 13,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 batch 5: plugins/index + daemon oauth-launch + comments fallback + plugin-assets + strategy-rollout; sweep envelope completo salvo tokens protocolo",
-      "commit": "cb28b84ac",
-      "pr": 14,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "revision post-muerte (esta sesión): diffs G7/G4 del predecesor auditados con escepticismo — schema auth_audit, retención, orden sweep/check del limiter IP y flujo de contexto correctos; 27/27 tests re-ejecutados verdes",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G7: auth audit trail — tabla auth_audit (90d/100k retención), login_success/login_failure(detail)/logout con ip+user-agent del request",
-      "commit": "7db05a69b",
-      "deploy": "pending"
-    },
-    {
-      "item": "G4: bucket rate-limit por IP en login (20/min, 10k keys, sweep-on-access) via AuthAuditContext.ip",
-      "commit": "380311354",
-      "deploy": "pending"
-    },
-    {
-      "item": "G7 refinamiento: authorize() audita session_revoked (identity_mismatch) al matar sesión por identidad revocada — 1 fila por revocación",
-      "commit": "a8f0e978f",
-      "deploy": "pending"
-    },
-    {
-      "item": "G8: readSession audita session_expired en el delete de la fila expirada — 1 fila por sesión, 0 para ids desconocidos",
-      "commit": "a0a0408bc",
-      "deploy": "pending"
-    },
-    {
-      "item": "PR #15 (gateway auth G7+G4+G8+session_revoked) mergeado squash",
-      "commit": "50a8470db",
-      "pr": 15,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 tokens fase 1: apiErrorCode helper web + dual-read useWorkspaceContext billing",
-      "commit": "dbe65a54b",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 collab-context wire: ~30 tokens -> envelope code+message, acceptedGeneration sibling preservado; 725/725 collab",
-      "commit": "8697251e9",
-      "deploy": "pending"
-    },
-    {
-      "item": "D3 vela wire local: /api/integrations/vela/* + /api/amr/models enveloped, login siblings preservados, api-proxy diferido (binario vela externo); consumers web dual-read; 93+62 tests verdes",
-      "commit": "263606cbf",
-      "deploy": "pending"
-    },
-    {
-      "item": "chore(fleet): coordinación D3 cierre tokens",
-      "commit": "ccdc25b82",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad upstream: cherry-pick fix automation CLI id splitter dead-zone (upstream #7612)",
-      "commit": "abcb99c6d",
-      "deploy": "pending"
-    },
-    {
-      "item": "PR #16 (tokens protocolo collab-context+vela + automation CLI parity) mergeado squash",
-      "commit": "ce045f845",
-      "pr": 16,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "G3: sweep periódico unref'd (15min) en SqliteSessionStore — sessions+csrf+audit retention; tests 30/30",
-      "commit": "d12f06f71",
-      "deploy": "pending"
-    },
-    {
-      "item": "PR #17 (G3 periodic sweep + cherry-picks #8212/#8063) mergeado squash",
-      "commit": "b52a7cf28",
-      "pr": 17,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: prefer direct Copilot CLI (upstream #7974)",
-      "commit": "49bcdfecc",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: defer invalid-payload until launcher eligible (upstream #7520)",
-      "commit": "b8b23ea1f",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: BYOK image input sin capability metadata (upstream #8035)",
-      "commit": "3f3425835",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: MCP workflow id en confirm briefs (upstream #7779)",
-      "commit": "e7e4b52b2",
-      "deploy": "pending"
-    },
-    {
-      "item": "PR #18 (paridad batch 4: Copilot CLI, payload handoff, BYOK image, MCP workflow id) mergeado squash",
-      "commit": "194286537",
-      "pr": 18,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: proxy Basic creds fuera de media wait tool-token (upstream #8006)",
-      "commit": "32cae7f17",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: proxy Basic creds fuera de export tool-token (upstream #7999)",
-      "commit": "6fc501fb6",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: ACP session cancel como notificación (upstream #7959)",
-      "commit": "ac06579fa",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: canonical client monitoring kinds (upstream #7945)",
-      "commit": "80d3e002f",
-      "deploy": "pending"
-    },
-    {
-      "item": "PR #19 (paridad batch 5: proxy cred lanes + ACP cancel + monitoring kinds) mergeado squash",
-      "commit": "38abb6aee",
-      "pr": 19,
-      "merged": true,
-      "deploy": "pending"
-    },
-    {
-      "item": "revision post-muerte: picks 8fdb5bc52/9638d8843/66058730e correctos; fallo de tests era dist stale de contracts (OD_NEXT_AGENT_DECLARED_BLOCK_REASON ausente en build) — resuelto con rebuild, 42/42 + 25/25 + typecheck verdes",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "D1 paridad: clarification turn Runtime State wrong stage (upstream #7980)",
-      "commit": "8fdb5bc52",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: collapse identical ternary arms normalizeComparableValue (upstream #7793)",
-      "commit": "9638d8843",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: refuse turn with nothing to design + durable blockedContext (upstream #7725, prerequisito de #7980)",
-      "commit": "66058730e",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: Novita AI model catalog (upstream #6327)",
-      "commit": "c6e0fca3c",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: bundled Vela CLI 0.0.35->0.0.38 (upstream #8273, lockfile regenerado con pnpm)",
-      "commit": "4537ab17e",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: preserve running launcher payload during cleanup (upstream #7963)",
-      "commit": "dab5cfc14",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: preserve failed ACP tool results (upstream #8046)",
-      "commit": "73bf94d37",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: OD Next clarifications resumable after restart (upstream #7575)",
-      "commit": "0520f3f08",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: AMR compaction continuation sin replay (upstream #7958; conflicto resuelto — sin hasDaemonTimeoutVerdict de #7884)",
-      "commit": "a51751d27",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: request_id + token usage por request en claude_code (upstream #4620)",
-      "commit": "04192a480",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: fail blocked OD Next runs antes de finalization (upstream #7942; conflictos test resueltos — sin OD_CODEX_TRANSPORT)",
-      "commit": "6fd3453d5",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: docs Rescan rename (upstream #7907)",
-      "commit": "e69489ab1",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: Thursday patch cut gate (upstream #7977)",
-      "commit": "c3513c9d9",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: packaged MCP runtime integrity + sidecar delivery (upstream #8027)",
-      "commit": "bc064afaa",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: prerelease runtime identity + Vela contract tests (upstream #7957)",
-      "commit": "850e75056",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: docs anchor TRANSLATIONS (upstream #7792)",
-      "commit": "1dc3876cc",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: docs Linux desktop availability (upstream #7698)",
-      "commit": "f38c77c65",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: docs Vela CLI Linux Docker (upstream #6590)",
-      "commit": "2848fe3f6",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: DeepSeek Harness 0.1.2-rc.1 (upstream #7825)",
-      "commit": "3f04072f9",
-      "deploy": "pending"
-    },
-    {
-      "item": "D1 paridad: French setup/recovery copy (upstream #7753)",
-      "commit": "b830d0452",
-      "deploy": "pending"
-    },
-    {
-      "item": "revision post-muerte: picks a745c2ca2 (updater predecessor ordering) y c9edcea4b (AMR chat-capable guard) auditados — diffs correctos, tests verdes previos (78/78 chat-route, 12/12 entry-handoff)",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "paridad lote 10: packaged updater ordering, AMR chat-capable guard, PPTX portable compare, e2e mock hardening",
-      "commit": "fleet/parity-10",
-      "deploy": "PR pendiente"
-    },
-    {
-      "item": "paridad lote 10 merged via PR #24",
-      "commit": "e856fdbba",
-      "deploy": "pendiente"
-    },
-    {
-      "item": "paridad lote 11: drift card, stable release notes, e2e readiness, diagnostics env evidence",
-      "commit": "fleet/parity-11",
-      "deploy": "PR pendiente"
-    },
-    {
-      "item": "paridad lote 11 merged via PR #25",
-      "commit": "640974bf8",
-      "deploy": "pendiente"
-    },
-    {
-      "item": "G11 — session_revoked audit lleva ip/user-agent (authorize context)",
-      "commit": "a9a7099f0",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G12 — session_expired audit con ip/user-agent",
-      "commit": "4898b0bd9",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G13 — malformed_form + logout csrf_rejected auditados",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "lote 12 gateway forense merged via PR #26",
-      "commit": "af43be3b5",
-      "deploy": "pendiente"
-    },
-    {
-      "item": "G14 — session_revoked:org_not_admitted con borrado + contexto",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "convergencia: cola upstream agotada + inventario gaps propio cerrado",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "lote 13 merged via PR #27 — convergencia alcanzada",
-      "commit": "9937e7e34",
-      "deploy": "pendiente"
-    },
-    {
-      "item": "G15 — x-forwarded-for propagado al daemon (audit daemon-side ve IP real)",
-      "commit": "87da4c53c",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G16 — shutdownGateway: cierre forzado de sockets para que SIGTERM no cuelgue (SSE proxy)",
-      "commit": "2149b0e97",
-      "deploy": "n/a"
-    },
-    {
-      "item": "hygiene: .playwright-cli untracked+ignored (scratch commiteado)",
-      "commit": "afb24f5e2",
-      "deploy": "n/a"
-    },
-    {
-      "item": "lote 14 merged via PR #28",
-      "commit": "cc78ada74",
-      "deploy": "pendiente"
-    },
-    {
-      "item": "G17 — session_revoked:csrf_undecryptable auditado",
-      "commit": "c5c551aa7",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G18 — HSTS en design.gruia.app (Caddyfile)",
-      "commit": "0e7d675ee",
-      "deploy": "pending"
-    },
-    {
-      "item": "G19 — publisher: pin sha256 del HTML público",
-      "commit": "8e44af759",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G20 — CI Jenkins corre suites privadas (gateway+campaign)",
-      "commit": "621f9e4f9",
-      "deploy": "n/a"
-    },
-    {
-      "item": "Docs: sync gruia-auth + gruia-b2b-campaign con código",
-      "commit": "886b75c85+7d7369001",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G19 follow-up: pin remoto por stream sha256 + elegibilidad byte-exacta (edges 2MB/utf-8)",
-      "commit": "98613bcdb",
-      "deploy": "n/a"
-    },
-    {
-      "item": "tests: URL guard SSRF del public-verifier (3 tests)",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "EXPOSE 3006 en Dockerfile.gateway (paridad con prebuilt)",
-      "commit": "HEAD",
-      "deploy": "pending"
-    },
-    {
-      "item": "post-review #2: probe con stream acotado (16MB) + truncated fail-closed",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "sync PR #35 mergeado (056699a32) — probe acotado en main",
-      "commit": "056699a32",
-      "deploy": "pending"
-    },
-    {
-      "item": "G21 dep audit — esbuild gateway 0.28.0→0.28.1 (GHSA-g7r4-m6w7-qqqr)",
-      "commit": "649b2b256",
-      "deploy": "pending"
-    },
-    {
-      "item": "PR #37 mergeado (4c8c2e447) — esbuild bump + doc sync",
-      "commit": "4c8c2e447",
-      "deploy": "pending"
-    },
-    {
-      "item": "G22 refresh deps gateway: pg 8.23.0, @types/pg 8.23.1, @types/node 24.13.6, esbuild 0.28.2",
-      "commit": "f79551a67",
-      "deploy": "pending"
-    },
-    {
-      "item": "G23 tests del scope guard de browser-qa (id/projectId)",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "PR #39 mergeado (c73a2ee2e) — dep refresh + browser-qa tests",
-      "commit": "c73a2ee2e",
-      "deploy": "pending"
-    },
-    {
-      "item": "ledger fix — deploys_pending completado con PRs #29-#40",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "FLEET_PROTOCOL §5 — flujo de publicación operativo documentado",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "upstream re-triage post-fetch-fix: 144 commits, 2 nuevos (CMS + test ChatPanel) inaplicables; d992e09fb/900d01c61/127ec0f02 verificados ya aplicados",
-      "commit": "f5707c8ca",
-      "deploy": "n/a"
-    },
-    {
-      "item": "FLEET_PROTOCOL — fetch upstream con blob:none documentado",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "tick final — convergencia declarada tras re-verificar cola upstream y superficie privada",
-      "commit": "HEAD",
-      "deploy": "n/a"
-    },
-    {
-      "item": "G24 audit subcommand — reporte auth por org (read-only, operator-only)",
-      "commit": "aa796f61b",
-      "deploy": "pending"
-    },
-    {
-      "item": "SAAS_GAPS — mapeo backlog flota → design (aplicable vs N/A vs decision)",
-      "commit": "6b85cdf1d",
-      "deploy": "n/a"
-    },
-    "lote28: gateway audit --db usage-error fix + WORKLOG sync (fleet/gaps-33)",
-    "lote28b: operator docs for auth_audit + audit subcommand (fleet/gaps-35)",
-    "lote28c: auth_audit.at index — retention deletes/reports no longer full-scan (fleet/gaps-36)",
-    "lote29: upstream picks — AMR subscription reset on profile switch (287357b12) + preview snapshot blank-page fix (1aa228115); skipped d5eddcb59/0ffafb3d7 (diverged conflicts)",
-    {
-      "item": "revision escéptica del predecesor: picks #51 verbatim upstream, índice auth_audit correcto, tests verdes (gateway 38, collab 74, srcdoc 44)",
-      "commit": "n/a",
-      "deploy": "n/a"
-    },
-    {
-      "item": "chore(pack): bundled Vela CLI 0.1.3",
-      "commit": "7438807de",
-      "deploy": "pending",
-      "note": "upstream #8299; lockfile regenerado, hashes idénticos"
-    },
-    {
-      "item": "fix(daemon): count manifest-backed artifacts in run snapshots",
-      "commit": "66c226c7a",
-      "deploy": "pending",
-      "note": "upstream #7586 port manual + coverage machinery de #8172 local al fichero; .cjs/.mjs excluido (cadena #7801 ausente); 23/23 tests"
-    },
-    {
-      "item": "fix(daemon): surface classifier retryable verdict on run status",
-      "commit": "fb5fd4a35",
-      "deploy": "pending",
-      "note": "parcial de #7518: el test OPEND-2953 estaba rojo desde batch 8 (aserción sin campo); añade retryable a contrato+record+statusBody+SSE end+resume reset+stamping; también failureAction en el stamping y variante done_key del contrato"
-    },
-    {
-      "item": "fix(web,daemon): keep strategy continuations under the original task",
-      "commit": "eeceb1b56",
-      "deploy": "pending",
-      "note": "upstream #8195 (0ffafb3d7) + guard #8250 (ea58bd752); executionIntent omitido (cadena #8172); añadido testid assistant-role y caso done_key; web 114 tests, contracts 512, typechecks verdes"
-    }
-  ],
-  "blocked": [
-    {
-      "item": "G6 — observabilidad gateway (/metrics vs logs estructurados)",
-      "reason": "decisión de diseño",
-      "needs": "decision"
-    },
-    {
-      "item": "proxyAmrApiRequest — 6 tokens planos",
-      "reason": "binario vela ELF compilado; parsing de errores no verificable desde fuente/strings",
-      "needs": "decision"
-    },
-    {
-      "item": "emails transaccionales en gateway",
-      "reason": "sin mailer; SMTP requiere credenciales y decision de producto",
-      "needs": "decision"
-    },
-    {
-      "item": "canal de soporte/help in-app",
-      "reason": "falta destino real (URL/email) para enlazar",
-      "needs": "decision"
-    }
-  ],
-  "prs_open": [
-    {
-      "repo": "nexu-io/open-design",
-      "pr": 8262,
-      "note": "contribution upstream; no auto-merge posible"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 11,
-      "merged": "74fcd820e",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 12,
-      "merged": "d011a5f76",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 13,
-      "merged": "e10add9b4",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 14,
-      "merged": "cb28b84ac",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 15,
-      "merged": "50a8470db",
-      "note": "auto-merge squash ejecutado (merge inmediato, sin checks pendientes)"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 16,
-      "merged": "ce045f845",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 17,
-      "merged": "b52a7cf28",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 18,
-      "merged": "194286537",
-      "note": "auto-merge squash ejecutado"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 19,
-      "merged": "38abb6aee",
-      "note": "squash directo (auto-merge no habilitado en repo)"
-    },
-    {
-      "repo": "gruia-app/design",
-      "pr": 52,
-      "merged": "e61ba1a3c",
-      "note": "squash merge directo (auto-merge deshabilitado); lote 30"
-    }
-  ],
-  "deploys_pending": [
-    "2cc1658f5 (upstream PR #8262)",
-    "PR #4 squash (gateway G1+G2+G9)",
-    "73b37548f (PR #6)",
-    "8089972db (PR #7)",
-    "6384ae519 (PR #8)",
-    "adefce32f (PR #9)",
-    "9b3ef04ec (PR #10)",
-    "74fcd820e (PR #11)",
-    "d011a5f76 (PR #12)",
-    "e10add9b4 (PR #13)",
-    "cb28b84ac (PR #14)",
-    "50a8470db (PR #15)",
-    "ce045f845 (PR #16)",
-    "b52a7cf28 (PR #17)",
-    "194286537 (PR #18)",
-    "38abb6aee (PR #19)",
-    "PR #24 / e856fdbba (lote 10)",
-    "PR #25 / 640974bf8 (lote 11)",
-    "PR #26 / af43be3b5 (gateway audit context)",
-    "PR #27 / 9937e7e34 (gateway org_not_admitted)",
-    "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)",
-    "PR #29 / 543f080a3 (G17-G19 gateway+campaign)",
-    "PR #30 / 4e336c2c0 (G20 CI + docs)",
-    "PR #31 / 06731e717 (sync)",
-    "PR #32 / ef50042c8 (convergence)",
-    "PR #33 / 940396811 (sha256 pin)",
-    "PR #34 / f627a6ef6 (sync)",
-    "PR #35 / 056699a32 (bounded probe)",
-    "PR #36 / 0dce59798 (sync)",
-    "PR #37 / 4c8c2e447 (esbuild+docs)",
-    "PR #38 / 970ed794f (sync)",
-    "PR #39 / c73a2ee2e (dep refresh+tests)",
-    "PR #40 / 045afeadf (sync)",
-    {
-      "pr": 47,
-      "merge": "92a1667eee3b28f566c223fbc4e980ed31ad485a",
-      "deploy": "pending"
-    },
-    {
-      "pr": 49,
-      "merge": "524fd85eb26e84391a4671aabe51d873e8339c19",
-      "deploy": "pending"
-    },
-    {
-      "pr": 52,
-      "commit": "e61ba1a3c",
-      "note": "squash mergeado; deploy pendiente de Jenkins"
-    }
-  ],
-  "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12)."
+  {
+   "item": "fix(daemon): api-error envelope en rutas MCP (17 sitios) + consumer web + test 5/5",
+   "commit": "2cc1658f5",
+   "deploy": "pending",
+   "note": "upstream PR #8262"
+  },
+  {
+   "item": "gateway G1+G2+G9: sweep sesiones, anti-framing, sessionTtl config",
+   "commit": "squash via PR #4",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 batch 2: sidecar IPC, records, resilience",
+   "commit": "73b37548f",
+   "deploy": "pending",
+   "pr": 6
+  },
+  {
+   "item": "D1 batch 3: pack/serve/release quoting+validation",
+   "commit": "8089972db",
+   "deploy": "pending",
+   "pr": 7
+  },
+  {
+   "item": "D1 batch 4: web resilience, envelopes, timeouts",
+   "commit": "6384ae519",
+   "deploy": "pending",
+   "pr": 8
+  },
+  {
+   "item": "D1 batch 5: dep tree patch (next 16.3.5), context-chip i18n",
+   "commit": "adefce32f",
+   "deploy": "pending",
+   "pr": 9
+  },
+  {
+   "item": "G10: envelope api-error en brand-routes (18 sitios, 3 shapes→1) + consumers dual + BRAND_EXTRACTION_STILL_STOPPING",
+   "commit": "6b878c4e2",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 sweep: memory (072b65d02), media+xai, collab-context — PR #10 squash 9b3ef04ec",
+   "commit": "9b3ef04ec",
+   "deploy": "pending",
+   "pr": 10
+  },
+  {
+   "item": "D3: envelope en genui route errors (14 sitios, import directo)",
+   "commit": "406a03aae",
+   "deploy": "pending",
+   "pr": 11,
+   "merged": "74fcd820e"
+  },
+  {
+   "item": "D3: envelope en comment route errors (24 sitios, ctx.sendApiError + fallback)",
+   "commit": "07d14a7b2",
+   "deploy": "pending",
+   "pr": 11,
+   "merged": "74fcd820e"
+  },
+  {
+   "item": "D3: envelope en static-resource (28 sitios + sendWorkspaceScopeError local; atom/install codes en details; fixtures con sender real; bootstrap-regression al día)",
+   "commit": "0fa8652de",
+   "deploy": "pending",
+   "pr": 11,
+   "merged": "74fcd820e"
+  },
+  {
+   "item": "D3: envelope en design-systems (35 sitios + sendWorkspaceScopeError propio; workspace codes preservados; consumers dual-read)",
+   "commit": "74fcd820e",
+   "pr": 11,
+   "deploy": "pending",
+   "merged": true
+  },
+  {
+   "item": "D3 batch 3: envelope en automation (21), routine (+sendRoutineError scope shape), team-resources, team-resource-share (workspace codes verbatim); web apiErrorMessage helper + 10 consumer sites",
+   "commit": "0202c835b",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 batch 3 (4 ficheros lógicos): automation/routine/team-resources/team-resource-share + project tabs/templates/artifacts/conversations + daemon db + connectors + telemetry/attribution/presence/public-metadata/critique-artifact + plugins assets/marketplaces; web apiErrorMessage helper + readErrorMessage details.errors",
+   "commit": "d011a5f76",
+   "pr": 12,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D3: collab-sync.ts — 29 sitios token + 3 senders multi-sitio (workspace-verification, publish-principal, identity-409, FILE_*); tokens verbatim en error.code; failureKey consumer lee error.code",
+   "commit": "29b4fe3bb",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 batch 4: collab-sync + stragglers + multiline sweep + media residuals",
+   "commit": "e10add9b4",
+   "pr": 13,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 batch 5: plugins/index + daemon oauth-launch + comments fallback + plugin-assets + strategy-rollout; sweep envelope completo salvo tokens protocolo",
+   "commit": "cb28b84ac",
+   "pr": 14,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "revision post-muerte (esta sesión): diffs G7/G4 del predecesor auditados con escepticismo — schema auth_audit, retención, orden sweep/check del limiter IP y flujo de contexto correctos; 27/27 tests re-ejecutados verdes",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G7: auth audit trail — tabla auth_audit (90d/100k retención), login_success/login_failure(detail)/logout con ip+user-agent del request",
+   "commit": "7db05a69b",
+   "deploy": "pending"
+  },
+  {
+   "item": "G4: bucket rate-limit por IP en login (20/min, 10k keys, sweep-on-access) via AuthAuditContext.ip",
+   "commit": "380311354",
+   "deploy": "pending"
+  },
+  {
+   "item": "G7 refinamiento: authorize() audita session_revoked (identity_mismatch) al matar sesión por identidad revocada — 1 fila por revocación",
+   "commit": "a8f0e978f",
+   "deploy": "pending"
+  },
+  {
+   "item": "G8: readSession audita session_expired en el delete de la fila expirada — 1 fila por sesión, 0 para ids desconocidos",
+   "commit": "a0a0408bc",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #15 (gateway auth G7+G4+G8+session_revoked) mergeado squash",
+   "commit": "50a8470db",
+   "pr": 15,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 tokens fase 1: apiErrorCode helper web + dual-read useWorkspaceContext billing",
+   "commit": "dbe65a54b",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 collab-context wire: ~30 tokens -> envelope code+message, acceptedGeneration sibling preservado; 725/725 collab",
+   "commit": "8697251e9",
+   "deploy": "pending"
+  },
+  {
+   "item": "D3 vela wire local: /api/integrations/vela/* + /api/amr/models enveloped, login siblings preservados, api-proxy diferido (binario vela externo); consumers web dual-read; 93+62 tests verdes",
+   "commit": "263606cbf",
+   "deploy": "pending"
+  },
+  {
+   "item": "chore(fleet): coordinación D3 cierre tokens",
+   "commit": "ccdc25b82",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad upstream: cherry-pick fix automation CLI id splitter dead-zone (upstream #7612)",
+   "commit": "abcb99c6d",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #16 (tokens protocolo collab-context+vela + automation CLI parity) mergeado squash",
+   "commit": "ce045f845",
+   "pr": 16,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "G3: sweep periódico unref'd (15min) en SqliteSessionStore — sessions+csrf+audit retention; tests 30/30",
+   "commit": "d12f06f71",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #17 (G3 periodic sweep + cherry-picks #8212/#8063) mergeado squash",
+   "commit": "b52a7cf28",
+   "pr": 17,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: prefer direct Copilot CLI (upstream #7974)",
+   "commit": "49bcdfecc",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: defer invalid-payload until launcher eligible (upstream #7520)",
+   "commit": "b8b23ea1f",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: BYOK image input sin capability metadata (upstream #8035)",
+   "commit": "3f3425835",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: MCP workflow id en confirm briefs (upstream #7779)",
+   "commit": "e7e4b52b2",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #18 (paridad batch 4: Copilot CLI, payload handoff, BYOK image, MCP workflow id) mergeado squash",
+   "commit": "194286537",
+   "pr": 18,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: proxy Basic creds fuera de media wait tool-token (upstream #8006)",
+   "commit": "32cae7f17",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: proxy Basic creds fuera de export tool-token (upstream #7999)",
+   "commit": "6fc501fb6",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: ACP session cancel como notificación (upstream #7959)",
+   "commit": "ac06579fa",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: canonical client monitoring kinds (upstream #7945)",
+   "commit": "80d3e002f",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #19 (paridad batch 5: proxy cred lanes + ACP cancel + monitoring kinds) mergeado squash",
+   "commit": "38abb6aee",
+   "pr": 19,
+   "merged": true,
+   "deploy": "pending"
+  },
+  {
+   "item": "revision post-muerte: picks 8fdb5bc52/9638d8843/66058730e correctos; fallo de tests era dist stale de contracts (OD_NEXT_AGENT_DECLARED_BLOCK_REASON ausente en build) — resuelto con rebuild, 42/42 + 25/25 + typecheck verdes",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "D1 paridad: clarification turn Runtime State wrong stage (upstream #7980)",
+   "commit": "8fdb5bc52",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: collapse identical ternary arms normalizeComparableValue (upstream #7793)",
+   "commit": "9638d8843",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: refuse turn with nothing to design + durable blockedContext (upstream #7725, prerequisito de #7980)",
+   "commit": "66058730e",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: Novita AI model catalog (upstream #6327)",
+   "commit": "c6e0fca3c",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: bundled Vela CLI 0.0.35->0.0.38 (upstream #8273, lockfile regenerado con pnpm)",
+   "commit": "4537ab17e",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: preserve running launcher payload during cleanup (upstream #7963)",
+   "commit": "dab5cfc14",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: preserve failed ACP tool results (upstream #8046)",
+   "commit": "73bf94d37",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: OD Next clarifications resumable after restart (upstream #7575)",
+   "commit": "0520f3f08",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: AMR compaction continuation sin replay (upstream #7958; conflicto resuelto — sin hasDaemonTimeoutVerdict de #7884)",
+   "commit": "a51751d27",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: request_id + token usage por request en claude_code (upstream #4620)",
+   "commit": "04192a480",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: fail blocked OD Next runs antes de finalization (upstream #7942; conflictos test resueltos — sin OD_CODEX_TRANSPORT)",
+   "commit": "6fd3453d5",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs Rescan rename (upstream #7907)",
+   "commit": "e69489ab1",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: Thursday patch cut gate (upstream #7977)",
+   "commit": "c3513c9d9",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: packaged MCP runtime integrity + sidecar delivery (upstream #8027)",
+   "commit": "bc064afaa",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: prerelease runtime identity + Vela contract tests (upstream #7957)",
+   "commit": "850e75056",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs anchor TRANSLATIONS (upstream #7792)",
+   "commit": "1dc3876cc",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs Linux desktop availability (upstream #7698)",
+   "commit": "f38c77c65",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: docs Vela CLI Linux Docker (upstream #6590)",
+   "commit": "2848fe3f6",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: DeepSeek Harness 0.1.2-rc.1 (upstream #7825)",
+   "commit": "3f04072f9",
+   "deploy": "pending"
+  },
+  {
+   "item": "D1 paridad: French setup/recovery copy (upstream #7753)",
+   "commit": "b830d0452",
+   "deploy": "pending"
+  },
+  {
+   "item": "revision post-muerte: picks a745c2ca2 (updater predecessor ordering) y c9edcea4b (AMR chat-capable guard) auditados — diffs correctos, tests verdes previos (78/78 chat-route, 12/12 entry-handoff)",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "paridad lote 10: packaged updater ordering, AMR chat-capable guard, PPTX portable compare, e2e mock hardening",
+   "commit": "fleet/parity-10",
+   "deploy": "PR pendiente"
+  },
+  {
+   "item": "paridad lote 10 merged via PR #24",
+   "commit": "e856fdbba",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "paridad lote 11: drift card, stable release notes, e2e readiness, diagnostics env evidence",
+   "commit": "fleet/parity-11",
+   "deploy": "PR pendiente"
+  },
+  {
+   "item": "paridad lote 11 merged via PR #25",
+   "commit": "640974bf8",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "G11 — session_revoked audit lleva ip/user-agent (authorize context)",
+   "commit": "a9a7099f0",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G12 — session_expired audit con ip/user-agent",
+   "commit": "4898b0bd9",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G13 — malformed_form + logout csrf_rejected auditados",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "lote 12 gateway forense merged via PR #26",
+   "commit": "af43be3b5",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "G14 — session_revoked:org_not_admitted con borrado + contexto",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "convergencia: cola upstream agotada + inventario gaps propio cerrado",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "lote 13 merged via PR #27 — convergencia alcanzada",
+   "commit": "9937e7e34",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "G15 — x-forwarded-for propagado al daemon (audit daemon-side ve IP real)",
+   "commit": "87da4c53c",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G16 — shutdownGateway: cierre forzado de sockets para que SIGTERM no cuelgue (SSE proxy)",
+   "commit": "2149b0e97",
+   "deploy": "n/a"
+  },
+  {
+   "item": "hygiene: .playwright-cli untracked+ignored (scratch commiteado)",
+   "commit": "afb24f5e2",
+   "deploy": "n/a"
+  },
+  {
+   "item": "lote 14 merged via PR #28",
+   "commit": "cc78ada74",
+   "deploy": "pendiente"
+  },
+  {
+   "item": "G17 — session_revoked:csrf_undecryptable auditado",
+   "commit": "c5c551aa7",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G18 — HSTS en design.gruia.app (Caddyfile)",
+   "commit": "0e7d675ee",
+   "deploy": "pending"
+  },
+  {
+   "item": "G19 — publisher: pin sha256 del HTML público",
+   "commit": "8e44af759",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G20 — CI Jenkins corre suites privadas (gateway+campaign)",
+   "commit": "621f9e4f9",
+   "deploy": "n/a"
+  },
+  {
+   "item": "Docs: sync gruia-auth + gruia-b2b-campaign con código",
+   "commit": "886b75c85+7d7369001",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G19 follow-up: pin remoto por stream sha256 + elegibilidad byte-exacta (edges 2MB/utf-8)",
+   "commit": "98613bcdb",
+   "deploy": "n/a"
+  },
+  {
+   "item": "tests: URL guard SSRF del public-verifier (3 tests)",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "EXPOSE 3006 en Dockerfile.gateway (paridad con prebuilt)",
+   "commit": "HEAD",
+   "deploy": "pending"
+  },
+  {
+   "item": "post-review #2: probe con stream acotado (16MB) + truncated fail-closed",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "sync PR #35 mergeado (056699a32) — probe acotado en main",
+   "commit": "056699a32",
+   "deploy": "pending"
+  },
+  {
+   "item": "G21 dep audit — esbuild gateway 0.28.0→0.28.1 (GHSA-g7r4-m6w7-qqqr)",
+   "commit": "649b2b256",
+   "deploy": "pending"
+  },
+  {
+   "item": "PR #37 mergeado (4c8c2e447) — esbuild bump + doc sync",
+   "commit": "4c8c2e447",
+   "deploy": "pending"
+  },
+  {
+   "item": "G22 refresh deps gateway: pg 8.23.0, @types/pg 8.23.1, @types/node 24.13.6, esbuild 0.28.2",
+   "commit": "f79551a67",
+   "deploy": "pending"
+  },
+  {
+   "item": "G23 tests del scope guard de browser-qa (id/projectId)",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "PR #39 mergeado (c73a2ee2e) — dep refresh + browser-qa tests",
+   "commit": "c73a2ee2e",
+   "deploy": "pending"
+  },
+  {
+   "item": "ledger fix — deploys_pending completado con PRs #29-#40",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "FLEET_PROTOCOL §5 — flujo de publicación operativo documentado",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "upstream re-triage post-fetch-fix: 144 commits, 2 nuevos (CMS + test ChatPanel) inaplicables; d992e09fb/900d01c61/127ec0f02 verificados ya aplicados",
+   "commit": "f5707c8ca",
+   "deploy": "n/a"
+  },
+  {
+   "item": "FLEET_PROTOCOL — fetch upstream con blob:none documentado",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "tick final — convergencia declarada tras re-verificar cola upstream y superficie privada",
+   "commit": "HEAD",
+   "deploy": "n/a"
+  },
+  {
+   "item": "G24 audit subcommand — reporte auth por org (read-only, operator-only)",
+   "commit": "aa796f61b",
+   "deploy": "pending"
+  },
+  {
+   "item": "SAAS_GAPS — mapeo backlog flota → design (aplicable vs N/A vs decision)",
+   "commit": "6b85cdf1d",
+   "deploy": "n/a"
+  },
+  "lote28: gateway audit --db usage-error fix + WORKLOG sync (fleet/gaps-33)",
+  "lote28b: operator docs for auth_audit + audit subcommand (fleet/gaps-35)",
+  "lote28c: auth_audit.at index — retention deletes/reports no longer full-scan (fleet/gaps-36)",
+  "lote29: upstream picks — AMR subscription reset on profile switch (287357b12) + preview snapshot blank-page fix (1aa228115); skipped d5eddcb59/0ffafb3d7 (diverged conflicts)",
+  {
+   "item": "revision escéptica del predecesor: picks #51 verbatim upstream, índice auth_audit correcto, tests verdes (gateway 38, collab 74, srcdoc 44)",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "chore(pack): bundled Vela CLI 0.1.3",
+   "commit": "7438807de",
+   "deploy": "pending",
+   "note": "upstream #8299; lockfile regenerado, hashes idénticos"
+  },
+  {
+   "item": "fix(daemon): count manifest-backed artifacts in run snapshots",
+   "commit": "66c226c7a",
+   "deploy": "pending",
+   "note": "upstream #7586 port manual + coverage machinery de #8172 local al fichero; .cjs/.mjs excluido (cadena #7801 ausente); 23/23 tests"
+  },
+  {
+   "item": "fix(daemon): surface classifier retryable verdict on run status",
+   "commit": "fb5fd4a35",
+   "deploy": "pending",
+   "note": "parcial de #7518: el test OPEND-2953 estaba rojo desde batch 8 (aserción sin campo); añade retryable a contrato+record+statusBody+SSE end+resume reset+stamping; también failureAction en el stamping y variante done_key del contrato"
+  },
+  {
+   "item": "fix(web,daemon): keep strategy continuations under the original task",
+   "commit": "eeceb1b56",
+   "deploy": "pending",
+   "note": "upstream #8195 (0ffafb3d7) + guard #8250 (ea58bd752); executionIntent omitido (cadena #8172); añadido testid assistant-role y caso done_key; web 114 tests, contracts 512, typechecks verdes"
+  },
+  {
+   "item": "fix(web): drop malformed od-card markup and decode cards in thinking",
+   "commit": "b529b235d",
+   "deploy": "pending",
+   "note": "port manual de #8264 (441ab84b0) + #8258 (c3ec5fda7): splitShellCards nuevo en runtime/chat, AssistantMessage prose + ThinkingBlock lo consumen; tests de componente reescritos (ThinkingMarkdown/SayBlock ausentes); splitOnOdCards sigue lossless; 10/10 helper + 7/7 componente + 170/170 regresion AssistantMessage"
+  },
+  {
+   "item": "fix(chat): retain blocked task verdicts during recovery and reload",
+   "commit": "d8a217878",
+   "deploy": "pending",
+   "note": "port #8008 (5b50e9e4b): daemon cold-projection via WeakSet hydration + web cold-history restore + projectedRunAlreadyHydrated (guard de #7518) + createStrategyTaskBlockedError con reason code + deliveredDespiteBlock con projectDeliverableValid (campo #7931 añadido al contrato, daemon aun no lo envia); recoveryTargetIsCurrent→cancelled, sin findDetachedManualFileWrites; 30 daemon + 17 hydration + 10 verdict + 5 artifact tests verdes"
+  },
+  {
+   "item": "fix(web): forward workspace authority headers on local context reads",
+   "commit": "4891d62b3",
+   "deploy": "pending",
+   "note": "subset portable de #8240 (6fd2f6080): explicitWorkspaceHeaders reenvia type/role/lifecycle/member-status de la fila de directorio elegida; sin esto un Team member/admin con wallet vacio recibia dialog personal. Resto del commit NO portable: depende de onBeginProjectCreation/optimistic-frame ausente del fork; EntryShell del fork gatea antes de crear el proyecto, la carrera frame-antes-de-dialogo no ocurre. Incluye reparacion del spec blocked-history-hydration commiteado roto en d8a217878 (helpers upstream ChatPanel -> runStatus pre-fold + run-recovery card); typecheck verde"
+  },
+  {
+   "item": "test(web): pin workspace authority headers on local context reads",
+   "commit": "5bf4ba2a6",
+   "deploy": "pending",
+   "note": "explicitWorkspaceHeaders exportado como test seam + spec 2/2"
+  },
+  {
+   "item": "SKIP 792480fe2 (#8170): bounded run events + crashed-run prompt truncation",
+   "commit": "n/a",
+   "deploy": "n/a",
+   "note": "35 ficheros/~4700 lineas; 11 conflictos incl. modify/delete de run-steering.ts (borrado en el fork); subsistema entero (spawnAgentProcess file-backed stdin + reaping de agentes via packages/platform + heal de payloads) entrelazado con arquitectura divergente; sin subset coherente seguro"
+  },
+  {
+   "item": "SKIPs re-triage: f5707c8ca/3d76f3c94/e35e6542f (cms campaign/touchpoint, ficheros ausentes), 6fd2f6080 resto (ver 4891d62b3), 3c7b16b44 (project-split-layout ausente, Home divergente), 053abdc1b/425a33237 (test-only, ficheros ausentes)",
+   "commit": "n/a",
+   "deploy": "n/a"
+  },
+  {
+   "item": "fix(web): keep the rail row menu open under transcript scroll",
+   "commit": "8fe36928f",
+   "deploy": "pending",
+   "note": "subset OPEND-3283 de #8223 (b419463f9): scroll-moves-anchor verbatim + gating del dismiss en RailRecentRow (rootRef como anchor); el row menu del dock no existia en WorkspaceTabsBar del fork pero RailRecentRow tenia el mismo bug. Resto no portable: QueuedSendStack/ChatRoot.module.css borrados, campaign claims en ficheros ausentes, selected-card ring CSS divergente. 4/4 tests lib + typecheck"
+  }
+ ],
+ "blocked": [
+  {
+   "item": "G6 — observabilidad gateway (/metrics vs logs estructurados)",
+   "reason": "decisión de diseño",
+   "needs": "decision"
+  },
+  {
+   "item": "proxyAmrApiRequest — 6 tokens planos",
+   "reason": "binario vela ELF compilado; parsing de errores no verificable desde fuente/strings",
+   "needs": "decision"
+  },
+  {
+   "item": "emails transaccionales en gateway",
+   "reason": "sin mailer; SMTP requiere credenciales y decision de producto",
+   "needs": "decision"
+  },
+  {
+   "item": "canal de soporte/help in-app",
+   "reason": "falta destino real (URL/email) para enlazar",
+   "needs": "decision"
+  }
+ ],
+ "prs_open": [
+  {
+   "repo": "nexu-io/open-design",
+   "pr": 8262,
+   "note": "contribution upstream; no auto-merge posible"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 11,
+   "merged": "74fcd820e",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 12,
+   "merged": "d011a5f76",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 13,
+   "merged": "e10add9b4",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 14,
+   "merged": "cb28b84ac",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 15,
+   "merged": "50a8470db",
+   "note": "auto-merge squash ejecutado (merge inmediato, sin checks pendientes)"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 16,
+   "merged": "ce045f845",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 17,
+   "merged": "b52a7cf28",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 18,
+   "merged": "194286537",
+   "note": "auto-merge squash ejecutado"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 19,
+   "merged": "38abb6aee",
+   "note": "squash directo (auto-merge no habilitado en repo)"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 52,
+   "merged": "e61ba1a3c",
+   "note": "squash merge directo (auto-merge deshabilitado); lote 30"
+  }
+ ],
+ "deploys_pending": [
+  "2cc1658f5 (upstream PR #8262)",
+  "PR #4 squash (gateway G1+G2+G9)",
+  "73b37548f (PR #6)",
+  "8089972db (PR #7)",
+  "6384ae519 (PR #8)",
+  "adefce32f (PR #9)",
+  "9b3ef04ec (PR #10)",
+  "74fcd820e (PR #11)",
+  "d011a5f76 (PR #12)",
+  "e10add9b4 (PR #13)",
+  "cb28b84ac (PR #14)",
+  "50a8470db (PR #15)",
+  "ce045f845 (PR #16)",
+  "b52a7cf28 (PR #17)",
+  "194286537 (PR #18)",
+  "38abb6aee (PR #19)",
+  "PR #24 / e856fdbba (lote 10)",
+  "PR #25 / 640974bf8 (lote 11)",
+  "PR #26 / af43be3b5 (gateway audit context)",
+  "PR #27 / 9937e7e34 (gateway org_not_admitted)",
+  "PR #28 / cc78ada74 (gateway xff + shutdown + hygiene)",
+  "PR #29 / 543f080a3 (G17-G19 gateway+campaign)",
+  "PR #30 / 4e336c2c0 (G20 CI + docs)",
+  "PR #31 / 06731e717 (sync)",
+  "PR #32 / ef50042c8 (convergence)",
+  "PR #33 / 940396811 (sha256 pin)",
+  "PR #34 / f627a6ef6 (sync)",
+  "PR #35 / 056699a32 (bounded probe)",
+  "PR #36 / 0dce59798 (sync)",
+  "PR #37 / 4c8c2e447 (esbuild+docs)",
+  "PR #38 / 970ed794f (sync)",
+  "PR #39 / c73a2ee2e (dep refresh+tests)",
+  "PR #40 / 045afeadf (sync)",
+  {
+   "pr": 47,
+   "merge": "92a1667eee3b28f566c223fbc4e980ed31ad485a",
+   "deploy": "pending"
+  },
+  {
+   "pr": 49,
+   "merge": "524fd85eb26e84391a4671aabe51d873e8339c19",
+   "deploy": "pending"
+  },
+  {
+   "pr": 52,
+   "commit": "e61ba1a3c",
+   "note": "squash mergeado; deploy pendiente de Jenkins"
+  }
+ ],
+ "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12)."
 }

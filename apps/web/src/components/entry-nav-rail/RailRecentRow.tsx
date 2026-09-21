@@ -35,6 +35,7 @@ import {
   selectProjectFileCover,
   type ProjectCoverOverride,
 } from '../project-cover';
+import { scrollMovesAnchor } from '../../lib/scroll-moves-anchor';
 import type { Project } from '../../types';
 
 /** `undefined` = not resolved yet; `null` = resolved, this project has none. */
@@ -264,13 +265,18 @@ export function RailRecentRow({
     document.addEventListener('keydown', onKeyDown);
     // Its anchor is a snapshot of the row's position, so anything that moves
     // the row (the rail list scrolling, the page behind it) would leave the
-    // menu stranded. Dismiss instead of chasing.
-    document.addEventListener('scroll', close, true);
+    // menu stranded. Dismiss instead of chasing — but only when the scroll
+    // actually moves the row: the chat transcript auto-scrolling under a
+    // running turn is not the menu's business (OPEND-3283).
+    function onScroll(event: Event) {
+      if (scrollMovesAnchor(event, rootRef.current)) close();
+    }
+    document.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('pointerdown', onDocPointerDown);
       document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('scroll', close, true);
+      document.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', close);
     };
   }, [menuOpen, project.id]);
