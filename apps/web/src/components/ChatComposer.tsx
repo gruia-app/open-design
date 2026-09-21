@@ -513,6 +513,10 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
     // is cleared. Keep a synchronous latch so a second Enter/click in that
     // window cannot enqueue the same still-visible payload again.
     const composedSendPendingRef = useRef(false);
+    // Rendered mirror of the latch: while admission is in flight the action
+    // button shows a disabled "preparing" affordance instead of flapping
+    // between send and stop when the transcript starts streaming first.
+    const [composedSendPending, setComposedSendPending] = useState(false);
     const previousSessionModeRef = useRef(sessionMode);
 
     useEffect(() => {
@@ -1355,6 +1359,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
         },
       ).finally(() => {
         composedSendPendingRef.current = false;
+        setComposedSendPending(false);
       });
     }
 
@@ -1364,11 +1369,13 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
     ): boolean {
       if (composedSendPendingRef.current) return false;
       composedSendPendingRef.current = true;
+      setComposedSendPending(true);
       try {
         finishComposedSend(send(), pendingMetadata);
         return true;
       } catch (error) {
         composedSendPendingRef.current = false;
+        setComposedSendPending(false);
         throw error;
       }
     }
@@ -2811,8 +2818,10 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
       draft.trim().length > 0
       || staged.length > 0
       || liveCommentAttachments.length > 0;
-    const showStopButton = streaming && !hasComposerPayload;
-    const showSendButton = !streaming || hasComposerPayload;
+    // The transcript can enter streaming before the send's admission completes.
+    const showAdmissionPendingButton = composedSendPending;
+    const showStopButton = streaming && !hasComposerPayload && !showAdmissionPendingButton;
+    const showSendButton = (!streaming || hasComposerPayload) && !showAdmissionPendingButton;
 
     const openDesignSystemPicker = () => {
       const trigger = composerRootRef.current?.querySelector<HTMLButtonElement>(
@@ -3263,6 +3272,18 @@ export const ChatComposer = forwardRef<ChatComposerHandle, Props>(
                 switch it (ChatPane.handleNextStepPromptAction) — it just is
                 not chosen from here any more. */}
             {footerAccessory}
+            {showAdmissionPendingButton ? (
+              <button
+                type="button"
+                className="composer-send stop admission-pending"
+                data-testid="chat-send-pending"
+                disabled
+                aria-busy="true"
+                aria-label={t('assistant.statusPreparing')}
+              >
+                <ComposerRunIcon className="composer-run-glyph" />
+              </button>
+            ) : null}
             {showStopButton ? (
               <button
                 type="button"

@@ -566,7 +566,7 @@ function durableRunState(run) {
     assistantMessageId: run.assistantMessageId,
     clientRequestId: run.clientRequestId,
     requestFingerprint: run.requestFingerprint,
-    ...(Object.prototype.hasOwnProperty.call(run, 'appliedPluginSnapshotId')
+    ...(typeof run.appliedPluginSnapshotId === 'string'
       ? { appliedPluginSnapshotId: run.appliedPluginSnapshotId }
       : {}),
     ...(run.strategyRolloutDecision
@@ -853,6 +853,10 @@ export function createChatRunService({
       requestFingerprint:
         typeof state.requestFingerprint === 'string' ? state.requestFingerprint : null,
       agentId: typeof state.agentId === 'string' ? state.agentId : null,
+      appliedPluginSnapshotId:
+        typeof state.appliedPluginSnapshotId === 'string' && state.appliedPluginSnapshotId
+          ? state.appliedPluginSnapshotId
+          : null,
       projectMetadata: null,
       events,
       nextEventId: events.reduce((max, record) => Math.max(max, record.id), 0) + 1,

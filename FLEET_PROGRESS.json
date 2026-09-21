@@ -698,6 +698,26 @@
    "commit": "e4fedda22",
    "what": "fix(web): question form host controls translate through uiT while content keeps t(form.lang); 8 locale-split specs",
    "upstream": "e10b5b487/#8010"
+  },
+  {
+   "commit": "2ceb03144",
+   "what": "fix(daemon): preserve uploaded attachment sizes on seeded user turns (seededAttachmentSize with traversal guard)",
+   "upstream": "b4783cfc8/#8030"
+  },
+  {
+   "commit": "a72d72810",
+   "what": "fix(web): preparing action button during send admission (composedSendPending state + gated stop/send)",
+   "upstream": "0c500ef3e/#8069"
+  },
+  {
+   "commit": "3989db8b3",
+   "what": "fix(web): folded strategy retries resolve to their failed run (resolveRetryTarget walks task successors)",
+   "upstream": "246ec7d06/#7981"
+  },
+  {
+   "commit": "3d5cfc765",
+   "what": "fix(daemon): durableRunState serializes appliedPluginSnapshotId strictly (recovery side already converged in parity batch 7)",
+   "upstream": "01726d9fc/#7575"
   }
  ],
  "blocked": [
@@ -897,6 +917,74 @@
   {
    "commit": "ad4a8fc40",
    "reason": "depends on absent manualFileWriteRegistration/decideAgentFocusOpen/userTookOverPreviewRef machinery (#7518 chain)"
+  },
+  {
+   "commit": "8031b5e21",
+   "reason": "already applied (orderPathCandidatesForAgent in executables.ts)"
+  },
+  {
+   "commit": "1af682238",
+   "reason": "already applied (sendRpcNotification session/cancel)"
+  },
+  {
+   "commit": "668c09436",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "6d1d91a30",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "9f76c3a9c",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "75840861f",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "e2944daba",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "6b0692f86",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "eb7fbd817",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "c333324da",
+   "reason": "no-op pick — already applied"
+  },
+  {
+   "commit": "393ecfe9e",
+   "reason": "depends on assistantMessageNeverHadARun (#7863 chain) + host-authored cards absent in fork"
+  },
+  {
+   "commit": "50e9c0fcc",
+   "reason": "depends on manualFileWriteRegistration/userTookOverPreviewRef (#8007 chain) absent in fork"
+  },
+  {
+   "commit": "875d0b95a",
+   "reason": "test-only; w102-thinking-empty-delta-heartbeat.test.ts absent in fork"
+  },
+  {
+   "commit": "6801f25c0",
+   "reason": "successful-run-deliverable-finalization.ts deleted in fork"
+  },
+  {
+   "commit": "bf60362db",
+   "reason": "runtime/chat/build-turn-blocks + chat/primitives deleted in fork"
+  },
+  {
+   "commit": "6086bbfd9",
+   "reason": "runtime/chat/build-turn-blocks.ts deleted in fork"
+  },
+  {
+   "commit": "0af03070e",
+   "reason": "chat/primitives/record.module.css deleted in fork"
   }
  ],
  "prs_merged": [

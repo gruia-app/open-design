@@ -564,3 +564,21 @@ resubmit+jump-button 39/39, web typecheck verde.
 - `e4fedda22` — port `e10b5b487` (#8010): chrome del form via uiT (fork ya
   tenia tForLanguageTag); specs de locale-split adaptadas (SelectChoice
   ausente -> caso grouped-menu descartado).
+
+## fleet/gaps-43 — attachment sizes, send-admission, strategy retry, durable snapshot
+
+- `2ceb03144` — port `b4783cfc8` (#8030): size de adjuntos en seeded user
+  turns (seededAttachmentSize con guard anti-traversal; ChatAttachment.size
+  ya existia). headless-runs 20/20 (1 flake de carga).
+- `a72d72810` — port `0c500ef3e` (#8069): boton "preparing" durante admision
+  de envio (estado espejo del ref + gating de stop/send). Spec nueva 2/2.
+- `3989db8b3` — port `246ec7d06` (#7981): retry de tarea foldada resuelve al
+  run fallido real (resolveRetryTarget cruza sucesores de la misma task).
+  Spec adaptada (clase chat-error-retry, sin testid). 7/7.
+- `3d5cfc765` — port `01726d9fc` (#7575): durableRunState serializa
+  appliedPluginSnapshotId estricto; la parte de recovery ya estaba
+  converged (parity batch 7). run-durable-snapshot-id + workspace-gate 71/71.
+- Skips/no-ops: 10 picks ya aplicados (8031b5e21, 1af682238, 668c09436,
+  6d1d91a30, 9f76c3a9c, 75840861f, e2944daba, 6b0692f86, eb7fbd817,
+  c333324da); 393ecfe9e/50e9c0fcc (cadenas #7863/#8007 ausentes);
+  875d0b95a/6801f25c0/bf60362db/6086bbfd9/0af03070e (ficheros borrados).
