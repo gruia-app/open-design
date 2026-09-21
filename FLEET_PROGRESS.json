@@ -1,10 +1,10 @@
 {
  "app": "design",
- "updated_at": "2026-09-21T00:07:56.010082+00:00",
+ "updated_at": "2026-09-21T00:09:19.188947+00:00",
  "current": {
-  "branch": "fleet/gaps-39",
-  "state": "in_progress",
-  "note": "lote 39: 441ab84b0+c3ec5fda7 (od-card), 5b50e9e4b (verdicts blocked), headers workspace de 6fd2f6080; resto de cola re-triageado con skips documentados"
+  "branch": "main",
+  "state": "idle",
+  "note": "PR #53 squash-mergeado (ca16b9a42); lote 39 completo"
  },
  "done": [
   {
@@ -704,6 +704,12 @@
    "pr": 52,
    "merged": "e61ba1a3c",
    "note": "squash merge directo (auto-merge deshabilitado); lote 30"
+  },
+  {
+   "repo": "gruia-app/design",
+   "pr": 53,
+   "merged": "ca16b9a42",
+   "note": "squash merge directo (auto-merge deshabilitado); lote 39"
   }
  ],
  "deploys_pending": [
@@ -753,6 +759,11 @@
   {
    "pr": 52,
    "commit": "e61ba1a3c",
+   "note": "squash mergeado; deploy pendiente de Jenkins"
+  },
+  {
+   "pr": 53,
+   "commit": "ca16b9a42",
    "note": "squash mergeado; deploy pendiente de Jenkins"
   }
  ],
