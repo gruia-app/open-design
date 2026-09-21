@@ -795,6 +795,9 @@
 .question-form-titles {
   flex: 1;
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .question-form-title {
   font-size: 14px;
@@ -828,6 +831,16 @@
   flex: 0 0 auto;
   color: var(--text-muted);
   font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.qf-picked {
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-inline-start: auto;
+  color: var(--text-strong);
+  font-size: var(--font-size-12);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;

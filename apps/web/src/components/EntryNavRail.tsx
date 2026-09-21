@@ -262,6 +262,7 @@ interface Props {
   priorityAnnouncementActive?: boolean;
   onPriorityAnnouncementPendingChange?: (pending: boolean) => void;
   priorityAnnouncementCurrentPlanId?: string | null;
+  priorityAnnouncementAmrProfile?: string | null;
   priorityAnnouncementMetricsConsent?: boolean;
 }
 
@@ -765,6 +766,7 @@ interface EntryTopRightClusterProps {
   priorityAnnouncementActive?: boolean;
   onPriorityAnnouncementPendingChange?: (pending: boolean) => void;
   priorityAnnouncementCurrentPlanId?: string | null;
+  priorityAnnouncementAmrProfile?: string | null;
   priorityAnnouncementMetricsConsent?: boolean;
 }
 
@@ -793,6 +795,7 @@ export function EntryTopRightCluster({
   priorityAnnouncementActive,
   onPriorityAnnouncementPendingChange,
   priorityAnnouncementCurrentPlanId,
+  priorityAnnouncementAmrProfile,
   priorityAnnouncementMetricsConsent,
 }: EntryTopRightClusterProps) {
   const { t } = useI18n();
@@ -1314,6 +1317,7 @@ export function EntryTopRightCluster({
           priorityAnnouncementActive={priorityAnnouncementActive}
           onPriorityAnnouncementPendingChange={onPriorityAnnouncementPendingChange}
           priorityAnnouncementCurrentPlanId={priorityAnnouncementCurrentPlanId}
+          priorityAnnouncementAmrProfile={priorityAnnouncementAmrProfile}
           priorityAnnouncementMetricsConsent={priorityAnnouncementMetricsConsent}
         />
       ) : null}
@@ -1505,6 +1509,7 @@ export function EntryNavRail({
   priorityAnnouncementActive,
   onPriorityAnnouncementPendingChange,
   priorityAnnouncementCurrentPlanId,
+  priorityAnnouncementAmrProfile,
   priorityAnnouncementMetricsConsent,
 }: Props) {
   const { t } = useI18n();
@@ -2159,6 +2164,7 @@ export function EntryNavRail({
           priorityAnnouncementActive={priorityAnnouncementActive}
           onPriorityAnnouncementPendingChange={onPriorityAnnouncementPendingChange}
           priorityAnnouncementCurrentPlanId={priorityAnnouncementCurrentPlanId}
+          priorityAnnouncementAmrProfile={priorityAnnouncementAmrProfile}
           priorityAnnouncementMetricsConsent={priorityAnnouncementMetricsConsent}
         />
       )}
@@ -2195,6 +2201,7 @@ export function EntryNavRail({
         priorityAnnouncementActive={priorityAnnouncementActive}
         onPriorityAnnouncementPendingChange={onPriorityAnnouncementPendingChange}
         priorityAnnouncementCurrentPlanId={priorityAnnouncementCurrentPlanId}
+        priorityAnnouncementAmrProfile={priorityAnnouncementAmrProfile}
         priorityAnnouncementMetricsConsent={priorityAnnouncementMetricsConsent}
       />
     </nav>

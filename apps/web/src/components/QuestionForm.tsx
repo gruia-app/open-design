@@ -491,7 +491,7 @@ export const QuestionFormView = forwardRef<QuestionFormHandle, Props>(function Q
       <FormHead className="question-form-head">
         <span className="question-form-icon" aria-hidden>?</span>
         <div className="question-form-titles">
-          <div className="question-form-title">{form.title}</div>
+          <div className="question-form-title" title={form.title}>{form.title}</div>
           {form.description ? (
             <div className="question-form-desc">{form.description}</div>
           ) : null}

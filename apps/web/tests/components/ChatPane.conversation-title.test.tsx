@@ -189,7 +189,7 @@ describe('ChatPane session switcher', () => {
     const parsedConsoleUrl = new URL(String(consoleUrl));
     // Top-up reports on the console dashboard now, not a wallet page.
     expect(`${parsedConsoleUrl.origin}${parsedConsoleUrl.pathname}`).toBe(
-      'https://vela.powerformer.net/dashboard',
+      'https://open-design.powerformer.net/cloud/dashboard',
     );
     // The plain top-up entry must NOT carry the upgrade intent — it opens the
     // console to add credit, not the plan catalog.

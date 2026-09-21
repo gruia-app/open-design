@@ -599,3 +599,26 @@ resubmit+jump-button 39/39, web typecheck verde.
 - `2b3b4e8ce` — subset de `ad9078b87` (#8001): flex-wrap+min-width en
   .assistant-footer-controls (unicas reglas con markup en el fork).
 - Skips: `d06eb1efe` no-op tras resolucion.
+
+## gaps-45 (2026-09-21)
+
+- `81f2f6259` — port `e21f6bf29` (#8031): titulos largos de question-form
+  recuperables via title attr + estilos .qf-picked. 2/2 + 41/41.
+- `4e86dc863` — port `4de36a0f7` (#7955): historial legible retenido durante
+  refresh de authority del mismo principal; queue/send bloqueados hasta
+  lectura autoritativa. 13/13 + 51/51.
+- `3a54b132c` — port `d465086b2` (#8126) adaptado: links AMR a rutas Cloud
+  dashboard (daemon por perfil + mapa web). El fork mantiene la decision
+  deliberada de enviar CTAs genericos a /pricing/ publico. 138/138 + 88/88.
+- `841f60e19` — port `53a47bf91` (#7944): clientType+osName en telemetria
+  de excepciones direct-fetch. Tests DU de maquinaria ausente descartados.
+  50/50.
+- `921caeecd` — port `ea58bd752` (#8250): la mitad faltante del fix —
+  liveAssistantMessageIds en el merge transcript autoritativo evita que el
+  buffer flush duplique frames tras GET mid-run. Bug real del fork
+  corregido (form duplicada tras authority refresh). 208/208.
+- Skips: `712b0db97` (chat-turn-host-protocol/next_steps ausente),
+  `1ff25e5b2`/`d5eddcb59`/`287357b12`/`ac6115406`/`b6b0022fb`/`55b3762af`/
+  `0ffafb3d7`/`441ab84b0` no-ops ya converged, `e3400d2d0`/`1424be972`/
+  `39d9eb593`/`dcfd44eed`/`13d3676f8`/`954f304dd`/`98f2fd1a4` maquinaria
+  ausente.

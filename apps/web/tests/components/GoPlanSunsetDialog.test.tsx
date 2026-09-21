@@ -22,12 +22,14 @@ afterEach(() => {
 function renderDialog(
   onDismiss = vi.fn(async () => undefined),
   locale: Locale = 'zh-CN',
+  profile: string | null = null,
 ) {
   const result = render(
     <I18nProvider initial={locale}>
       <GoPlanSunsetDialog
         active
         currentPlanId="go"
+        profile={profile}
         metricsConsent={false}
         onDismiss={onDismiss}
       />
@@ -157,5 +159,15 @@ describe('GoPlanSunsetDialog', () => {
       '_blank',
       'noopener,noreferrer',
     );
+  });
+
+  it('keeps the plan action on the public pricing surface for non-prod profiles', () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
+    renderDialog(vi.fn(async () => undefined), 'zh-CN', 'test');
+
+    fireEvent.click(screen.getByRole('button', { name: '查看其他订阅' }));
+
+    const target = new URL(String(open.mock.calls.at(-1)?.[0]));
+    expect(`${target.origin}${target.pathname}`).toBe('https://open-design.ai/pricing/');
   });
 });

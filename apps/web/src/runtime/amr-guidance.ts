@@ -20,7 +20,7 @@ import {
 // (vela #1055), so sending a user to /wallet would drop them on a surface the
 // product no longer navigates to.
 export const AMR_CONSOLE_URL =
-  'https://open-design.ai/amr/dashboard?source=open_design';
+  'https://open-design.ai/cloud/dashboard?source=open_design';
 export const DEFAULT_AMR_RECHARGE_URL = AMR_CONSOLE_URL;
 export const AMR_RECHARGE_URL = DEFAULT_AMR_RECHARGE_URL;
 export const OPEN_DESIGN_PRICING_URL = 'https://open-design.ai/pricing/';
@@ -31,7 +31,7 @@ const AMR_CONSOLE_PATH = '/dashboard?source=open_design';
 
 const AMR_CONSOLE_URL_BY_PROFILE: Record<string, string> = {
   prod: DEFAULT_AMR_RECHARGE_URL,
-  test: 'https://vela.powerformer.net/dashboard?source=open_design',
+  test: 'https://open-design.powerformer.net/cloud/dashboard?source=open_design',
   local: 'http://localhost:5173/dashboard?source=open_design',
 };
 

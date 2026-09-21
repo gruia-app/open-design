@@ -1,10 +1,10 @@
 {
  "app": "design",
- "updated_at": "2026-09-21T01:49:12Z",
+ "updated_at": "2026-09-21T04:03:09Z",
  "current": {
-  "branch": "fleet/gaps-41",
-  "state": "idle",
-  "note": "PR #53 squash-mergeado (ca16b9a42); lote 39 completo"
+  "branch": "fleet/gaps-45",
+  "state": "publishing",
+  "note": "5 product commits; publish batch"
  },
  "done": [
   {
@@ -743,6 +743,31 @@
    "commit": "2b3b4e8ce",
    "what": "fix(chat): .assistant-footer-controls flex-wrap+min-width subset (footer-time/continue-remaining rules lack markup here)",
    "upstream": "ad9078b87/#8001"
+  },
+  {
+   "commit": "81f2f6259",
+   "what": "fix(web): long question-form titles stay recoverable via title attr + .qf-picked styles",
+   "upstream": "e21f6bf29/#8031"
+  },
+  {
+   "commit": "4e86dc863",
+   "what": "fix(chat): retain readable history while same-principal workspace authority refreshes; queue/send gated on authoritative read",
+   "upstream": "4de36a0f7/#7955"
+  },
+  {
+   "commit": "3a54b132c",
+   "what": "fix(amr): client links aligned with Cloud dashboard routes (daemon per-profile origins + web console map); fork keeps public-Pricing policy for generic upgrade CTAs",
+   "upstream": "d465086b2/#8126"
+  },
+  {
+   "commit": "841f60e19",
+   "what": "fix(web): stamp clientType+osName on direct-fetch exception telemetry",
+   "upstream": "53a47bf91/#7944"
+  },
+  {
+   "commit": "921caeecd",
+   "what": "fix(web): live-stream ownership on mid-run transcript GET (liveAssistantMessageIds in merge)",
+   "upstream": "ea58bd752/#8250"
   }
  ],
  "blocked": [
@@ -935,7 +960,7 @@
   }
  ],
  "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
- "branch": "fleet/gaps-42",
+ "branch": "fleet/gaps-45",
  "skipped_upstream": [
   {
    "commit": "900d01c61",
@@ -1036,6 +1061,70 @@
   {
    "commit": "d06eb1efe",
    "reason": "no-op after resolution — fork already converged (OD_CODEX_TRANSPORT machinery absent, test deltas HEAD-side)"
+  },
+  {
+   "commit": "e3400d2d0",
+   "reason": "artifact cover-image card subsystem absent in fork (FileOpsSummary has no covers; ProducedFiles is icon+name list)"
+  },
+  {
+   "commit": "1424be972",
+   "reason": "artifact card refresh subsystem absent/divergent in fork"
+  },
+  {
+   "commit": "39d9eb593",
+   "reason": "requires userTookOverPreviewRef/requestOpenTurnArtifacts terminal-artifact machinery absent in fork"
+  },
+  {
+   "commit": "dcfd44eed",
+   "reason": "artifact-focus card-order subsystem deleted in fork"
+  },
+  {
+   "commit": "13d3676f8",
+   "reason": "execution-clock machinery (useTickingNow, stampRunSpan, done_key spans) absent in fork"
+  },
+  {
+   "commit": "954f304dd",
+   "reason": "no next-step suggestion surface in fork (nextStepSuggestions/onNextStepSuggestion absent)"
+  },
+  {
+   "commit": "98f2fd1a4",
+   "reason": "74-file ExecutionShell/prompt-card redesign with deleted+divergent files; definitively incompatible"
+  },
+  {
+   "commit": "712b0db97",
+   "reason": "fix targets next-step suggestions via chat-turn-host-protocol/done_key marker chain absent in fork; residual ui-locale text tweak cosmetic only"
+  },
+  {
+   "commit": "1ff25e5b2",
+   "reason": "no-op — fork already converged (supervisor.mjs, runtime-manifest, daemon-url integrity tests all present)"
+  },
+  {
+   "commit": "ac6115406",
+   "reason": "no-op — fork already bundles @powerformer/vela-cli 0.1.3"
+  },
+  {
+   "commit": "d5eddcb59",
+   "reason": "no-op — already converged (manifest-backed artifact counts in run snapshots)"
+  },
+  {
+   "commit": "287357b12",
+   "reason": "no-op — already converged (workspace subscription reset on profile switch)"
+  },
+  {
+   "commit": "441ab84b0",
+   "reason": "no-op — source already converged; upstream test file deleted in fork"
+  },
+  {
+   "commit": "b6b0022fb",
+   "reason": "no-op — AMR_CONTINUATION classification already in fork; only watchdog-verdict context diverged"
+  },
+  {
+   "commit": "55b3762af",
+   "reason": "no-op — request_usage contract+stream+telemetry already converged"
+  },
+  {
+   "commit": "0ffafb3d7",
+   "reason": "no-op — runMappings/strategyTaskRunIndex already converged; only plan_only executionIntent passthrough absent (chain #8172)"
   }
  ],
  "prs_merged": [

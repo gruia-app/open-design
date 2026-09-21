@@ -42,6 +42,7 @@ import {
 import type { ComponentProps, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import proseFixture from '../fixtures/chat/clarification-hydration.json';
 import { ProjectView } from '../../src/components/ProjectView';
 import type { ProjectWorkspaceScopeState } from '../../src/collab/useProjectWorkspaceScope';
 import { resetWorkspaceContextCache } from '../../src/collab/useWorkspaceContext';
@@ -767,7 +768,7 @@ describe('a Home auto-send identifies its caller before the project scope resolv
     },
   );
 
-  it('clears the established transcript when request authority changes and reload fails', async () => {
+  it('retains the same readable principal transcript during refresh and clears it if reload fails', async () => {
     window.sessionStorage.removeItem(`od:auto-send-first:${PROJECT_ID}`);
     const persistedMessage: ChatMessage = {
       id: 'persisted-assistant',
@@ -808,15 +809,24 @@ describe('a Home auto-send identifies its caller before the project scope resolv
     }));
 
     await waitFor(() => expect(mockedListMessages).toHaveBeenCalledTimes(2));
-    expect(chatPaneSpy.mock.calls.at(-1)?.[0].messages).toEqual([]);
-
-    await act(async () => {
-      reload.reject(new Error('workspace directory unavailable'));
-      await reload.promise.catch(() => undefined);
-    });
+    try {
+      // Scope confirms the same active workspace member with a different role.
+      // Keep their history visible, but wait for the fresh read before sending.
+      expect(chatPaneSpy.mock.calls.at(-1)?.[0].messages).toEqual([persistedMessage]);
+      expect(view.getByTestId('normal-send')).toBeDisabled();
+      fireEvent.click(view.getByTestId('normal-send'));
+      expect(mockedStreamViaDaemon).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => {
+        reload.reject(new Error('workspace directory unavailable'));
+        await reload.promise.catch(() => undefined);
+      });
+    }
 
     expect(chatPaneSpy.mock.calls.at(-1)?.[0].messages).toEqual([]);
     expect(chatPaneSpy.mock.calls.at(-1)?.[0].messagesConversationId).toBeNull();
+    expect(view.getByTestId('normal-send')).toBeDisabled();
+    fireEvent.click(view.getByTestId('normal-send'));
     expect(mockedStreamViaDaemon).not.toHaveBeenCalled();
   });
 
@@ -905,6 +915,97 @@ describe('a Home auto-send identifies its caller before the project scope resolv
     ]);
 
     activeStream.resolve();
+  });
+
+  // OPEND-3230 guard: the raw form tail observed in the field was cut INSIDE
+  // the question form, after the client had already rendered the text before
+  // the cut. The live-stream ownership on Home authority refresh must hold for
+  // that cut too, not only for a cut in the prose before the form.
+  it.each(['buffer fallback', 'same-batch terminal'] as const)(
+    'does not append a flushed partial question form behind the authoritative transcript on Home authority refresh (%s)', async (settlement) => {
+    const activeStream = deferred<void>();
+    let runOptions: Parameters<typeof streamViaDaemon>[0] | undefined;
+    mockedStreamViaDaemon.mockImplementation((options) => {
+      runOptions = options;
+      return activeStream.promise;
+    });
+    const view = renderProjectView();
+    await waitFor(() => expect(runOptions).toBeDefined());
+    await act(async () => {
+      runOptions?.onRunCreated?.('run-clarification-fixture');
+      runOptions?.onRunStatus?.('running');
+    });
+    const live = chatPaneSpy.mock.calls.at(-1)?.[0].messages as ChatMessage[];
+    const assistant = live.find((message) => message.role === 'assistant')!;
+    expect(assistant.runId).toBe('run-clarification-fixture');
+    vi.useFakeTimers();
+    const authorityReload = deferred<ChatMessage[]>();
+    mockedListMessages.mockReturnValueOnce(authorityReload.promise);
+    workspaceScopeMocks.projectScope = {
+      loading: false,
+      scope: {
+        kind: 'team', projectId: PROJECT_ID, workspaceId: TEAM_WORKSPACE, visibility: 'team',
+        context: {
+          ...CALLER_CONTEXT, role: 'admin',
+          permissions: buildWorkspacePermissions({ role: 'admin', lifecycleState: 'active' }),
+        } as WorkspaceCollabContext & { workspaceType: 'team' },
+      },
+    };
+    await act(async () => {
+      view.rerender(projectViewElement());
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(mockedListMessages).toHaveBeenCalledTimes(2);
+    const full = proseFixture.events.filter((event) => event.kind === 'text')
+      .map((event) => 'text' in event ? event.text : '').join('');
+    const prefix = full.slice(0, full.indexOf('"title":"Choose'));
+    expect(prefix).toContain('<question-form>');
+    await act(async () => {
+      runOptions?.handlers.onDelta(prefix);
+      runOptions?.handlers.onAgentEvent({ kind: 'text', text: prefix });
+    });
+    // Unlike the prose cut above, this prefix is already on screen before the
+    // authoritative GET lands.
+    await act(async () => { await vi.advanceTimersByTimeAsync(250); });
+    expect((chatPaneSpy.mock.calls.at(-1)?.[0].messages as ChatMessage[])
+      .find((message) => message.id === assistant.id)?.content).toBe(prefix);
+    const pendingTranscript = mockedListMessages.mock.results.at(-1)?.value as Promise<ChatMessage[]>;
+    expect(pendingTranscript).toBeInstanceOf(Promise);
+    try {
+      await act(async () => {
+        authorityReload.resolve(live.map((message) => message.id === assistant.id ? {
+          ...message, content: full, events: [{ kind: 'text', text: full }],
+        } : message));
+        await pendingTranscript;
+        if (settlement === 'same-batch terminal') {
+          const suffix = full.slice(prefix.length);
+          runOptions?.handlers.onDelta(suffix);
+          runOptions?.handlers.onAgentEvent({ kind: 'text', text: suffix });
+          runOptions?.onRunStatus?.('succeeded');
+          runOptions?.handlers.onDone(full);
+        } else {
+          await vi.advanceTimersByTimeAsync(0);
+        }
+      });
+      if (settlement === 'buffer fallback') {
+        await act(async () => { await vi.advanceTimersByTimeAsync(250); });
+        await act(async () => {
+          const suffix = full.slice(prefix.length);
+          runOptions?.handlers.onDelta(suffix);
+          runOptions?.handlers.onAgentEvent({ kind: 'text', text: suffix });
+          await vi.advanceTimersByTimeAsync(250);
+        });
+      }
+      const actual = (chatPaneSpy.mock.calls.at(-1)?.[0].messages as ChatMessage[])
+        .find((message) => message.id === assistant.id)!;
+      expect(actual.content).toBe(full);
+      const text = actual.events?.filter((event) => event.kind === 'text')
+        .map((event) => event.text).join('');
+      expect(text).toBe(full);
+    } finally {
+      activeStream.resolve();
+      await act(async () => { await activeStream.promise; });
+    }
   });
 
   it('keeps a terminal cold Home run attached when the empty refresh outlives its controller', async () => {
