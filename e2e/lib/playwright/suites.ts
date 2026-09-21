@@ -32,6 +32,10 @@ export const uiP0Groups = {
       "ui/entry-chrome-flows.test.ts",
       "ui/entry-configuration-flows.test.ts",
       "ui/home-hero-rail.test.ts",
+      // Enrolled 2026-09-21: the Home → project hand-off split-width spec
+      // (OPEND-3207) pins what only a running browser can see — the chat
+      // column must not move while the optimistic frame hands over.
+      "ui/home-send-split-width.test.ts",
       "ui/amr-onboarding.test.ts",
       "ui/api-empty-response.test.ts",
       "ui/settings-api-protocol.test.ts",

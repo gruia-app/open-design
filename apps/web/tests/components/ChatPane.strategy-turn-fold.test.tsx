@@ -157,4 +157,59 @@ describe('foldStrategyTaskTurns settlement', () => {
 
     expect(folded[0]!.strategyTaskDelivered).toBeUndefined();
   });
+
+  it('stamps each folded run\'s own wall-clock span onto its done_key (#7921)', () => {
+    const folded = foldStrategyTaskTurns([
+      assistant({
+        id: 'a-plan',
+        content: 'PLAN',
+        createdAt: 1_000,
+        endedAt: 2_000,
+        events: [{ kind: 'done_key', key: 'key-run-0' }],
+        strategyTaskExecutionId: 'odnext_1',
+        strategyTaskRunIndex: 0,
+      }),
+      assistant({
+        id: 'a-production',
+        content: 'BUILT',
+        createdAt: 3_000,
+        endedAt: 9_500,
+        events: [{ kind: 'done_key', key: 'key-run-1' }],
+        strategyTaskExecutionId: 'odnext_1',
+        strategyTaskRunIndex: 1,
+      }),
+    ]);
+
+    expect(folded).toHaveLength(1);
+    const doneKeys = folded[0]!.events!.filter((e) => e.kind === 'done_key');
+    expect(doneKeys).toEqual([
+      { kind: 'done_key', key: 'key-run-0', runStartedAt: 1_000, runEndedAt: 2_000 },
+      { kind: 'done_key', key: 'key-run-1', runStartedAt: 3_000, runEndedAt: 9_500 },
+    ]);
+  });
+
+  it('leaves an in-flight run\'s done_key without an end bound', () => {
+    const folded = foldStrategyTaskTurns([
+      assistant({
+        id: 'a-plan',
+        content: 'PLAN',
+        createdAt: 1_000,
+        endedAt: 2_000,
+        events: [{ kind: 'done_key', key: 'key-run-0' }],
+        strategyTaskExecutionId: 'odnext_1',
+        strategyTaskRunIndex: 0,
+      }),
+      assistant({
+        id: 'a-production',
+        content: 'BUILT',
+        createdAt: 3_000,
+        events: [{ kind: 'done_key', key: 'key-run-1' }],
+        strategyTaskExecutionId: 'odnext_1',
+        strategyTaskRunIndex: 1,
+      }),
+    ]);
+
+    const doneKeys = folded[0]!.events!.filter((e) => e.kind === 'done_key');
+    expect(doneKeys[1]).toEqual({ kind: 'done_key', key: 'key-run-1', runStartedAt: 3_000 });
+  });
 });
