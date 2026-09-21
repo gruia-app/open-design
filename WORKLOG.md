@@ -833,3 +833,50 @@ Convergencias verificadas en gaps-51:
   (Home refresh + su propio revert), `ad09d3883` (ChatPanel rebuild),
   `81044a03c` (whats-new.json ausente), `92bf0b7ad` + 14 commits de
   release-pipeline/e2e-lane upstream.
+
+## fleet/gaps-52 — OD Next default-on (port #7876) + gateway /metrics (G6) + cierre de DECISIONES
+
+### Triage upstream: agotado
+Los 137 commits detrás de main quedan clasificados tras gaps-51; el último
+(`21fffb860`, docs) converge. No quedan candidatos de producto sin evaluar.
+
+### Commits
+- `afa6500d2` — `bb9682a5f` (#7876): OD Next pasa a default-on. Instalación
+  sin configurar resuelve `active`; `off` explícito se respeta en cada
+  release posterior; modo guardado ilegible resuelve a `off`
+  (`OD_NEXT_MODE_WHEN_CONFIG_UNREADABLE`) en vez de leerse como sin
+  configurar. El switch de Labs queda como opt-out. Adaptaciones del fork:
+  sin `migrateChatArtifacts` (feature ausente), sin la ruta reset-latch
+  obsoleta (se conserva el endpoint read-only de status), y sin el ajuste
+  del test `thinking-stream-panel-grammar` (ausente; cobertura equivalente
+  en runtime stream tests). Validado: 118/118 tests enfocados
+  rollout+app-config+rutas, 180/180 web Labs/Settings, typechecks
+  daemon+contracts+web. La suite od-next-automatic-simple-server tiene 3
+  fallos de hook-timeout PREEXISTENTES en HEAD limpio (verificado via
+  stash) + flakes de carga que pasan aislados.
+- `46c7fdff9` — G6: `GET /metrics` Prometheus en el gateway, gateado por
+  `metricsToken` opcional en el JSON protegido (unset → 404, sin superficie
+  nueva). Bearer timing-safe, `www-authenticate` en 401. Series gauge de
+  cardinalidad acotada sin PII: `gruia_gateway_uptime_seconds`,
+  `gruia_gateway_sessions_active`, `gruia_gateway_auth_events{event,detail}`
+  sobre la ventana retenida de auth_audit. Nuevo `src/metrics.ts` puro +
+  `readMetrics` en SessionStore. Documentado en docs/gruia-auth.md.
+  Tests: 6 nuevas + 2 de config (46/46), typecheck verde.
+
+### DECISIONES resueltas (8/8)
+- `od-next-default-route` → sí: port completo adaptado (`afa6500d2`).
+- `gateway-observability` → métricas: `/metrics` implementado (`46c7fdff9`).
+- `amr-proxy-error-envelope` → no: excepción permanente documentada; el
+  binario vela consume flat tokens y su contrato no es verificable. D3
+  cerrado con excepción registrada.
+- `transactional-emails` → no: sin decisión SMTP ni credenciales; usuarios
+  internos fuera de banda.
+- `support-channel` → ninguno: verificado que no existe destino real de
+  help/contacto en el fork.
+- `limits-metering` → no: sin planes; población interna.
+- `onboarding-checklist` → no: GruiaExamples ya da primer valor; coste
+  alto/bajo retorno en web divergida.
+- `growth-invite-flow` → no: admisión externa; sin superficie de invitación.
+
+SAAS_GAPS.md: G6 y D3 marcados `[x]`; los seis N/A del backlog pasan a
+`[x]` con la decisión registrada.

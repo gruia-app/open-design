@@ -76,3 +76,36 @@ with distinct user counts and last activity, and the top 10 client IPs. It
 opens the database read-only, never touches sessions or Postgres, and is
 deliberately not an HTTP endpoint — audit metadata must not ride the
 authenticated session surface.
+
+## Metrics scrape endpoint
+
+`GET /metrics` serves Prometheus text exposition when `metricsToken` is set in
+the protected gateway JSON; without the key the route answers 404 and exposes
+nothing. The scrape requires `Authorization: Bearer <metricsToken>` — the token
+lives beside `sessionSecret` in the same operator-only file, never in the
+repository, and unrelated `Authorization` headers still never reach upstream
+daemons because the proxy strips them.
+
+Series are deliberately low-cardinality and free of PII: no IPs, emails, user
+ids, or organization ids appear. Every series is a gauge:
+
+- `gruia_gateway_uptime_seconds` — process uptime.
+- `gruia_gateway_sessions_active` — sessions whose expiry has not passed.
+- `gruia_gateway_auth_events{event, detail}` — retained `auth_audit` rows
+  grouped by event and failure detail (e.g. `login_failure` with
+  `detail="rate_limited"` surfaces brute-force pressure). Counts cover the
+  retained window only, so they can shrink when retention prunes.
+
+Example scrape config:
+
+```yaml
+scrape_configs:
+  - job_name: gruia-gateway
+    bearer_token: <metricsToken>
+    static_configs:
+      - targets: ["design.gruia.app"]
+```
+
+This is aggregate operational telemetry, not the per-tenant audit report —
+per-organization and per-IP detail stays in `gruia-gateway audit`, which
+remains a local read-only command.

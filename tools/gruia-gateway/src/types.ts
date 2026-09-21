@@ -18,6 +18,10 @@ export type GatewayConfig = Readonly<{
   upstreamTimeoutMs: number;
   clientAccessOpen: boolean;
   testMode: boolean;
+  // Bearer token guarding GET /metrics. Absent disables the endpoint entirely —
+  // the gateway sits behind a public proxy, so an unguarded scrape surface
+  // would publish auth-failure volumes and session counts to anyone.
+  metricsToken?: string;
 }>;
 
 export type GatewayIdentity = Readonly<{
@@ -56,6 +60,13 @@ export type AuthAuditRecord = Readonly<{
   detail?: string;
 }>;
 
+export type AuthEventCount = Readonly<{ event: string; detail: string; count: number }>;
+
+export type GatewayStoreMetrics = Readonly<{
+  authEvents: readonly AuthEventCount[];
+  activeSessions: number;
+}>;
+
 export interface SessionStore {
   createLoginCsrf(token: string, expiresAt: number): void;
   consumeLoginCsrf(cookieToken: string, formToken: string, now: number): boolean;
@@ -65,6 +76,7 @@ export interface SessionStore {
   deleteSession(id: string): void;
   recordAuthEvent(record: AuthAuditRecord): void;
   readAuthAudit(limit: number): AuthAuditRecord[];
+  readMetrics(now: number): GatewayStoreMetrics;
   close(): void;
 }
 

@@ -81,5 +81,6 @@ export function loadConfig(path: string): GatewayConfig {
     upstreamTimeoutMs: integer(value.upstreamTimeoutMs, "upstreamTimeoutMs", 30_000, 1000, 120_000),
     clientAccessOpen: value.clientAccessOpen === true,
     testMode,
+    ...(value.metricsToken === undefined ? {} : { metricsToken: text(value.metricsToken, "metricsToken", 512) }),
   });
 }

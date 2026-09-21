@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import type { AuthAuditContext, AuthAuditRecord, SessionStore, StoredSession } from "./types.js";
+import type { AuthAuditContext, AuthAuditRecord, GatewayStoreMetrics, SessionStore, StoredSession } from "./types.js";
 
 type SessionRow = { id_hash: string; user_id: string; organization_id: string; role: string; csrf_token: string; expires_at: number };
 const digest = (value: string): string => createHash("sha256").update(value).digest("base64url");
@@ -75,6 +75,11 @@ export class SqliteSessionStore implements SessionStore {
       ...(row.user_agent ? { userAgent: row.user_agent } : {}),
       ...(row.detail ? { detail: row.detail } : {}),
     }));
+  }
+  readMetrics(now: number): GatewayStoreMetrics {
+    const rows = this.db.prepare("SELECT event, COALESCE(detail, '') AS detail, COUNT(*) AS n FROM auth_audit GROUP BY event, detail").all() as Array<{ event: string; detail: string; n: number }>;
+    const activeSessions = (this.db.prepare("SELECT COUNT(*) AS n FROM password_sessions WHERE expires_at >= ?").get(now) as { n: number }).n;
+    return Object.freeze({ authEvents: Object.freeze(rows.map((row) => Object.freeze({ event: row.event, detail: row.detail, count: row.n }))), activeSessions });
   }
   close(): void { clearInterval(this.sweepTimer); this.db.close(); }
 }

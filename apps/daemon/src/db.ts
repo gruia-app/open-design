@@ -29,7 +29,6 @@ import { migrateLibrary } from './library-store.js';
 import { migratePlugins } from './plugins/persistence.js';
 import { migrateProjectScenarioBindings } from './plugins/scenario-binding.js';
 import { emittedRenderableQuestionForm } from './question-form-detect.js';
-import { migrateOdNextRolloutStore } from './strategies/od-next/rollout.js';
 import {
   RUN_EVENT_JSON_BUDGET_BYTES,
   boundPersistedAgentEvent,
@@ -586,7 +585,6 @@ function migrate(db: SqliteDb): void {
   migratePlugins(db);
   migrateProjectScenarioBindings(db);
   migrateStrategyTaskStore(db);
-  migrateOdNextRolloutStore(db);
   migrateCollabSyncSnapshots(db);
   migrateCommentRelayOutbox(db);
   migrateAmrTerminalReportOutbox(db);

@@ -20,7 +20,13 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   compartido. Merged vía PR #15 (`50a8470db`).
 - [x] G5 — `GET /auth/session` `csrfToken`: verificado — `json()` aplica `noStore`
   globalmente a rutas /auth. Sin gap real.
-- [ ] G6 — sin métricas/observabilidad propia (solo /healthz). (!) decisión de diseño.
+- [x] G6 — sin métricas/observabilidad propia (solo /healthz). Resuelto con
+  `GET /metrics` Prometheus gateado por `metricsToken` en el JSON protegido
+  (unset → 404, sin superficie nueva). Series gauge de baja cardinalidad sin
+  PII: `gruia_gateway_uptime_seconds`, `gruia_gateway_sessions_active`,
+  `gruia_gateway_auth_events{event,detail}` sobre la ventana retenida de
+  auth_audit (commit `46c7fdff9`, tests 46/46). El reporte por tenant sigue
+  siendo CLI-only (`gruia-gateway audit`).
 - [x] G7 — sin auditoría de logins (quién, cuándo, desde dónde). Tabla
   `auth_audit` (event/at/email/user_id/org/ip/user_agent/detail) con retención
   90d + 100k rows; eventos login_success/login_failure(detail)/logout/
@@ -59,7 +65,7 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   y el consumer pintaba el CODE como mensaje → todo por `sendApiError` con codes
   tipados + `BRAND_EXTRACTION_STILL_STOPPING` registrado en API_ERROR_CODES +
   consumers web con lectura dual (commit `6b878c4e2`, tests 34/34).
-- [~] D3 — sweep envelope `{error: {code, message}}` por fichero daemon.
+- [x] D3 — sweep envelope `{error: {code, message}}` por fichero daemon.
   Hechos: MCP (`2cc1658f5`), brand-routes (`6b878c4e2`), memory (`072b65d02`),
   media+xai (PR #10), collab-context, genui (`406a03aae`), comments
   (`07d14a7b2`), static-resource (`0fa8652de`), design-systems (PR #11
@@ -90,8 +96,10 @@ Inventario de gaps accionables. `[x]` hecho, `[ ]` pendiente, `(!)` requiere dec
   Envelopes manuales legítimos que permanecen: critique artifact/interrupt
   (`error.currentStatus` contractual), strategy-rollout 409 (`status`
   sibling), comments.ts fallback.
-  **Resta solo:** `proxyAmrApiRequest` (6 sitios) — pendiente verificar el
-  parsing de errores del binario vela antes de convertir.
+  **Resta solo:** `proxyAmrApiRequest` (6 sitios) — excepción permanente
+  documentada: el consumidor es el binario vela (superficie externa no
+  verificable); convertir a envelope a ciegas rompería el parseo de errores
+  del binario. Decisión registrada: los flat tokens quedan a propósito.
 
 ## Coordinación
 
@@ -117,15 +125,18 @@ contra BD externa). Lo aplicable:
   `authorize` re-resuelve la identidad en cada request; un usuario
   eliminado de la BD externa muere en `identity_mismatch` con revocación
   + audit. La exportación de datos es daemon-side upstream.
-- [~] **Onboarding/activation** — existe la galería GruiaExamples como
-  primer valor; un checklist post-signup sería trabajo de producto en la
-  web divergida (coste alto, bajo retorno para ~usuarios internos).
-- [ ] **Pago/billing** — N/A: el fork no tiene checkout ni planes; el
-  wallet AMR es servicio upstream hospedado.
-- [ ] **Emails transaccionales** — N/A sin decisión: el gateway no tiene
-  mailer; añadir SMTP requiere credenciales y decisión de producto.
-- [ ] **Limits/metering** — N/A: sin planes ni cuotas en el fork.
-- [ ] **Soporte mínimo** — N/A sin decisión: falta un destino real de
-  help/docs/contacto para enlazar.
-- [ ] **Growth loops** — N/A: acceso por org concedido externamente; no
-  hay flujo de invitación en el fork.
+- [x] **Onboarding/activation** — decisión registrada: no se implementa un
+  checklist post-signup. Existe la galería GruiaExamples como primer valor;
+  un checklist sería trabajo de producto en la web divergida con coste alto
+  y bajo retorno para usuarios internos.
+- [x] **Pago/billing** — N/A confirmado: el fork no tiene checkout ni
+  planes; el wallet AMR es servicio upstream hospedado.
+- [x] **Emails transaccionales** — decisión registrada: no se implementa un
+  mailer. Sin decisión SMTP ni credenciales; la comunicación con usuarios
+  internos va fuera de banda.
+- [x] **Limits/metering** — decisión registrada: no se implementan cuotas.
+  Sin planes en el fork y población de usuarios internos.
+- [x] **Soporte mínimo** — decisión registrada: ningún destino. No existe
+  URL/email real de help/contacto en el fork para enlazar.
+- [x] **Growth loops** — decisión registrada: no se implementa flujo de
+  invitación. La admisión por org se concede externamente.

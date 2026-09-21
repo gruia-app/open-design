@@ -3,7 +3,8 @@ import { pbkdf2, randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, request as httpRequest, type IncomingHttpHeaders, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { Transform, pipeline } from "node:stream";
 import type { Duplex } from "node:stream";
-import type { AuthAuditContext, AuthAuditEvent, AuthorizationRepository, GatewayConfig, GatewayIdentity, SessionStore, StoredSession } from "./types.js";
+import { renderGatewayMetrics } from "./metrics.js";
+import type { AuthAuditContext, AuthAuditEvent, AuthorizationRepository, GatewayConfig, GatewayIdentity, GatewayStoreMetrics, SessionStore, StoredSession } from "./types.js";
 
 type Authorized = Readonly<{ session: StoredSession; identity: GatewayIdentity }>;
 type Form = ReadonlyMap<string, string>;
@@ -157,6 +158,7 @@ export class GatewayCore {
     this.store.deleteSession(sessionId);
     if (session) this.recordAuthEvent("logout", { userId: session.userId, organizationId: session.organizationId, ...(context ?? {}) });
   }
+  storeMetrics(): GatewayStoreMetrics { return this.store.readMetrics(this.clock()); }
   async close(): Promise<void> { this.store.close(); await this.identities.close(); }
   private admittedOrganizationIds(): string[] { return [...this.config.organizations].filter(([, target]) => target.audience === "internal" || this.config.clientAccessOpen).map(([id]) => id); }
   private singleAdmittedIdentity(identities: readonly GatewayIdentity[]): GatewayIdentity | null { return identities.length === 1 && this.config.organizations.has(identities[0].organizationId) && this.admittedOrganizationIds().includes(identities[0].organizationId) ? identities[0] : null; }
@@ -185,7 +187,8 @@ async function readForm(request: IncomingMessage): Promise<Form | null> {
 }
 
 export function createGatewayServer(core: GatewayCore): Server {
-  const server = createServer((request, response) => { void handleRequest(request, response, core).catch(() => json(response, 503, { error: "service_unavailable" })); });
+  const startedAt = Date.now();
+  const server = createServer((request, response) => { void handleRequest(request, response, core, startedAt).catch(() => json(response, 503, { error: "service_unavailable" })); });
   server.on("upgrade", (request, socket, head) => { void handleUpgrade(request, socket, head, core).catch(() => socket.destroy()); });
   return server;
 }
@@ -198,11 +201,12 @@ export function shutdownGateway(server: Server, graceMs = 5_000): Promise<void> 
   return closed;
 }
 
-async function handleRequest(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
+async function handleRequest(request: IncomingMessage, response: ServerResponse, core: GatewayCore, startedAt: number): Promise<void> {
   const raw = request.url;
   if (!isSafeProxyPath(raw)) { json(response, 400, { error: "invalid_request" }); return; }
   const url = new URL(raw, core.config.publicOrigin); const method = request.method ?? "GET";
   if (url.pathname === "/healthz" || url.pathname === "/health") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } noStore(response); response.writeHead(200, { "content-type": "text/plain; charset=utf-8" }); response.end("ok\n"); return; }
+  if (url.pathname === "/metrics") { serveMetrics(request, response, core, method, startedAt); return; }
   if (url.pathname === "/auth" || url.pathname === "/auth/login") {
     if (method === "GET") { const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request)); if (authorized) signedInPage(response, core, authorized.session); else loginPage(response, core); return; }
     if (url.pathname === "/auth/login" && method === "POST") { await handleLogin(request, response, core); return; }
@@ -223,6 +227,20 @@ function authContext(request: IncomingMessage): AuthAuditContext {
   const ip = first && first.length <= 64 ? first : request.socket.remoteAddress;
   const agent = request.headers["user-agent"];
   return { ...(ip ? { ip } : {}), ...(typeof agent === "string" && agent.length <= 512 ? { userAgent: agent } : {}) };
+}
+function serveMetrics(request: IncomingMessage, response: ServerResponse, core: GatewayCore, method: string, startedAt: number): void {
+  const token = core.config.metricsToken;
+  if (!token) { json(response, 404, { error: "not_found" }); return; }
+  if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; }
+  const expected = `Bearer ${token}`;
+  const presented = request.headers.authorization ?? "";
+  if (presented.length !== expected.length || !equal(presented, expected)) {
+    noStore(response); response.writeHead(401, { "content-type": "application/json; charset=utf-8", "www-authenticate": 'Bearer realm="metrics"' }); response.end(JSON.stringify({ error: "authentication_required" }));
+    return;
+  }
+  const snapshot = core.storeMetrics();
+  noStore(response); response.writeHead(200, { "content-type": "text/plain; version=0.0.4; charset=utf-8" });
+  response.end(renderGatewayMetrics({ uptimeSeconds: (Date.now() - startedAt) / 1000, activeSessions: snapshot.activeSessions, authEvents: snapshot.authEvents }));
 }
 async function handleLogin(request: IncomingMessage, response: ServerResponse, core: GatewayCore): Promise<void> {
   const csrfName = loginCsrfCookieName(core.config); const form = await readForm(request);

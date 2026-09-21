@@ -58,4 +58,15 @@ describe("loadConfig", () => {
   it("rejects secrets that are not 32 base64 bytes", () => {
     expect(() => loadConfig(write(valid({ sessionSecret: "short" })))).toThrow(/sessionSecret/);
   });
+
+  it("leaves metricsToken unset by default and honors a configured token", () => {
+    expect(loadConfig(write(valid())).metricsToken).toBeUndefined();
+    expect(loadConfig(write(valid({ metricsToken: "scrape-token" }))).metricsToken).toBe("scrape-token");
+  });
+
+  it("rejects malformed metricsToken values", () => {
+    for (const metricsToken of ["", 42, " padded ", null]) {
+      expect(() => loadConfig(write(valid({ metricsToken })))).toThrow(/metricsToken/);
+    }
+  });
 });
