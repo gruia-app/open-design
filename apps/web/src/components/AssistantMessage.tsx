@@ -2244,13 +2244,16 @@ function ProducedFiles({
 }) {
   const t = useT();
   const { workspaceContext } = useProjectCollabContext();
+  // A folded turn unions producedFiles from several physical runs, so the
+  // same file can arrive twice; keep the latest record per (path, name).
+  const uniqueFiles = [...new Map(files.map((f) => [`${f.path}|${f.name}`, f])).values()];
   return (
     <div className="produced-files">
       <div className="produced-files-label">{t("assistant.producedFiles")}</div>
       <div className="produced-files-list">
-        {files.map((f) => (
+        {uniqueFiles.map((f) => (
           <div
-            key={f.name}
+            key={`${f.path}|${f.name}`}
             className={`produced-file${onRequestOpenFile ? " produced-file-openable" : ""}`}
             role={onRequestOpenFile ? "button" : undefined}
             tabIndex={onRequestOpenFile ? 0 : undefined}

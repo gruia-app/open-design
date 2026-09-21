@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-21T00:09:19.188947+00:00",
+ "updated_at": "2026-09-21T01:30:52Z",
  "current": {
-  "branch": "main",
+  "branch": "fleet/gaps-40",
   "state": "idle",
   "note": "PR #53 squash-mergeado (ca16b9a42); lote 39 completo"
  },
@@ -615,6 +615,42 @@
    "commit": "8fe36928f",
    "deploy": "pending",
    "note": "subset OPEND-3283 de #8223 (b419463f9): scroll-moves-anchor verbatim + gating del dismiss en RailRecentRow (rootRef como anchor); el row menu del dock no existia en WorkspaceTabsBar del fork pero RailRecentRow tenia el mismo bug. Resto no portable: QueuedSendStack/ChatRoot.module.css borrados, campaign claims en ficheros ausentes, selected-card ring CSS divergente. 4/4 tests lib + typecheck"
+  },
+  {
+   "item": "fix(web): dedupe folded produced files instead of keying duplicate rows",
+   "commit": "810a5f103",
+   "deploy": "pending",
+   "note": "gap propio: ChatPane fold concatena producedFiles de runs fisicos -> rutas repetidas (warning React duplicate key result.html); dedupe por (path,name) conservando ultima entrada en AssistantMessage ProducedFiles; test 3/3"
+  },
+  {
+   "item": "fix(daemon): count .cjs/.mjs modules as render-dependency touches",
+   "commit": "6b9b99bdf",
+   "deploy": "pending",
+   "note": "subset portable de 92f27d1fc (#7801): RENDER_DEPENDENCY_EXTENSIONS + .cjs/.mjs; convergencia del fichero a upstream; test 24/24"
+  },
+  {
+   "item": "fix(daemon): restore persisted strategy task blocked fields in conversation history",
+   "commit": "d8f819db6",
+   "deploy": "pending",
+   "note": "port 6734dbba2: projection strategyTaskBlocked/BlockedText con scope (projectId,conversationId); sin disclosure cross-conversation/project; test 11/11"
+  },
+  {
+   "item": "fix(web): open the model picker on the model in effect",
+   "commit": "54f3af052",
+   "deploy": "pending",
+   "note": "port a10e4671b (#7917): pickerSelectionAnchor.ts nuevo; anchor once-per-open en InlineModelSwitcher + modelOptions; test 6/6"
+  },
+  {
+   "item": "fix(web): retry transient conversation transcript reads within a bounded window",
+   "commit": "509edded8",
+   "deploy": "pending",
+   "note": "port a3da5e06c (#7954): load-conversation-transcript.ts nuevo (retries 500/1s/2s, budget 15s, abort-aware); listMessages acepta AbortSignal y default retryable en 408/429/5xx; tests 104+145"
+  },
+  {
+   "item": "SKIP a3da5e06c parcial n/a; SKIP fd8599458 (#7898): stick-to-bottom.ts + chat-scroll-following tests borrados en el fork (maquinaria de scroll divergente, rebuild ChatPanel #7518); SKIP 5f7baf9c9 (#7900): premisa sendFailed ausente en el fork; SKIP c764b21e5 (#7793): ya aplicado",
+   "commit": "n/a",
+   "deploy": "n/a",
+   "note": "dry-runs verificados; sin subset seguro"
   }
  ],
  "blocked": [

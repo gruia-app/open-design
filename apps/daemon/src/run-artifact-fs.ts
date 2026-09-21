@@ -77,8 +77,10 @@ async function hasValidManifestSidecarAsync(fullPath: string): Promise<boolean> 
 
 const RENDER_DEPENDENCY_EXTENSIONS = new Set([
   '.css',
+  '.cjs',
   '.js',
   '.jsx',
+  '.mjs',
   '.ts',
   '.tsx',
 ]);

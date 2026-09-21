@@ -243,6 +243,23 @@ test('a CSS-only visible edit modifies the primary HTML artifact without inflati
   }), 'modified');
 });
 
+test('an ESM/CJS module next to the artifact counts as a render-dependency touch', () => {
+  const root = tmpProject();
+  fs.writeFileSync(path.join(root, 'index.html'), '<script type="module" src="app.mjs"></script>');
+  const mjs = path.join(root, 'app.mjs');
+  const cjs = path.join(root, 'vendor.cjs');
+  fs.writeFileSync(mjs, 'export {}');
+  fs.writeFileSync(cjs, 'module.exports = {}');
+  const before = snapshotProjectArtifacts(root);
+  fs.writeFileSync(mjs, 'export const v = 1');
+  fs.writeFileSync(cjs, 'module.exports = { v: 1 }');
+  const after = snapshotProjectArtifacts(root);
+  const diff = diffRunArtifacts(before, after);
+
+  assert.equal(diff.touched, 0, 'JS modules stay outside the legacy artifact_count file set');
+  assert.equal(diff.renderDependencyTouched, 2);
+});
+
 test('first generation is created even when the run edits a pre-seeded HTML file', () => {
   const root = tmpProject();
   const page = path.join(root, 'index.html');

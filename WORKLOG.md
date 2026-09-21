@@ -493,3 +493,25 @@ daemon typecheck + web typecheck verdes, test OPEND-2953 verde.
 
 Verificacion: web typecheck verde; 17/17 hydration, 4/4 scroll-moves-anchor,
 2/2 explicit-workspace-headers.
+
+## Lote 40 — re-triage upstream, ronda 2 (fleet/gaps-40)
+
+- `810a5f103` — gap propio: el fold de ChatPane concatena producedFiles de
+  runs fisicos con rutas repetidas (warning React duplicate key). Dedupe por
+  (path,name) conservando la ultima entrada en ProducedFiles.
+- `6b9b99bdf` — subset de `92f27d1fc` (#7801): `.cjs`/`.mjs` en
+  RENDER_DEPENDENCY_EXTENSIONS. run-artifact-fs.ts converge a upstream.
+- `d8f819db6` — port `6734dbba2`: proyeccion strategyTaskBlocked/BlockedText
+  scoped por (projectId, conversationId) en historial de conversacion.
+- `54f3af052` — port `a10e4671b` (#7917): pickerSelectionAnchor; el model
+  picker abre anclado al modelo en efecto, una vez por apertura.
+- `509edded8` — port `a3da5e06c` (#7954): load-conversation-transcript con
+  retries acotados (500/1s/2s, budget 15s); listMessages acepta AbortSignal y
+  trata 408/429/5xx como retryable sin hint.
+- SKIP `fd8599458` (#7898): stick-to-bottom.ts y chat-scroll-following borrados
+  en el fork (scroll divergente, rebuild ChatPanel #7518).
+- SKIP `5f7baf9c9` (#7900): premisa sendFailed ausente en el fork.
+- SKIP `c764b21e5` (#7793): ya aplicado en el fork.
+
+Verificacion: web typecheck verde; transcript 104/104, ProjectView 145/145,
+artifact-fs 24/24, strategy-history 11/11, model-picker 6/6.
