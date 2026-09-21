@@ -1721,7 +1721,14 @@ export function ChatPane({
   const showByokRecoveryCta =
     showByokRecoveryAction && Boolean(onSwitchToLocalCli) && !runFailureHasAction;
   const showErrorActions = showByokRecoveryCta || runFailureHasAction;
-  const showAmrGuidance = Boolean(amrSwitchPayload);
+  // The switch card's〔去 AMR〕button does nothing on its own — it hands the
+  // turn to a host handler (`onSwitchToAmrAndRetry`, falling back to
+  // `onOpenAmrSettings`). Hosts wiring neither (SideChatTab wires only
+  // `onRetry`; DesignSystemFlow wires none) would render a primary-looking
+  // button whose click is inert. Same handoff-presence invariant upstream
+  // applies in #7897: the card only shows while a receiver actually exists.
+  const amrSwitchCannotTakeTheHandoff = !onSwitchToAmrAndRetry && !onOpenAmrSettings;
+  const showAmrGuidance = Boolean(amrSwitchPayload) && !amrSwitchCannotTakeTheHandoff;
   const visibleRecoveryActionTypes = useMemo(() => {
     const actions: TrackingRunRecoveryActionType[] = [];
     if (!retryAssistant || !onRetry || !runFailureUi) return actions;

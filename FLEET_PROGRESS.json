@@ -1,10 +1,10 @@
 {
   "app": "design",
-  "updated_at": "2026-09-21T09:00:29Z",
+  "updated_at": "2026-09-21T10:24:10Z",
   "current": {
-    "branch": "fleet/gaps-49",
+    "branch": "fleet/gaps-50",
     "state": "working",
-    "note": "fc959c7a5 (#7893) ported as f64906c60. 5 commits on branch — at publish threshold. Continue upstream triage or publish."
+    "note": "Ported #7897 subset (9f51467d2). Triaging remaining upstream candidates."
   },
   "done": [
     {
@@ -871,6 +871,36 @@
       "what": "fix(web): dedicated invalid-API-key error card for BYOK/API-provider runs — polished title/body in 19 locales + open-settings primary action → Settings execution section, no retry; local CLIs keep S02 path",
       "upstream": "fc959c7a5/#7893 (adapted: fork RunFailureUi/primaryAction model instead of failureCard/directFix; API_PROTOCOL_AGENT_IDS moved to byokProvider)",
       "deploy": "pending"
+    },
+    {
+      "commit": "9f51467d2",
+      "what": "fix(web): hide AMR switch card when no host can take the handoff — SideChatTab/DesignSystemFlow wired no receiver, inert primary-looking CTA",
+      "upstream": "9bb516218/#7897 (subset: contactSupportCta copy absent in fork)",
+      "deploy": "pending"
+    },
+    {
+      "commit": "fc06ec82f",
+      "what": "fix(daemon): stream early OpenCode tool previews — injected file plugin + OpenCodeToolEvents + detection missing-version TTL + spawn wiring",
+      "upstream": "dc61db8e0/#8117 (opencode subset; codex-app-server absent in fork)",
+      "deploy": "pending"
+    },
+    {
+      "commit": "ca1d3cd82",
+      "what": "fix(i18n): translate French design system flow copy — all 192 dsCreate/dsFlow keys present in fork fr.ts, applies clean",
+      "upstream": "39de577a5/#7906",
+      "deploy": "pending"
+    },
+    {
+      "commit": "cce990941",
+      "what": "fix(platform): restore signalProcesses/stopProcesses exports lost in #7636 reland — platform build (and dependent pretest chains) was broken on HEAD",
+      "upstream": "0688faaec follow-up (process.ts implementations ported from upstream/main)",
+      "deploy": "pending"
+    },
+    {
+      "commit": "6e4b42806",
+      "what": "perf(od-next): streamline tool work + Closing Runtime State in production continuation + run-pinned workspace scope for dynamic Skill reads + od-next-media-inputs skill",
+      "upstream": "c8f6db60c/#7804 (host-protocol tail dropped — absent machinery)",
+      "deploy": "pending"
     }
   ],
   "blocked": [
@@ -982,13 +1012,23 @@
       "pr": 61,
       "note": "squash merge immediate; Jenkins deploy pending"
     },
-    "f64906c60"
+    "f64906c60",
+    {
+      "pr": 63,
+      "note": "squash merge immediate; Jenkins deploy pending"
+    },
+    "9f51467d2",
+    "fc06ec82f",
+    "ca1d3cd82",
+    "cce990941",
+    "6e4b42806"
   ],
   "notes": [
     "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
-    "regression: EntryShell.amr-home-balance-memory.test.tsx 2/2 fail on HEAD (pre-existing from cd17a44a1/#8240 port, unrelated to #8229); transcript-authority-refresh 'conversation read refused' also red on HEAD — follow-up candidates"
+    "regression: EntryShell.amr-home-balance-memory.test.tsx 2/2 fail on HEAD (pre-existing from cd17a44a1/#8240 port, unrelated to #8229); transcript-authority-refresh 'conversation read refused' also red on HEAD — follow-up candidates",
+    "gaps-50: pre-existing flake od-next-automatic-simple-server \"keeps a completed task exactly-once...daemon restart\" times out at 60s identically on HEAD (verified via stash); load-induced cascade failures in same file pass in isolation. detection-resilience timeout also a load flake (2/2 green isolated)."
   ],
-  "branch": "fleet/gaps-49",
+  "branch": "fleet/gaps-50",
   "skipped_upstream": [
     {
       "commit": "900d01c61",
@@ -1273,6 +1313,34 @@
     {
       "commit": "f5a03f77a",
       "reason": "converged — ancestor rounded-clip fix already in fork 271f13036 (gaps-42), incl. OD_MOCKS_TEXT_DELTAS mock delta"
+    },
+    {
+      "commit": "5a3f0c892",
+      "reason": "codex-app-server subsystem absent in fork"
+    },
+    {
+      "commit": "8be9b0fca",
+      "reason": "artifacts/deliverable-syntax-finalization + evidence-delivery chain absent in fork"
+    },
+    {
+      "commit": "9f73dcebf",
+      "reason": "RunErrorCard/chat-actions redesign absent in fork (#7930 chain)"
+    },
+    {
+      "commit": "eca7c7ab9",
+      "reason": "RunErrorCard redesign absent in fork; fixed-actions card model does not exist here"
+    },
+    {
+      "commit": "00c12c645",
+      "reason": "observability/chat-health module absent in fork"
+    },
+    {
+      "commit": "bb9682a5f",
+      "reason": "pending DECISION od-next-default-route — product-policy default flip, not a defect fix"
+    },
+    {
+      "commit": "8fb94d28e",
+      "reason": "feat(cms) — CMS subsystem absent in fork"
     }
   ],
   "prs_merged": [
@@ -1328,6 +1396,28 @@
       "mergeCommit": "409e54b7769b98d3360b977bd1977e98d06c81ae",
       "url": "https://github.com/gruia-app/design/pull/62",
       "note": "squash merge directo (auto-merge deshabilitado en repo)"
+    },
+    {
+      "number": 63,
+      "repo": "gruia-app/design",
+      "branch": "fleet/gaps-49",
+      "state": "MERGED",
+      "mergedAt": "2026-09-21T09:01:40Z",
+      "mergeCommit": "4fdc240333f04229154c784b01f57b57378e4f6b",
+      "url": "https://github.com/gruia-app/design/pull/63",
+      "note": "squash merge directo (auto-merge deshabilitado en repo); 7 commits"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "od-next-default-route",
+      "upstream": "bb9682a5f/#7876",
+      "question": "Upstream flips the OD Next strategy route default from opt-in to default-on (unconfigured installs resolve `active` instead of `off`). Port to the fork? si/no",
+      "context": "Fork has the full rollout machinery + LabsSection opt-out switch, so the port is feasible. It is a deliberate product-policy inversion, not a defect fix — flipping changes behavior for every unconfigured install. Diff: 41 files, +680/-1100.",
+      "options": [
+        "si: port the full #7876 changeset (rollout.ts default + contracts comments + LabsSection copy + tests)",
+        "no: keep opt-in default `off`; record as deliberate fork divergence"
+      ]
     }
   ]
 }

@@ -799,3 +799,59 @@ export async function terminateProcessGroup(
   const gone = await waitForGroupExit(normalizedGraceMs(options.killGraceMs) ?? 5000);
   return { alreadyStopped: false, forced: true, survived: !gone };
 }
+
+/** Send a signal to each PID, ignoring `ESRCH` (already-dead) but rethrowing other errors. */
+export function signalProcesses(pids: number[], signal: NodeJS.Signals): void {
+  for (const pid of pids) {
+    try {
+      process.kill(pid, signal);
+    } catch (error) {
+      if (errorCode(error) !== "ESRCH") throw error;
+    }
+  }
+}
+
+/** @internal Poll until all PIDs exit or the timeout elapses; returns the PIDs still alive. */
+async function waitForProcessesToExit(pids: number[], timeoutMs = 5000): Promise<number[]> {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const remaining = pids.filter(isProcessAlive);
+    if (remaining.length === 0) return [];
+    await sleep(100);
+  }
+  return pids.filter(isProcessAlive);
+}
+
+/**
+ * Stop a set of PIDs with escalation: SIGTERM, wait, then SIGKILL any
+ * survivors. Excludes the current process and de-duplicates the input.
+ *
+ * @param pids - The PIDs to stop (non-numbers and the current PID are ignored).
+ * @returns A result describing matched, stopped, force-killed, and remaining PIDs.
+ */
+export async function stopProcesses(
+  pids: Array<number | null | undefined>,
+  options: StopProcessesOptions = {},
+): Promise<StopProcessesResult> {
+  const uniquePids = [...new Set(pids)]
+    .filter((pid): pid is number => typeof pid === "number" && pid !== process.pid)
+    .sort((left, right) => right - left);
+  if (uniquePids.length === 0) {
+    return { alreadyStopped: true, forcedPids: [], matchedPids: [], remainingPids: [], stoppedPids: [] };
+  }
+  signalProcesses(uniquePids, "SIGTERM");
+  const remainingAfterTerm = await waitForProcessesToExit(
+    uniquePids,
+    normalizedGraceMs(options.termGraceMs),
+  );
+  if (remainingAfterTerm.length === 0) {
+    return { alreadyStopped: false, forcedPids: [], matchedPids: uniquePids, remainingPids: [], stoppedPids: uniquePids };
+  }
+  signalProcesses(remainingAfterTerm, "SIGKILL");
+  const remainingAfterKill = await waitForProcessesToExit(
+    remainingAfterTerm,
+    normalizedGraceMs(options.killGraceMs),
+  );
+  const stoppedPids = uniquePids.filter((pid) => !remainingAfterKill.includes(pid));
+  return { alreadyStopped: false, forcedPids: remainingAfterTerm, matchedPids: uniquePids, remainingPids: remainingAfterKill, stoppedPids };
+}

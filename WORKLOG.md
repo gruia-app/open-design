@@ -726,3 +726,62 @@ resubmit+jump-button 39/39, web typecheck verde.
     defaultTypePending mantiene el botón deshabilitado y el click era no-op —
     2/2 rojo desde gaps-46. El test ahora espera a que el botón se habilite
     (la misma ventana breve que ve un usuario). 2/2.
+- `fb85d134b` — OPEND-3203 de `b419463f9` (#8223): la barra de inserción del
+  drag-reorder de la cola se dibujaba como pseudo-elemento a ±2px dentro de la
+  fila, cuyo `overflow: hidden` la recortaba a su halo. Adaptación al fork (sin
+  QueuedSendStack): barra real absolutamente posicionada sobre un slot sin clip
+  alrededor de cada fila — misma geometría ±2px en el gap de 3px. OPEND-3283
+  (menú ⋮ por fila) y CMS campaign-modal ausentes en el fork; OPEND-3284 ya
+  converged en gaps-47. 35/35.
+- `f64906c60` — `fc959c7a5` (#7893): card dedicada para `invalid_api_key` en
+  runs BYOK/proveedor-API — título/cuerpo pulidos en 19 locales, acción
+  primaria〔去设置〕→ Settings `execution` (mismo destino que el preflight
+  BYOK), sin Retry (la misma key falla igual). Adaptación al fork: upstream usa
+  la capa `failureCard`/`directFix` ausente aquí — se devuelve un `RunFailureUi`
+  plano con la nueva acción `open-settings` en la cadena de acciones de
+  ChatPane. La tabla protocol→agent-id se movió a `byokProvider.ts`
+  (`byokApiKeyIsEditableInSettings`) para acotar la card a keys que guardamos
+  sin importar el stack de providers; los CLI locales conservan S02. 18/18.
+- Publicado: PR #63 squash-mergeado (`4fdc24033`, 09:01Z, 7 commits).
+
+## gaps-50 (2026-09-21)
+
+- `9f51467d2` — subset de `24f09b753` (#7897): la card AMR "switch to a
+  different assistant" se renderizaba aunque ningún host hubiera cableado un
+  receptor — CTA visible que no puede actuar. Gate de presencia de receptor
+  antes de mostrarla (SideChatTab y DesignSystemFlow no cablean los handlers;
+  ProjectView sí). El CTA `contactSupport` upstream no existe en el fork.
+  4/4 red-capable.
+- `fc06ec82f` — mitad opencode de `dc61db8e0` (#8117): plugin de fichero sin
+  dependencias inyectado vía OPENCODE_CONFIG_CONTENT (preservando plugins del
+  usuario y del overlay) emite frames `od_opencode_tool`; OpenCodeToolEvents
+  en el parser JSON convierte cada tool en preview `tool_in_flight` al
+  arrancar en vez de esperar a los argumentos — los `tool_use`/`tool_result`
+  nativos siguen siendo autoridad y el flush cierra previews huérfanos.
+  Gateado a OpenCode >=1.17.18; versión ausente expira del caché de detección
+  (TTL 5s) en vez de deshabilitar la feature de por vida. Mitad codex
+  omitida (codex-app-server ausente). 18/18 + vecinos verdes.
+- `ca1d3cd82` — `39de577a5` (#7906): copy del design system flow traducido al
+  francés; las 192 claves dsCreate/dsFlow existen en el fork — aplica limpio.
+- `cce990941` — fix de defecto preexistente en main: `index.ts` de
+  packages/platform exportaba `signalProcesses`/`stopProcesses` (reland
+  #7636) sin que las implementaciones llegaran a `process.ts` — build roto
+  en HEAD (TS2305) y con él toda cadena `pretest` dependiente. Port verbatim
+  de ambas funciones (tipos ya convergían).
+- `6e4b42806` — `c8f6db60c` (#7804): core prompt v2.1.2 retira el literal
+  `open-design-runtime-state` de la regla "not a tool name" (salience -> el
+  modelo lo llamaba como tool); la continuación production cierra con
+  Closing Runtime State (sin el tail host-protocol, ausente); `od skill
+  list/show --workspace/--workspace-member` + env OD_WORKSPACE_ID/
+  OD_WORKSPACE_MEMBER_ID pinneadas al scope congelado del run (member vía
+  PinnedRunWorkspaceScope); nueva skill od-next-media-inputs. 25/25
+  contracts + 5/5 plugin-runtime + 222/222 daemon enfocados.
+- DECISION registrada: `bb9682a5f` (#7876) invierte el default OD Next a
+  opt-out — política de producto, no fix; escalada en FLEET_PROGRESS.json.
+- Flakes verificados (preexistentes, no del batch): od-next-automatic-
+  simple-server "exactly-once...daemon restart" timeout 60s idéntico en
+  HEAD (verificado via stash); cascadas del mismo fichero pasan aisladas;
+  detection-resilience timeout también es flake de carga (2/2 aislado).
+- Skips: `5a3f0c892` (codex-app-server ausente), `8be9b0fca` (artifacts/
+  deliverable-syntax ausente), `9f73dcebf`/`eca7c7ab9` (RunErrorCard
+  ausente), `00c12c645` (chat-health ausente), `8fb94d28e` (CMS ausente).
