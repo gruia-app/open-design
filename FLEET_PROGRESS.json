@@ -1,10 +1,10 @@
 {
   "app": "design",
-  "updated_at": "2026-09-21T06:10:00Z",
+  "updated_at": "2026-09-21T06:15:00Z",
   "current": {
-    "branch": "fleet/gaps-47",
+    "branch": "fleet/gaps-48",
     "state": "working",
-    "note": "6 product commits on gaps-47: bda2aad77, 220f3baf9, 22a9d2864, e322f550c, c4bee8c50, 3c94a9077 + test fix 754314d9a. Publishing."
+    "note": "Opened after PR #61 merge (0da1b71ba). Upstream main fully triaged through 894d55466; continuing backlog/saas-gap loop."
   },
   "done": [
     {
@@ -1018,6 +1018,10 @@
     {
       "pr": 59,
       "note": "squash merge immediate; Jenkins deploy pending"
+    },
+    {
+      "pr": 61,
+      "note": "squash merge immediate; Jenkins deploy pending"
     }
   ],
   "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12).",
@@ -1287,6 +1291,14 @@
       "pr": 60,
       "mergedAt": "2026-09-21T04:57:52Z",
       "branch": "fleet/gaps-46",
+      "note": "squash directo; auto-merge deshabilitado en repo"
+    },
+    {
+      "repo": "gruia-app/design",
+      "pr": 61,
+      "mergedAt": "2026-09-21T06:06:15Z",
+      "merge": "0da1b71ba4c7aa9ebb58ef881c7eacb1ccefa374",
+      "branch": "fleet/gaps-47",
       "note": "squash directo; auto-merge deshabilitado en repo"
     }
   ]
