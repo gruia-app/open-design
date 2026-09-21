@@ -1,8 +1,8 @@
 {
  "app": "design",
- "updated_at": "2026-09-21T01:30:52Z",
+ "updated_at": "2026-09-21T01:32:22Z",
  "current": {
-  "branch": "fleet/gaps-40",
+  "branch": "main",
   "state": "idle",
   "note": "PR #53 squash-mergeado (ca16b9a42); lote 39 completo"
  },
@@ -651,6 +651,12 @@
    "commit": "n/a",
    "deploy": "n/a",
    "note": "dry-runs verificados; sin subset seguro"
+  },
+  {
+   "item": "PR #54 (fleet/gaps-40) mergeado",
+   "commit": "43f2eadf2",
+   "deploy": "pending",
+   "note": "squash merge directo (--auto no-op: repo sin auto-merge habilitado, merge inmediato); gh apuntaba a nexu-io/open-design por defecto -> usar --repo gruia-app/design"
   }
  ],
  "blocked": [
@@ -801,7 +807,8 @@
    "pr": 53,
    "commit": "ca16b9a42",
    "note": "squash mergeado; deploy pendiente de Jenkins"
-  }
+  },
+  "PR #54 (43f2eadf2): produced-files dedupe + .cjs/.mjs render deps + blocked fields en historial + model-picker anchor + retryable transcript reads — Jenkins"
  ],
  "notes": "upstream fetch: usar --filter=blob:none (el fetch completo cuelga en negociacion; repo alcanzable). Cola 144 commits, 2 nuevos N/A.\n- 2026-09-21 gaps-38: upstream 7413c6daa (Home default Prototype + type picker) SKIPPED: feature de producto incompatible con GRUIA_MANAGED/GruiaDesignWorkflow (Home divergió en f0a1f8b12)."
 }
