@@ -678,3 +678,36 @@ resubmit+jump-button 39/39, web typecheck verde.
   (cadenas ausentes), `c764b21e5`/`6b60b567a`/`00fb31145`/`6788a8667`
   no-ops, `78f389a05` (i18n 19-locales, fork es-only), `819c10d49` (43
   conflictos, estructura divergente), `92f27d1fc` (57 ficheros sin triage).
+
+## gaps-48 (2026-09-21)
+
+- `fe1d48a7a` — port parcial f197844e2 (#7921): stampRunSpan estampa
+  runStartedAt/runEndedAt en done_key (reloj por run físico en folds).
+  Write-side solo; renderer build-turn-blocks ausente. 8/8 fold + typecheck.
+- `5048b77a0` — port parcial 11943a400 (#7880): spec daemon que fija los
+  orígenes públicos de consola vela por perfil (valores ya converged).
+  Plans-deeplink intencionalmente ausente (CTAs a /pricing público). 6/6.
+- `5182163a3` — port 956077251 (#7884) adaptado: stage-timeout del watchdog
+  clasificado y propagado daemon→card como timeout retryable nombrado;
+  forced-signal guard en signalInterruptClassification; isRetryable;
+  compaction-continuation EOF resumable. Excluido: credential-fault check
+  (cadena #7518). 62/62 daemon + 4/4 web card + typechecks.
+- `6ec99f88c` — port 21bba485b (#7943) adaptado: ctaLabel localizable en
+  WhatsNewContent/WhatsNewLocaleContent. Toolchain de publicación whats-new
+  (borrada en el fork) no restaurada. 26/26 web + 16/16 daemon + contracts.
+- `aefdbfa1c` — port 3c7b16b44 (#8229/OPEND-3207) adaptado: geometría del
+  split extraída a project-split-layout.ts conservando handle 8px del fork,
+  saved-width numérica y clamps existentes (sin modelo customized/equal-
+  split upstream); PendingView y ProjectView resuelven el mismo primer
+  ancho; primer write medido asienta bajo .split-settling sin transición.
+  Specs: project-split-layout 8/8 + PendingView 3/3 + e2e ui_p0 enrollado.
+- No-ops/skip verificados: `8921ccac2` (#8063 conv. 04e16e50e),
+  `7fa06a408` (#7951 conv. 640974bf8), `d54f5cf07` (#7945 conv.),
+  `a0d00198e` (#7905 ausente), `a3da5e06c` (#7954 conv. 43f2eadf2),
+  `f95b9a6ee` (#7933 conv.), `fd8599458` (#7898 ausente),
+  `677457dfb` (conv. b7f649f15), `5f7baf9c9` (#7900 sendFailed ausente),
+  `d2e7c3b5f` (#7896 scroll-freeze ausente), `3ddff7120` (#7892 release
+  machinery upstream), `c3ec5fda7` (#8258 ThinkingMarkdown ausente).
+- Regresiones preexistentes detectadas (HEAD, no de este batch):
+  EntryShell.amr-home-balance-memory 2/2 (de cd17a44a1/#8240 — revisar
+  el port del memory verdict) y transcript-authority-refresh refused-read.
