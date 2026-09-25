@@ -94,6 +94,16 @@ export interface CharacterPackDefaults {
   playback: PlaybackMode;
 }
 
+/** Pack meta (v1.1) — free-form provenance block. Personajes stores the r150
+ *  «¿Para qué lo quieres?» answer here: `goal` is one of app|video|brand|
+ *  story|other and `detail` the free text for "other". Kept opaque to the
+ *  parser: unknown sibling keys inside `meta` survive a round-trip. */
+export interface PackMeta {
+  goal?: string;
+  detail?: string;
+  [key: string]: unknown;
+}
+
 export interface EmotionQc {
   paletteDeltaE?: number;
   silhouetteIoUMin?: number;
@@ -112,6 +122,8 @@ export interface CharacterPack {
   defaults: CharacterPackDefaults;
   emotions: Record<string, CharacterEmotion>;
   qc?: Record<string, EmotionQc>;
+  /** Provenance block (v1.1) — the r150 meta question answer lives here. */
+  meta?: PackMeta;
   /** Forward-compat: generation/edit jobs (F3) live under `jobs/*.json`;
    *  manifest-level declarations land here so the viewer can ignore them. */
   jobs?: unknown;

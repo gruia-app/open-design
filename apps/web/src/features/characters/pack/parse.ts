@@ -208,6 +208,7 @@ export function parseCharacterPack(raw: unknown): PackParseResult {
   if (isNonEmptyString(raw.brand)) pack.brand = raw.brand;
   if (isNonEmptyString(raw.reference)) pack.reference = raw.reference;
   if (isRecord(raw.qc)) pack.qc = raw.qc as CharacterPack['qc'];
+  if (isRecord(raw.meta)) pack.meta = raw.meta as CharacterPack['meta'];
   if (raw.jobs !== undefined) pack.jobs = raw.jobs;
   return { ok: true, pack, warnings };
 }

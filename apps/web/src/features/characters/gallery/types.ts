@@ -9,6 +9,7 @@ import {
   CHARACTER_PACK_SCHEMA_V11,
   type CharacterEmotion,
   type CharacterPack,
+  type PackMeta,
 } from '../pack/types';
 
 export interface GenerationOptions {
@@ -47,6 +48,9 @@ export interface GenerationResult {
   /** Reviewer fields (v1.1) on the result card. */
   liked?: boolean;
   note?: string;
+  /** r150 meta answer («¿Para qué lo quieres?») — mirrored into
+   *  `manifest.meta` so pack exports carry it. */
+  meta?: PackMeta;
 }
 
 let counter = 0;

@@ -5540,4 +5540,21 @@ export interface Dict {
   'characters.gallery.notePlaceholder': string;
   'characters.gallery.basedOn': string;
   'characters.source.generated': string;
+  'characters.meta.question.gui': string;
+  'characters.meta.question.tinta': string;
+  'characters.meta.option.app': string;
+  'characters.meta.option.video': string;
+  'characters.meta.option.brand': string;
+  'characters.meta.option.story': string;
+  'characters.meta.option.other': string;
+  'characters.meta.otherPlaceholder': string;
+  'characters.meta.confirm': string;
+  'characters.meta.skip': string;
+  'characters.meta.cta.app': string;
+  'characters.meta.cta.video': string;
+  'characters.meta.cta.story': string;
+  'characters.meta.cta.brand': string;
+  'characters.meta.cta.roberto': string;
+  'characters.meta.ctaTodo': string;
+  'characters.gallery.exportedBadge': string;
 }

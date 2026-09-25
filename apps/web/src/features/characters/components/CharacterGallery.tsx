@@ -12,10 +12,12 @@ import { Button, Select } from '@open-design/components';
 
 import { useI18n } from '../../../i18n';
 import { Icon } from '../../../components/Icon';
+import { navigate } from '../../../router';
 import {
   IMPLEMENTED_ENGINE_IDS,
   RESERVED_ENGINE_IDS,
   type CharacterEmotion,
+  type PackMeta,
 } from '../pack/types';
 import { emotionLabel } from '../pack/labels';
 import { getEngine } from '../engines/registry';
@@ -31,6 +33,7 @@ import {
   type GenerationOptions,
   type GenerationResult,
 } from '../gallery/types';
+import { EXPORTS_EVENT, exportCount } from '../gallery/metrics';
 import type { EmotionLoader } from './useEmotionCache';
 import { AnimatedThumb } from './AnimatedThumb';
 import styles from './characters.module.css';
@@ -40,6 +43,28 @@ import styles from './characters.module.css';
 const STARTER_IDS = ['gruia-grulla', 'contenido-tinta'];
 
 const BACKGROUNDS = ['transparent', 'white', 'magenta'] as const;
+
+/** r150 meta question — asked once per project, always skippable. The flag
+ *  lives in localStorage; the answer lives on the result (and its manifest). */
+const META_DONE_KEY = 'od-personajes.meta-asked.v1';
+const META_GOALS = ['app', 'video', 'brand', 'story', 'other'] as const;
+type MetaGoal = (typeof META_GOALS)[number];
+
+function metaAskedBefore(): boolean {
+  try {
+    return localStorage.getItem(META_DONE_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+
+function markMetaAsked(): void {
+  try {
+    localStorage.setItem(META_DONE_KEY, '1');
+  } catch {
+    // best-effort
+  }
+}
 
 /** EmotionLoader over an arbitrary resolve function — gallery cards load
  *  base and derived manifests alike. */
@@ -77,6 +102,9 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const [options, setOptions] = useState<GenerationOptions>(DEFAULT_GENERATION_OPTIONS);
   const [results, setResults] = useState<GenerationResult[]>([]);
   const [busy, setBusy] = useState(false);
+  const [metaDone, setMetaDone] = useState(metaAskedBefore);
+  const [metaGoal, setMetaGoal] = useState<MetaGoal | null>(null);
+  const [metaOther, setMetaOther] = useState('');
 
   const starters = catalogue.filter(
     (option) => option.available && STARTER_IDS.includes(option.id),
@@ -153,6 +181,30 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
     void removeResult(id).catch(() => {});
   }, []);
 
+  // r150 meta: the answer lands on the newest result and is mirrored into its
+  // manifest (`meta` field, pack v1.1) so every export carries it.
+  const answerMeta = useCallback(
+    (goal: MetaGoal, detail: string) => {
+      const target = results[0];
+      if (target) {
+        const meta: PackMeta = { goal, ...(detail.trim() ? { detail: detail.trim() } : {}) };
+        updateResult({
+          ...target,
+          meta,
+          manifest: { ...target.manifest, meta },
+        });
+      }
+      setMetaDone(true);
+      markMetaAsked();
+    },
+    [results, updateResult],
+  );
+
+  const skipMeta = useCallback(() => {
+    setMetaDone(true);
+    markMetaAsked();
+  }, []);
+
   const openResult = useCallback(
     async (result: GenerationResult) => {
       // Frame bytes live in the base pack — resolve through it so the derived
@@ -177,6 +229,17 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
       });
     },
     [bases, onOpenPack],
+  );
+
+  // «Exportar para tu app» — open the result straight into the player, where
+  // every export button (sheet/JSON, GIF, APNG, WebP, pack zip) lives.
+  const openResultExports = useCallback(
+    async (result: GenerationResult) => {
+      await openResult(result);
+      const [key] = previewEmotion(result.manifest.emotions);
+      navigate({ kind: 'home', view: 'characters', emotionId: key });
+    },
+    [openResult],
   );
 
   const toggleEmotion = useCallback((key: string) => {
@@ -337,6 +400,21 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
         </div>
       </details>
 
+      {results.length > 0 && !metaDone && !results[0]?.meta ? (
+        <MetaPrompt
+          baseId={results[0]!.basePackId}
+          goal={metaGoal}
+          other={metaOther}
+          onSelect={(goal) => {
+            setMetaGoal(goal);
+            if (goal !== 'other') answerMeta(goal, '');
+          }}
+          onOther={setMetaOther}
+          onConfirm={() => answerMeta('other', metaOther)}
+          onSkip={skipMeta}
+        />
+      ) : null}
+
       {results.length > 0 ? (
         <>
           <h2 className={styles.gallerySection}>{t('characters.gallery.results')}</h2>
@@ -347,6 +425,7 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
                 result={result}
                 base={bases.get(result.basePackId) ?? null}
                 onOpen={() => void openResult(result)}
+                onOpenExports={() => void openResultExports(result)}
                 onChange={updateResult}
                 onRemove={() => discardResult(result.id)}
               />
@@ -409,23 +488,91 @@ function StarterCard({ pack, emotionKey, emotion, selected, onSelect }: StarterP
   );
 }
 
+/** The r150 meta question — one warm inline prompt in the base character's
+ *  voice, five chips, free text for «otra», always skippable. */
+interface MetaPromptProps {
+  baseId: string;
+  goal: MetaGoal | null;
+  other: string;
+  onSelect: (goal: MetaGoal) => void;
+  onOther: (text: string) => void;
+  onConfirm: () => void;
+  onSkip: () => void;
+}
+
+function MetaPrompt({ baseId, goal, other, onSelect, onOther, onConfirm, onSkip }: MetaPromptProps) {
+  const { t } = useI18n();
+  const voice = baseId === 'contenido-tinta' ? 'tinta' : 'gui';
+  return (
+    <div className={styles.metaPrompt} data-testid="characters-meta">
+      <div className={styles.metaQuestion}>
+        <span data-testid="characters-meta-question">{t(`characters.meta.question.${voice}`)}</span>
+        <button
+          type="button"
+          className={styles.metaSkip}
+          onClick={onSkip}
+          data-testid="characters-meta-skip"
+        >
+          {t('characters.meta.skip')}
+        </button>
+      </div>
+      <div className={styles.metaOptions}>
+        {META_GOALS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={`${styles.metaChip} ${goal === option ? styles.metaChipOn : ''}`}
+            onClick={() => onSelect(option)}
+            data-testid={`characters-meta-${option}`}
+          >
+            {t(`characters.meta.option.${option}`)}
+          </button>
+        ))}
+      </div>
+      {goal === 'other' ? (
+        <div className={styles.metaOtherRow}>
+          <input
+            type="text"
+            value={other}
+            onChange={(event) => onOther(event.target.value)}
+            placeholder={t('characters.meta.otherPlaceholder')}
+            data-testid="characters-meta-other-input"
+          />
+          <Button variant="primary" onClick={onConfirm} data-testid="characters-meta-confirm">
+            {t('characters.meta.confirm')}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 interface ResultProps {
   result: GenerationResult;
   base: LoadedPack | null;
   onOpen: () => void;
+  onOpenExports: () => void;
   onChange: (result: GenerationResult) => void;
   onRemove: () => void;
 }
 
-function ResultCard({ result, base, onOpen, onChange, onRemove }: ResultProps) {
+function ResultCard({ result, base, onOpen, onOpenExports, onChange, onRemove }: ResultProps) {
   const { t } = useI18n();
   const [note, setNote] = useState(result.note ?? '');
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [exports, setExports] = useState(() => exportCount(result.manifest.id));
   const load = useMemo(
     () => (base ? loaderFor((src) => base.resolve(src)) : null),
     [base],
   );
   const [key, emotion] = previewEmotion(result.manifest.emotions);
+
+  // The export counter lives in localStorage; refresh when any export lands.
+  useEffect(() => {
+    const refresh = () => setExports(exportCount(result.manifest.id));
+    window.addEventListener(EXPORTS_EVENT, refresh);
+    return () => window.removeEventListener(EXPORTS_EVENT, refresh);
+  }, [result.manifest.id]);
 
   const saveNote = (value: string) => {
     setNote(value);
@@ -465,6 +612,7 @@ function ResultCard({ result, base, onOpen, onChange, onRemove }: ResultProps) {
         <span className={styles.resultMeta}>
           {t('characters.gallery.basedOn', { name: result.baseLabel })}
           {result.imageName ? ` · ${result.imageName}` : ''}
+          {exports > 0 ? ` · ${t('characters.gallery.exportedBadge')}` : ''}
         </span>
         <span className={styles.resultMeta}>{result.prompt}</span>
         <div className={styles.resultActions}>
@@ -496,6 +644,36 @@ function ResultCard({ result, base, onOpen, onChange, onRemove }: ResultProps) {
             <Icon name="trash" size={14} />
           </Button>
         </div>
+        {result.meta?.goal ? (
+          <div className={styles.metaCtas} data-testid={`characters-meta-ctas-${result.id}`}>
+            {result.meta.goal === 'app' ? (
+              <Button
+                variant="subtle"
+                onClick={onOpenExports}
+                data-testid={`characters-meta-cta-app-${result.id}`}
+              >
+                {t('characters.meta.cta.app')}
+              </Button>
+            ) : result.meta.goal === 'other' ? (
+              result.meta.detail ? (
+                <span className={styles.metaChip} title={t('characters.meta.ctaTodo')}>
+                  {result.meta.detail}
+                </span>
+              ) : null
+            ) : (
+              <span
+                className={styles.metaChip}
+                title={t('characters.meta.ctaTodo')}
+                data-testid={`characters-meta-cta-${result.meta.goal}-${result.id}`}
+              >
+                {t(`characters.meta.cta.${result.meta.goal}` as Parameters<typeof t>[0])}
+              </span>
+            )}
+            <span className={styles.metaChip} title={t('characters.meta.ctaTodo')}>
+              {t('characters.meta.cta.roberto')}
+            </span>
+          </div>
+        ) : null}
         <input
           className={styles.resultNote}
           type="text"
