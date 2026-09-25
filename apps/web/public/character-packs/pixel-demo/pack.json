@@ -1,0 +1,462 @@
+{
+  "schema": "gruia.character-pack/1",
+  "id": "pixel-demo",
+  "name": "Pixel",
+  "brand": "gruia",
+  "canvas": {
+    "w": 512,
+    "h": 512
+  },
+  "anchor": {
+    "x": 256,
+    "y": 472
+  },
+  "palette": [
+    "#4A5178",
+    "#6B74A8",
+    "#E8645A",
+    "#FFCF5C",
+    "#FFFFFF",
+    "#26293D"
+  ],
+  "reference": "ref/master.png",
+  "defaults": {
+    "engine": "raster-frames",
+    "fps": 10,
+    "playback": "loop"
+  },
+  "emotions": {
+    "idle": {
+      "label": "Respiración",
+      "engine": "raster-frames",
+      "fps": 8,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "idle/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/007.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/008.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "idle/009.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "smile": {
+      "label": "Sonrisa",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "smile/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "smile/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "smile/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "smile/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "smile/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "smile/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "smile/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "smile/007.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "joy": {
+      "label": "Alegría",
+      "engine": "raster-frames",
+      "fps": 12,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "joy/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "joy/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "joy/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "joy/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "joy/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "joy/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "joy/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "joy/007.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "surprise": {
+      "label": "Sorpresa",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "surprise/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "surprise/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "surprise/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "surprise/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "surprise/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "surprise/005.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "sad": {
+      "label": "Tristeza",
+      "engine": "raster-frames",
+      "fps": 8,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "sad/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "sad/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "sad/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "sad/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "sad/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "sad/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "sad/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "sad/007.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "annoyed": {
+      "label": "Mosqueo",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "annoyed/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "annoyed/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "annoyed/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "annoyed/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "annoyed/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "annoyed/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "annoyed/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "annoyed/007.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "thinking": {
+      "label": "Pensando",
+      "engine": "raster-frames",
+      "fps": 8,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "thinking/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "thinking/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "thinking/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "thinking/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "thinking/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "thinking/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "thinking/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "thinking/007.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "wave": {
+      "label": "Saludo",
+      "engine": "raster-frames",
+      "fps": 12,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "wave/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "wave/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "wave/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "wave/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "wave/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "wave/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "wave/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "wave/007.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    },
+    "nudge": {
+      "label": "Codazo",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "nudge/000.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "nudge/001.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "nudge/002.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "nudge/003.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "nudge/004.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "nudge/005.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "nudge/006.png",
+          "ms": null,
+          "origin": "gen"
+        },
+        {
+          "src": "nudge/007.png",
+          "ms": null,
+          "origin": "gen"
+        }
+      ]
+    }
+  }
+}

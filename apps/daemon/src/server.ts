@@ -855,6 +855,7 @@ import { registerLiveArtifactRoutes } from './routes/live-artifact.js';
 import { registerDesignSystemToolRoutes } from './routes/design-system-tool.js';
 import { registerDeployRoutes, registerDeploymentCheckRoutes } from './routes/deploy.js';
 import { registerMediaRoutes } from './routes/media.js';
+import { registerCharacterPackRoutes } from './routes/character-packs.js';
 import { registerProjectRoutes, registerProjectArtifactRoutes, registerProjectFileRoutes, registerProjectUploadRoutes, createEnforceWorkspaceProjectMutation } from './routes/project/index.js';
 import { registerVelaRoutes } from './routes/vela.js';
 import { registerFinalizeRoutes, registerImportRoutes, registerProjectExportRoutes } from './import-export-routes.js';
@@ -8911,6 +8912,13 @@ export async function startServer({
     research: researchDeps,
     authorizeProjectRequest,
     authorizeProjectToolRequest,
+  });
+
+  // Personajes — character-pack regeneration jobs + edited pack write-back.
+  // Materializes jobs under the bundled pack dir for the Codex runner.
+  registerCharacterPackRoutes(app, {
+    http: httpDeps,
+    paths: pathDeps,
   });
 
   registerVelaRoutes(app, {

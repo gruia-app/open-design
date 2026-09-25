@@ -2035,6 +2035,15 @@ export function EntryNavRail({
             >
               <Icon name="puzzle" size={16} />
             </NavButton>
+            <NavButton
+              active={view === 'characters'}
+              ariaLabel={t('entry.navCharacters')}
+              label={t('entry.navCharacters')}
+              onClick={() => selectView('characters')}
+              testId="entry-nav-characters"
+            >
+              <Icon name="sparkles" size={16} />
+            </NavButton>
             {/* 最近浏览过 sits under 插件 (per product) — the last thing in the
                 destination list, because it is a list of CONTENT rather than a
                 place to go. */}
@@ -2096,6 +2105,15 @@ export function EntryNavRail({
               testId="entry-nav-plugins"
             >
               <Icon name="puzzle" size={16} />
+            </NavButton>
+            <NavButton
+              active={view === 'characters'}
+              ariaLabel={t('entry.navCharacters')}
+              label={t('entry.navCharacters')}
+              onClick={() => selectView('characters')}
+              testId="entry-nav-characters"
+            >
+              <Icon name="sparkles" size={16} />
             </NavButton>
             {/* recvq4hGF7BJkI removed this entry while the rail footer still
                 carried EntryShell's `entry-settings-chip` for the signed-out

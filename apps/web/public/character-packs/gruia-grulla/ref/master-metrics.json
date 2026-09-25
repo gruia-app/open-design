@@ -1,0 +1,36 @@
+{
+  "source": "/home/roberto/.t3/userdata/leaders-20260923/producto-saas/branding/img/gruia_explorador.png",
+  "bbox": [
+    191,
+    44,
+    893,
+    923
+  ],
+  "targetHeight": 408,
+  "enclosedPixelsFilled": 0,
+  "transform": {
+    "scale": 0.463636,
+    "sourceSize": [
+      1024,
+      1024
+    ],
+    "resized": [
+      475,
+      475
+    ],
+    "translation": [
+      4,
+      44
+    ],
+    "shoeCenterSource": 543.53,
+    "shoeCenterMeasuredSource": 543.53,
+    "shoeCenterMethod": "two-shoe-x-groups",
+    "anchor": [
+      256,
+      472
+    ],
+    "motionOffsetY": 0.0,
+    "clipped": false
+  },
+  "cleanup": {}
+}

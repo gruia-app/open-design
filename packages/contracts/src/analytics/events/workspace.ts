@@ -19,6 +19,7 @@ export type TrackingWorkspacePage =
   | 'all_projects'
   | 'design_systems'
   | 'plugins'
+  | 'characters'
   | 'workspace_settings'
   | 'project';
 

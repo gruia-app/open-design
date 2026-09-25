@@ -32,7 +32,11 @@ export type EntryHomeView =
   | 'workspace-settings'
   // Full-page personal Settings surface. `/settings` renders the same
   // SettingsDialog component in its `page` presentation instead of the modal.
-  | 'settings';
+  | 'settings'
+  // Personajes — the character-pack review surface (grid of emotions plus a
+  // per-emotion animation player). `/characters/:emotion` deep-links into the
+  // player, mirroring the `/brands/:id` preselection pattern.
+  | 'characters';
 
 export type Route =
   | {
@@ -46,6 +50,13 @@ export type Route =
        * select a specific brand without leaving the tab.
        */
       brandId?: string;
+      /**
+       * Optional preselected emotion for the Personajes view
+       * (`/characters/:emotion`). When present, the view opens the emotion's
+       * player directly instead of the grid; unknown ids fall back to the
+       * grid with a notice.
+       */
+      emotionId?: string;
     }
   | { kind: 'design-system-create' }
   | { kind: 'design-system-detail'; designSystemId: string }
@@ -137,6 +148,13 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'settings') {
     return { kind: 'home', view: 'settings' };
   }
+  if (parts[0] === 'characters' || parts[0] === 'personajes') {
+    return {
+      kind: 'home',
+      view: 'characters',
+      emotionId: parts[1] ? decodeURIComponent(parts[1]) : undefined,
+    };
+  }
   if (parts[0] === 'collab-demo') {
     return { kind: 'collab-demo', projectId: parts[1] ? decodeURIComponent(parts[1]) : null };
   }
@@ -193,6 +211,9 @@ export function buildPath(route: Route): string {
     if (route.view === 'board') return '/board';
     if (route.view === 'workspace-settings') return '/workspace-settings';
     if (route.view === 'settings') return '/settings';
+    if (route.view === 'characters') {
+      return route.emotionId ? `/characters/${encodeURIComponent(route.emotionId)}` : '/characters';
+    }
     return '/';
   }
   if (route.kind === 'marketplace') return '/marketplace';

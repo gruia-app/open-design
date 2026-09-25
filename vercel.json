@@ -3,5 +3,6 @@
   "buildCommand": "OD_WEB_OUTPUT_MODE= pnpm --filter @open-design/web build",
   "installCommand": "pnpm install",
   "outputDirectory": "apps/web/out",
-  "framework": null
+  "framework": null,
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }

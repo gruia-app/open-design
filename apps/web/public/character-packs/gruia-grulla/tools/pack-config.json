@@ -1,0 +1,24 @@
+{
+  "id": "gruia-grulla",
+  "name": "Gui",
+  "brand": "gruia",
+  "sourceMaster": "/home/roberto/.t3/userdata/leaders-20260923/producto-saas/branding/img/gruia_explorador.png",
+  "anchorMode": "grulla-shoes",
+  "sheetAnchorEmotions": [
+    "annoyed"
+  ],
+  "gridBorderCleanup": {
+    "joy": {
+      "source": "rev4-attempt2",
+      "bandPx": 3,
+      "verifiedEmptyMarginPx": 6,
+      "reason": "premultiplied black 4x2 grid; clear reviewed-empty cell borders before crop and scale"
+    },
+    "surprise": {
+      "source": "rev4-attempt3",
+      "bandPx": 3,
+      "verifiedEmptyMarginPx": 6,
+      "reason": "reproduce isolated evaluation's reviewed-empty cell-border treatment; no visible grid retained"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+Las hojas se generan exclusivamente con imagegen incorporado de Codex. La imagen original de cuerpo completo es la maestra de identidad; ref/master.png es su normalización técnica, no un rediseño. Cada archivo .txt conserva un prompt exacto.

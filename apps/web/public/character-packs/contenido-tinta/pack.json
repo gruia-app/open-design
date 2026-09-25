@@ -1,0 +1,671 @@
+{
+  "schema": "gruia.character-pack/1",
+  "id": "contenido-tinta",
+  "name": "Tinta",
+  "brand": "contenido",
+  "canvas": {
+    "w": 512,
+    "h": 512
+  },
+  "anchor": {
+    "x": 256,
+    "y": 472
+  },
+  "palette": [
+    "#AA772A",
+    "#DCA748",
+    "#BA8638",
+    "#C3892C",
+    "#E1AD4C",
+    "#CA9339",
+    "#C48D35",
+    "#C99543",
+    "#2D2B26",
+    "#B47D29",
+    "#BC832A",
+    "#AB7A33",
+    "#E6B254",
+    "#D39A3A",
+    "#7B4507",
+    "#9B6926",
+    "#B8781A",
+    "#D39D44",
+    "#9A631A",
+    "#8A5614",
+    "#DBA954",
+    "#A46B19",
+    "#683604",
+    "#89530C",
+    "#834C07",
+    "#E2AE52",
+    "#945C15",
+    "#312E29",
+    "#B27E32",
+    "#A26D24",
+    "#572902",
+    "#34312C"
+  ],
+  "reference": "ref/master.png",
+  "defaults": {
+    "engine": "raster-frames",
+    "fps": 10,
+    "playback": "loop"
+  },
+  "emotions": {
+    "idle": {
+      "label": "Respiración",
+      "engine": "raster-frames",
+      "fps": 8,
+      "playback": "pingpong",
+      "frames": [
+        {
+          "src": "idle/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "idle/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "idle/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "idle/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "idle/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "idle/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "idle/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "idle/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "smile": {
+      "label": "Sonrisa",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "smile/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "smile/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "smile/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "smile/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "smile/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "smile/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "smile/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "smile/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "joy": {
+      "label": "Alegría",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "joy/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "joy/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "joy/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "joy/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "joy/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "joy/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "joy/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "joy/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "surprise": {
+      "label": "Sorpresa",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "surprise/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "surprise/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "surprise/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "surprise/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "surprise/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "surprise/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "surprise/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "surprise/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "sad": {
+      "label": "Tristeza",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "sad/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "sad/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "sad/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "sad/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "sad/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "sad/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "sad/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "sad/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "annoyed": {
+      "label": "Molesto",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "annoyed/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "annoyed/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "annoyed/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "annoyed/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "annoyed/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "annoyed/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "annoyed/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "annoyed/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "thinking": {
+      "label": "Pensando",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "thinking/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "thinking/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "thinking/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "thinking/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "thinking/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "thinking/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "thinking/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "thinking/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "wave": {
+      "label": "Saludo",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "wave/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "wave/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "wave/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "wave/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "wave/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "wave/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "wave/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "wave/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "nudge": {
+      "label": "Toque",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "loop",
+      "frames": [
+        {
+          "src": "nudge/000.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "nudge/001.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "nudge/002.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "nudge/003.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "nudge/004.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "nudge/005.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "nudge/006.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        },
+        {
+          "src": "nudge/007.png",
+          "ms": null,
+          "origin": "gen",
+          "note": ""
+        }
+      ]
+    },
+    "triumph": {
+      "label": "Celebración",
+      "engine": "raster-frames",
+      "fps": 10,
+      "playback": "once",
+      "frames": [
+        {
+          "src": "triumph/000.png",
+          "origin": "gen",
+          "note": "",
+          "ms": null
+        },
+        {
+          "src": "triumph/001.png",
+          "origin": "gen",
+          "note": "",
+          "ms": null
+        },
+        {
+          "src": "triumph/002.png",
+          "origin": "gen",
+          "note": "",
+          "ms": null
+        },
+        {
+          "src": "triumph/003.png",
+          "origin": "gen",
+          "note": "",
+          "ms": null
+        },
+        {
+          "src": "triumph/004.png",
+          "origin": "gen",
+          "note": "",
+          "ms": null
+        },
+        {
+          "src": "triumph/005.png",
+          "origin": "gen",
+          "note": "",
+          "ms": null
+        },
+        {
+          "src": "triumph/006.png",
+          "origin": "gen",
+          "note": "",
+          "ms": null
+        },
+        {
+          "src": "triumph/007.png",
+          "origin": "gen",
+          "note": "",
+          "ms": 1000
+        }
+      ],
+      "base": "joy",
+      "oneShot": true,
+      "usage": "celebrar un logro"
+    }
+  },
+  "qc": {
+    "idle": {
+      "paletteDeltaE": 3.567,
+      "silhouetteIoUMin": 0.9735,
+      "flags": []
+    },
+    "smile": {
+      "paletteDeltaE": 4.657,
+      "silhouetteIoUMin": 0.8902,
+      "flags": []
+    },
+    "joy": {
+      "paletteDeltaE": 5.431,
+      "silhouetteIoUMin": 0.7692,
+      "flags": []
+    },
+    "surprise": {
+      "paletteDeltaE": 5.658,
+      "silhouetteIoUMin": 0.8528,
+      "flags": []
+    },
+    "sad": {
+      "paletteDeltaE": 3.1,
+      "silhouetteIoUMin": 0.7959,
+      "flags": []
+    },
+    "annoyed": {
+      "paletteDeltaE": 3.038,
+      "silhouetteIoUMin": 0.8412,
+      "flags": []
+    },
+    "thinking": {
+      "paletteDeltaE": 3.688,
+      "silhouetteIoUMin": 0.8773,
+      "flags": []
+    },
+    "wave": {
+      "paletteDeltaE": 3.659,
+      "silhouetteIoUMin": 0.9422,
+      "flags": []
+    },
+    "nudge": {
+      "paletteDeltaE": 4.616,
+      "silhouetteIoUMin": 0.8034,
+      "flags": []
+    },
+    "triumph": {
+      "paletteDeltaE": 3.35,
+      "silhouetteIoUMin": 0.8388,
+      "flags": []
+    }
+  }
+}

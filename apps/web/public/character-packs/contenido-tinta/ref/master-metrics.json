@@ -1,0 +1,42 @@
+{
+  "source": "/home/roberto/.t3/userdata/leaders-20260923/personajes/packs/contenido-tinta/ref/happy-rev3.png",
+  "bbox": [
+    201,
+    79,
+    811,
+    931
+  ],
+  "targetHeight": 408,
+  "enclosedPixelsFilled": 0,
+  "transform": {
+    "scale": 0.478312,
+    "sourceSize": [
+      1024,
+      1024
+    ],
+    "resized": [
+      490,
+      490
+    ],
+    "translation": [
+      14,
+      27
+    ],
+    "shoeCenterSource": 505.95,
+    "shoeCenterMeasuredSource": 505.95,
+    "shoeCenterMethod": "tentacle-support-median",
+    "anchor": [
+      256,
+      472
+    ],
+    "clipped": false
+  },
+  "cleanup": {
+    "wireWhiteFringeRemoved": 342,
+    "floorGreyShadowRemoved": 1103,
+    "detachedFloorOrEdgeComponentsRemoved": 36,
+    "residualBrightEdge": 39,
+    "metalEdgePixelsRecoveredFromSource": 2429,
+    "metalEdgeRepair": "upper dark-core 2px band; handle holes excluded by luminance"
+  }
+}

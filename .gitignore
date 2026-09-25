@@ -109,3 +109,8 @@ deploy/agent-bins/
 # Python bytecode from workflow helper self-checks / local compile.
 __pycache__/
 *.py[cod]
+.vercel
+
+# Personajes — runtime regeneration job dirs written by the daemon runner
+apps/web/public/character-packs/*/jobs/
+apps/web/public/character-packs/*/variants/

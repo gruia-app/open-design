@@ -164,6 +164,27 @@ export function detectInitialLocale(): Locale {
   return detected ?? 'en';
 }
 
+/** The user's deliberate locale pick, or null. Only explicit manual
+ *  selections count — auto-detected values don't qualify, so a surface can
+ *  choose its own default without trapping the user in it. */
+export function manualLocaleOverride(): Locale | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const storedLocale = window.localStorage.getItem(LS_KEY);
+    const storedSource = window.localStorage.getItem(LS_SOURCE_KEY);
+    if (
+      storedSource === MANUAL_LOCALE_SOURCE
+      && storedLocale
+      && (LOCALES as string[]).includes(storedLocale)
+    ) {
+      return storedLocale as Locale;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 interface I18nContextValue {
   locale: Locale;
   setLocale: (next: Locale) => void;

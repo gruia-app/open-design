@@ -1,0 +1,16 @@
+{
+  "id": "contenido-tinta",
+  "name": "Tinta",
+  "brand": "contenido",
+  "sourceMaster": "/home/roberto/.t3/userdata/leaders-20260923/personajes/packs/contenido-tinta/ref/happy-rev3.png",
+  "anchorMode": "tinta-support",
+  "sheetAnchorEmotions": [],
+  "manualFlags": {},
+  "resolvedManualFlags": {
+    "idle": {
+      "flag": "idle_amplitud_excesiva",
+      "resolution": "approved_retry1_by_visual_review",
+      "revision": "CEO-R140-ASTRA-F1-TINTA-PROC-02"
+    }
+  }
+}

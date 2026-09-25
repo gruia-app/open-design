@@ -111,6 +111,7 @@ import {
   requiresAmrReauthentication,
 } from './entry-rail-account-state';
 import { LibrarySection } from './LibrarySection';
+import { CharactersView } from '../features/characters/components/CharactersView';
 import { UpdaterPopup } from './UpdaterPopup';
 import { WhatsNewPopup } from './WhatsNewPopup';
 import { DeepSeekHarnessSetupDialog } from './DeepSeekHarnessSetupDialog';
@@ -1938,6 +1939,9 @@ export function EntryShell({
                 onDesignSystemsRefresh={onDesignSystemsRefresh}
               />
             </div>
+            {view === 'characters' ? (
+              <CharactersView emotionId={route.kind === 'home' ? route.emotionId : undefined} />
+            ) : null}
             {view === 'integrations' ? (
               <IntegrationsView
                 config={config}
