@@ -110,6 +110,37 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('living stage greets, reacts to chips and pokes, and speaks in the base voice', async ({ page }) => {
+  await page.goto(`${baseUrl}/characters`);
+  await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
+
+  // The stage is the first thing in the gallery: canvas + speech bubble +
+  // the «Hazle sentir algo» chips in the G-UX order.
+  const stage = page.getByTestId('characters-stage');
+  await expect(stage).toBeVisible();
+  const bubble = page.getByTestId('characters-bubble');
+  await expect(bubble).toHaveAttribute('aria-live', 'polite');
+  await expect(page.getByTestId('characters-bubble-text')).toContainText('Soy Gui');
+  await expect(stage).toContainText('Hazle sentir algo');
+  const chipButtons = page.getByTestId('characters-emo-chips').locator('button');
+  await expect(chipButtons).toHaveCount(10);
+  await expect(chipButtons.nth(0)).toHaveAttribute('data-testid', 'characters-emo-wave');
+  await expect(chipButtons.nth(9)).toHaveAttribute('data-testid', 'characters-emo-idle');
+
+  // Tapping an emotion plays it and updates the bubble in Gui's voice.
+  await page.getByTestId('characters-emo-joy').click();
+  await expect(page.getByTestId('characters-bubble-text')).toContainText('Yuju');
+  await expect(page.getByTestId('characters-emo-joy')).toHaveAttribute('aria-pressed', 'true');
+
+  // Poking the character makes it react too.
+  await page.getByTestId('characters-stage-canvas').click();
+  await expect(page.getByTestId('characters-bubble-text')).toContainText('cosquillas');
+
+  // Switching the base to Tinta switches the stage voice.
+  await page.getByTestId('characters-starter-contenido-tinta').click();
+  await expect(page.getByTestId('characters-bubble-text')).toContainText('Tinta');
+});
+
 test('mobile 390px: prompt field spans its own row and nothing overflows horizontally', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/characters`);

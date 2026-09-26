@@ -1063,3 +1063,153 @@
   cursor: default;
   color: var(--text-muted);
 }
+
+/* Living stage (G-UX 1) — the gallery hero: big animated character, speech
+   bubble in the base's voice and the «Hazle sentir algo» chip row. Stage
+   height is 330px on mobile and 420px on wide containers. */
+.stageHero {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 100%, #f9e3d2 0%, #fbf4ec 45%, var(--bg-panel) 100%);
+}
+
+.stageInner {
+  position: relative;
+  height: 330px;
+  display: grid;
+  place-items: end center;
+}
+
+.stageHeroCanvas {
+  width: 250px;
+  height: 250px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.stageShadow {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  width: 120px;
+  height: 14px;
+  margin-left: -60px;
+  background: radial-gradient(closest-side, rgba(90, 50, 20, 0.22), transparent);
+  border-radius: 50%;
+}
+
+.bubble {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--text-strong);
+  z-index: 1;
+}
+
+.bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  margin-left: -8px;
+  width: 16px;
+  height: 16px;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.bubbleWho {
+  font-weight: 700;
+  color: var(--accent, #e5702a);
+  margin-right: 4px;
+}
+
+.stageEmos {
+  padding: 12px 12px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.stageEmosLabel {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 4px 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.stageChips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 2px 4px;
+}
+
+.stageChips::-webkit-scrollbar {
+  display: none;
+}
+
+.stageChip {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--text-strong);
+  transition: transform 0.12s;
+}
+
+.stageChip:hover {
+  border-color: var(--border-strong);
+}
+
+.stageChip:active {
+  transform: scale(0.96);
+}
+
+.stageChip[aria-pressed="true"] {
+  background: var(--text-strong);
+  color: var(--bg-panel);
+  border-color: var(--text-strong);
+}
+
+@media (min-width: 861px) {
+  .stageInner {
+    height: 420px;
+  }
+
+  .stageHeroCanvas {
+    width: 340px;
+    height: 340px;
+  }
+
+  .bubble {
+    left: auto;
+    right: 22px;
+    top: 22px;
+    max-width: 340px;
+  }
+
+  .bubble::after {
+    left: 34%;
+  }
+
+  .stageChips {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
