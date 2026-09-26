@@ -21,6 +21,7 @@ import {
   voiceForPack,
 } from '../gallery/stage';
 import type { EmotionLoader } from './useEmotionCache';
+import { useReducedMotion } from './useReducedMotion';
 import styles from './characters.module.css';
 
 function loaderFor(resolve: (src: string) => Promise<string>): EmotionLoader {
@@ -80,6 +81,10 @@ export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, cue, onI
   onEmotionEndRef.current = onEmotionEnd;
   const [current, setCurrent] = useState('wave');
   const [line, setLine] = useState('');
+  // G-UX 10: under reduced motion the stage draws each emotion's first
+  // frame statically — every line/state still updates (bubble, chips,
+  // the meta hook's timing) but nothing visibly animates.
+  const reducedMotion = useReducedMotion();
 
   const load = useMemo(() => loaderFor((src) => pack.resolve(src)), [pack]);
   const emotions = pack.manifest.emotions;
@@ -144,7 +149,7 @@ export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, cue, onI
           } else {
             const mode: 'loop' | 'pingpong' =
               playing.key === 'idle' ? (emotionPlayback(pack.manifest, emotion) === 'pingpong' ? 'pingpong' : 'loop') : 'loop';
-            const index = frameIndexAt(timeline, mode, elapsed);
+            const index = reducedMotion ? 0 : frameIndexAt(timeline, mode, elapsed);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             engine.renderFrame(ctx, cached, index);
           }
@@ -157,7 +162,7 @@ export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, cue, onI
       alive = false;
       cancelAnimationFrame(raf);
     };
-  }, [emotions, load, pack.manifest]);
+  }, [emotions, load, pack.manifest, reducedMotion]);
 
   // Entry + character switch: greet with the character's own hello while
   // waving twice, then idle.

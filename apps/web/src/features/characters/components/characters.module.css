@@ -741,6 +741,12 @@
   display: contents;
 }
 
+/* G-UX 10: ≥44px touch targets on the CTAs and the like/remove
+ * actions — on every viewport, not just the phone layout. */
+.generateActions > button {
+  min-height: 44px;
+}
+
 .generateInput {
   flex: 1;
   min-width: 0;
@@ -1042,6 +1048,17 @@ textarea.generateInput {
   }
 }
 
+/* G-UX 10: with prefers-reduced-motion the character canvases draw a
+ * static first frame (see useReducedMotion); nothing else may animate
+ * or transition either — the bubble still updates its text. */
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 .galleryCards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -1158,6 +1175,11 @@ textarea.generateInput {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.resultActions > button {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .resultNote {
@@ -1382,7 +1404,7 @@ textarea.generateInput {
 
 .bubbleWho {
   font-weight: 700;
-  color: var(--accent, #e5702a);
+  color: #8a3a0c;
   margin-right: 4px;
 }
 
@@ -1504,7 +1526,7 @@ textarea.generateInput {
   background: none;
   padding: 2px 4px;
   font-size: 13px;
-  color: var(--accent, #e5702a);
+  color: #8a3a0c;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -1531,7 +1553,7 @@ textarea.generateInput {
 .goalPlanList li::before {
   content: "·";
   margin-right: 8px;
-  color: var(--accent, #e5702a);
+  color: #8a3a0c;
 }
 
 .goalFormat {
