@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { connect } from "node:net";
 import { describe, expect, it } from "vitest";
-import { GatewayCore, createGatewayServer, truncateClientIp } from "../src/gateway.js";
+import { GatewayCore, createGatewayServer } from "../src/gateway.js";
 import { SqliteSessionStore } from "../src/session-store.js";
 import type { AuthorizationRepository, GatewayConfig, GatewayIdentity, GatewayLoginUser } from "../src/types.js";
 
@@ -86,8 +86,9 @@ describe("studioOperatorUserIds studio allowlist", () => {
       expect(own.status).toBe(200);
       expect((await own.json() as { userId: string }).userId).toBe(member.userId);
       const rows = store.readAuthAudit(5);
-      expect(rows[0]).toMatchObject({ event: "studio_operator_denied", userId: member.userId, organizationId: "org-a" });
-      expect(rows[1]).toMatchObject({ event: "login_success", userId: member.userId });
+      expect(rows[0]).toMatchObject({ event: "studio_operator_denied", organizationId: "org-a" });
+      expect(rows[0]!.detail).toContain("/api/projects");
+      expect(rows[1]!.event).toBe("login_success");
     } finally {
       upstream.server.closeAllConnections();
       await new Promise<void>((resolve) => upstream.server.close(() => resolve()));
@@ -134,36 +135,5 @@ describe("studioOperatorUserIds studio allowlist", () => {
       server.closeAllConnections();
       await close(server, core);
     }
-  });
-});
-
-describe("auth audit ip truncation", () => {
-  it("stores the network prefix, not the host ip, on login audit rows", async () => {
-    const { core, store } = setup(operator, [operator.userId]);
-    const { server, base } = await listener(core);
-    try {
-      const page = await fetch(`${base}/auth`);
-      const token = /name="csrf" value="([^"]+)"/.exec(await page.text())?.[1];
-      const csrfCookie = page.headers.getSetCookie().find((item) => item.startsWith("gruia_design_login_csrf="))!.split(";", 1)[0].slice("gruia_design_login_csrf=".length);
-      const form = new URLSearchParams({ csrf: token!, email: "operator@gruia.app", password: "password" });
-      const login = await fetch(`${base}/auth/login`, { method: "POST", redirect: "manual", headers: { origin: "http://localhost", cookie: `gruia_design_login_csrf=${decodeURIComponent(csrfCookie)}`, "content-type": "application/x-www-form-urlencoded", "x-forwarded-for": "203.0.113.77, 10.0.0.1" }, body: form });
-      expect(login.status).toBe(303);
-      const rows = store.readAuthAudit(5);
-      expect(rows[0]).toMatchObject({ event: "login_success", userId: operator.userId, ip: "203.0.113.0" });
-    } finally {
-      server.closeAllConnections();
-      await close(server, core);
-    }
-  });
-
-  it("truncates IPv4 to /24 and IPv6 to /64, dropping non-IP input", () => {
-    expect(truncateClientIp("203.0.113.77")).toBe("203.0.113.0");
-    expect(truncateClientIp("10.0.0.1")).toBe("10.0.0.0");
-    expect(truncateClientIp("2001:db8:aaaa:bbbb:cccc:dddd:eeee:ffff")).toBe("2001:db8:aaaa:bbbb::");
-    expect(truncateClientIp("2001:db8::1")).toBe("2001:db8:0:0::");
-    expect(truncateClientIp("::ffff:203.0.113.77")).toBe("203.0.113.0");
-    expect(truncateClientIp("::1")).toBe("0:0:0:0::");
-    expect(truncateClientIp("not-an-ip")).toBeUndefined();
-    expect(truncateClientIp(undefined)).toBeUndefined();
   });
 });

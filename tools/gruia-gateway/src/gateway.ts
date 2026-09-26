@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import { pbkdf2, randomBytes, timingSafeEqual } from "node:crypto";
-import { isIP } from "node:net";
 import { createServer, request as httpRequest, type IncomingHttpHeaders, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { Transform, pipeline } from "node:stream";
 import type { Duplex } from "node:stream";
@@ -223,27 +222,10 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   await proxy(request, response, core, authorized.identity.organizationId);
 }
 
-function clientIp(request: IncomingMessage): string | undefined {
+function authContext(request: IncomingMessage): AuthAuditContext {
   const forwarded = request.headers["x-forwarded-for"];
   const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",", 1)[0]?.trim();
-  return first && first.length <= 64 ? first : request.socket.remoteAddress;
-}
-/** Audit rows keep a network prefix, not the host: IPv4 /24, IPv6 /64. */
-export function truncateClientIp(ip: string | undefined): string | undefined {
-  const mapped = ip?.toLowerCase().startsWith("::ffff:") ? ip.slice(7) : ip;
-  const version = mapped ? isIP(mapped) : 0;
-  if (version === 4) { const [a, b, c] = mapped!.split("."); return `${a}.${b}.${c}.0`; }
-  if (version === 6) {
-    const [head = "", tail = ""] = mapped!.split("::");
-    const heads = head ? head.split(":") : [];
-    const tails = tail ? tail.split(":") : [];
-    const groups = [...heads, ...Array<string>(8 - heads.length - tails.length).fill("0"), ...tails];
-    return `${groups.slice(0, 4).join(":")}::`;
-  }
-  return undefined;
-}
-function authContext(request: IncomingMessage): AuthAuditContext {
-  const ip = truncateClientIp(clientIp(request));
+  const ip = first && first.length <= 64 ? first : request.socket.remoteAddress;
   const agent = request.headers["user-agent"];
   return { ...(ip ? { ip } : {}), ...(typeof agent === "string" && agent.length <= 512 ? { userAgent: agent } : {}) };
 }
@@ -291,7 +273,7 @@ async function proxy(request: IncomingMessage, response: ServerResponse, core: G
   const target = core.config.organizations.get(organizationId); if (!target || !isSafeProxyPath(request.url)) { json(response, 403, { error: "forbidden" }); return; }
   const upstream = new URL(target.upstream); const contentLength = Number(request.headers["content-length"] ?? 0);
   if (!Number.isSafeInteger(contentLength) || contentLength < 0 || contentLength > core.config.requestBodyLimitBytes) { json(response, 413, { error: "payload_too_large" }); return; }
-  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, clientIp(request));
+  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs }, (upstreamResponse) => {
     if (response.destroyed || response.writableEnded) { upstreamResponse.destroy(); return; }
     try {
@@ -320,7 +302,7 @@ async function handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buf
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request));
   if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER" || !isStudioOperator(core, authorized.identity, "websocket", request)) { deny(); return; }
   const target = core.config.organizations.get(authorized.identity.organizationId); if (!target) { deny(); return; }
-  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, clientIp(request));
+  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs });
   upstreamRequest.on("response", (upstreamResponse) => { upstreamResponse.resume(); deny(); });
   upstreamRequest.on("upgrade", (upstreamResponse, upstreamSocket, upstreamHead) => { let lines = `HTTP/${upstreamResponse.httpVersion} ${upstreamResponse.statusCode} ${upstreamResponse.statusMessage}\r\n`; for (const [name, value] of Object.entries(upstreamResponse.headers)) if (value !== undefined && name.toLowerCase() !== "set-cookie") lines += `${name}: ${Array.isArray(value) ? value.join(", ") : value}\r\n`; socket.write(`${lines}\r\n`); if (upstreamHead.length) socket.write(upstreamHead); if (head.length) upstreamSocket.write(head); upstreamSocket.pipe(socket).pipe(upstreamSocket); });
