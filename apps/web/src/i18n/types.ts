@@ -5652,4 +5652,23 @@ export interface Dict {
   'characters.goalask.changing.tinta': string;
   'characters.goalask.reask.gui': string;
   'characters.goalask.reask.tinta': string;
+  'characters.react.typing.gui': string;
+  'characters.react.typing.tinta': string;
+  'characters.react.generate.gui': string;
+  'characters.react.generate.tinta': string;
+  'characters.react.progress.1': string;
+  'characters.react.progress.2': string;
+  'characters.react.progress.3': string;
+  'characters.react.result.gui': string;
+  'characters.react.result.tinta': string;
+  'characters.react.like.gui': string;
+  'characters.react.like.tinta': string;
+  'characters.react.editor.gui': string;
+  'characters.react.editor.tinta': string;
+  'characters.react.nudge.gui.1': string;
+  'characters.react.nudge.gui.2': string;
+  'characters.react.nudge.gui.3': string;
+  'characters.react.nudge.tinta.1': string;
+  'characters.react.nudge.tinta.2': string;
+  'characters.react.nudge.tinta.3': string;
 }

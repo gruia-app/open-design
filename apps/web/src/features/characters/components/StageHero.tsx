@@ -12,6 +12,7 @@ import { getEngine } from '../engines/registry';
 import type { LoadedEmotion } from '../engines/types';
 import type { LoadedPack } from '../import/importPack';
 import { buildTimeline, frameIndexAt } from '../playback/timeline';
+import type { Cue } from '../gallery/reactive';
 import {
   emotionPasses,
   POKE_EMOTIONS,
@@ -57,12 +58,16 @@ interface Props {
   chipOrder?: readonly string[];
   /** Chips rendered with the suggested highlight once a goal is chosen. */
   highlighted?: ReadonlySet<string>;
-  /** Line the bubble must say now (the meta question, the goal reaction,
-   *  the «Ahora no» line…). Internal lines take over again afterwards. */
-  forcedLine?: string;
+  /** External cue (meta question, goal reactions, G-UX 3 personality):
+   *  `seq` must grow per event; each new cue may set a bubble line and/or
+   *  play an emotion (never counted as a user-touched emotion). */
+  cue?: Cue;
+  /** Fires on every user interaction with the stage (chip tap, poke) so
+   *  the owner can reset idle timers. */
+  onInteract?: () => void;
 }
 
-export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, forcedLine }: Props) {
+export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, cue, onInteract }: Props) {
   const { t } = useI18n();
   const voice = voiceForPack(pack.manifest.id);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -164,15 +169,24 @@ export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, forcedLi
     say(`characters.stage.hello.${voice}`);
   }, [pack.manifest.id, voice, play, say]);
 
-  // External voice line (meta question, goal reactions…): lasts until the
-  // next chip/poke line replaces it.
+  // External cue (meta question, goal reactions, reactive personality…):
+  // each new `cue.seq` plays its emotion (non-user, so it never triggers
+  // the meta hook) and/or replaces the bubble line. The next chip/poke
+  // line takes over afterwards.
+  const cueSeqRef = useRef(0);
+  const onInteractRef = useRef(onInteract);
+  onInteractRef.current = onInteract;
   useEffect(() => {
-    if (forcedLine) setLine(forcedLine);
-  }, [forcedLine]);
+    if (!cue || cue.seq === cueSeqRef.current) return;
+    cueSeqRef.current = cue.seq;
+    if (cue.emotion) play(cue.emotion, false);
+    if (cue.line !== undefined) setLine(cue.line);
+  }, [cue, play]);
 
   const chip = useCallback(
     (key: string) => {
       if (!emotions[key]) return;
+      onInteractRef.current?.();
       play(key, true);
       say(`characters.stage.line.${voice}.${key}`);
     },
@@ -182,6 +196,7 @@ export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, forcedLi
   const poke = useCallback(() => {
     const index = pokesRef.current;
     pokesRef.current += 1;
+    onInteractRef.current?.();
     play(pokeEmotionAt(index), true);
     say(`characters.stage.poke.${voice}.${index % POKE_EMOTIONS.length}`);
   }, [play, say, voice]);
