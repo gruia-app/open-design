@@ -5359,7 +5359,7 @@ export const en: Dict = {
   'characters.emotionLabel.wave': "Wave",
   'characters.emotionLabel.nudge': "Nudge",
   'characters.emotionLabel.triumph': "Triumph",
-  'characters.gallery.promptPlaceholder': "Describe a character or attach an image…",
+  'characters.gallery.promptPlaceholder': "Describe it in one line…",
   'characters.gallery.attachImage': "Attach image",
   'characters.gallery.removeImage': "Remove image",
   'characters.gallery.generate': "Generate",

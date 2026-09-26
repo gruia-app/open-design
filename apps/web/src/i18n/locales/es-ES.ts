@@ -5345,7 +5345,7 @@ export const esES: Dict = {
   'characters.emotionLabel.wave': "Saludo",
   'characters.emotionLabel.nudge': "Toque",
   'characters.emotionLabel.triumph': "Triunfo",
-  'characters.gallery.promptPlaceholder': "Describe un personaje o adjunta una imagen…",
+  'characters.gallery.promptPlaceholder': "Descríbelo en una línea…",
   'characters.gallery.attachImage': "Adjuntar imagen",
   'characters.gallery.removeImage': "Quitar imagen",
   'characters.gallery.generate': "Generar",
