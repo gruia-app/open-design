@@ -819,6 +819,7 @@ export const th: Dict = {
   'entry.workspaceTeamsAria': 'เปิดหน้า Workspace สำหรับทีม',
   'entry.navExpand': 'ขยายแถบด้านข้าง',
   'entry.navCollapse': 'ย่อแถบด้านข้าง',
+  'entry.navMenu': 'เมนู',
   'entry.navNewProject': 'โปรเจกต์ใหม่',
   'entry.navHome': 'หน้าแรก',
   'entry.navProjects': 'โปรเจกต์',

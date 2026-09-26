@@ -273,17 +273,60 @@
   .entry-shell--no-header .entry { transition-delay: 0ms; }
 }
 
-/* Narrow window: below the comfortable split width the docked rail
-   auto-collapses instead of squeezing into a broken sliver — the grid track
-   zeroes out and the floating panel is clipped and inert. The open state is
-   preserved, so widening the window restores the rail as it was. */
+/* The overlay-drawer scrim only exists inside the narrow-viewport media
+   block below — on desktop the rail docks and there is no scrim at all. */
+.entry-rail-backdrop {
+  display: none;
+}
+
+/* Narrow window / mobile: the rail can no longer dock (a 0-width track would
+   clip it entirely), so while open it becomes an overlay drawer floating over
+   the content with a scrim — the standard mobile nav pattern. The grid track
+   stays 0 so opening the drawer never reflows the view under it. */
 @media (max-width: 1080px) {
   .entry-shell--no-header .entry.entry--rail-open {
     grid-template-columns: 0 minmax(0, 1fr);
   }
   .entry--rail-open .entry-nav-rail {
-    overflow: hidden;
-    pointer-events: none;
+    position: fixed;
+    /* Starts below the app chrome: the mobile menu toggle lives in that
+       44px strip, so the drawer content never slides under it — the
+       toggle stays visible as the drawer's own close affordance. */
+    top: var(--workspace-tabs-chrome-height, 44px);
+    bottom: 0;
+    left: 0;
+    width: min(300px, 85vw);
+    /* Above the workspace tabs chrome (z-index 120) and its own scrim —
+       the drawer covers the whole viewport like a modal. */
+    z-index: 130;
+    overflow: visible;
+    pointer-events: auto;
+  }
+  /* The docked panel's zero top margin was tuned to sit flush under the
+     tabs bar; as a floating drawer it keeps the uniform card inset. */
+  .entry--rail-open .entry-nav-rail__panel {
+    margin: 10px;
+    box-shadow: var(--shadow-lg, var(--shadow-md));
+  }
+  /* Touch targets: the docked rail's 33px rows go to the 44px minimum in
+     the drawer. */
+  .entry--rail-open .entry-nav-rail__btn,
+  .entry--rail-open .entry-nav-rail__recent-head {
+    height: 44px;
+  }
+  .entry-rail-backdrop {
+    display: block;
+    /* Lives inside the rail's nav so it shares the rail's stacking context;
+       -1 keeps it under the panel it carries. Fixed escapes the drawer's
+       300px box so the veil covers the whole viewport. */
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    /* Text-tinted veil: dark in light theme, light in dark theme — the same
+       token-driven scrim approach other overlays use. */
+    background: color-mix(in srgb, var(--text) 24%, transparent);
+    -webkit-backdrop-filter: var(--scrim-backdrop);
+    backdrop-filter: var(--scrim-backdrop);
   }
 }
 /* Topbar panel toggle — the single affordance left visible when the rail

@@ -819,6 +819,7 @@ export const uk: Dict = {
   'entry.workspaceTeamsAria': 'Відкрити сторінку Workspace для команд',
   'entry.navExpand': 'Розгорнути бічну панель',
   'entry.navCollapse': 'Згорнути бічну панель',
+  'entry.navMenu': 'Меню',
   'entry.navNewProject': 'Новий проєкт',
   'entry.navHome': 'Головна',
   'entry.navProjects': 'Проєкти',

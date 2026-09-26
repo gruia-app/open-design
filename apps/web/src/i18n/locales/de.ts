@@ -819,6 +819,7 @@ export const de: Dict = {
   'entry.workspaceTeamsAria': 'Die Seite „Workspace für Teams“ öffnen',
   'entry.navExpand': 'Seitenleiste einblenden',
   'entry.navCollapse': 'Seitenleiste ausblenden',
+  'entry.navMenu': 'Menü',
   'entry.navNewProject': 'Neues Projekt',
   'entry.navHome': 'Start',
   'entry.navProjects': 'Projekte',

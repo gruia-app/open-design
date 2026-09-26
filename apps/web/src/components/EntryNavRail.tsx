@@ -1788,10 +1788,26 @@ export function EntryNavRail({
   return (
     <nav
       ref={railRef}
+      id="entry-nav-rail"
       className={`entry-nav-rail${open ? ' is-open' : ''}`}
       aria-label={t('entry.primaryNavAria')}
       aria-hidden={open ? undefined : true}
     >
+      {/* Overlay-drawer scrim: only visible below the 1080px rail-dock
+          breakpoint (CSS), where the open rail floats as a drawer. It lives
+          inside the nav so it shares the rail's stacking context — a
+          body-level sibling would paint above the drawer. Tapping it
+          dismisses the drawer through the same toggle event the chrome's
+          menu button uses. */}
+      {open ? (
+        <div
+          className="entry-rail-backdrop"
+          aria-hidden="true"
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent(ENTRY_RAIL_TOGGLE_EVENT))
+          }
+        />
+      ) : null}
       <div className="entry-nav-rail__panel">
       <div className="entry-nav-rail__group">
 

@@ -819,6 +819,7 @@ export const esES: Dict = {
   'entry.workspaceTeamsAria': 'Abrir la página de Workspace para equipos',
   'entry.navExpand': 'Mostrar barra lateral',
   'entry.navCollapse': 'Ocultar barra lateral',
+  'entry.navMenu': 'Menú',
   'entry.navNewProject': 'Nuevo proyecto',
   'entry.navHome': 'Inicio',
   'entry.navProjects': 'Proyectos',

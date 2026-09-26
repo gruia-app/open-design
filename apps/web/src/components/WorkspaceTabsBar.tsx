@@ -1686,6 +1686,31 @@ export function WorkspaceTabsBar({
       aria-label="Workspace tabs"
     >
       <div className="app-chrome-traffic-space workspace-tabs-traffic" aria-hidden />
+      {/* Mobile nav toggle — the only entry-rail affordance below the docked
+          split width (1080px), where the rail becomes an overlay drawer. Kept
+          in the DOM on every viewport (CSS hides it on desktop) so the entry
+          route's menu button is a stable focus/aria-controls target; it
+          mirrors the rail state through the same bridge event the pinned
+          Home tab toggle uses. */}
+      {route.kind === 'home' ? (
+        <button
+          type="button"
+          id="entry-mobile-nav-toggle"
+          className="workspace-mobile-nav-toggle"
+          aria-label={t('entry.navMenu')}
+          aria-expanded={entryRailOpen}
+          aria-controls="entry-nav-rail"
+          data-testid="entry-mobile-nav-toggle"
+          onClick={(event) => {
+            event.stopPropagation();
+            window.dispatchEvent(new CustomEvent(ENTRY_RAIL_TOGGLE_EVENT));
+          }}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden>
+            <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
+          </svg>
+        </button>
+      ) : null}
       {/* Docked mode: the chrome row keeps the brand-logo button plus the
           account actions host at the window's top-right; the strip renders in
           the chat column's dock, level with

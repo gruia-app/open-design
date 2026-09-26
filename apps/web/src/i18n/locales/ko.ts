@@ -819,6 +819,7 @@ export const ko: Dict = {
   'entry.workspaceTeamsAria': 'Workspace 팀 버전 페이지 열기',
   'entry.navExpand': '사이드바 펼치기',
   'entry.navCollapse': '사이드바 접기',
+  'entry.navMenu': '메뉴',
   'entry.navNewProject': '새 프로젝트',
   'entry.navHome': '홈',
   'entry.navProjects': '프로젝트',

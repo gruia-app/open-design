@@ -91,6 +91,40 @@
 .workspace-tabs-chrome .workspace-tabs-traffic {
   margin-right: var(--app-chrome-traffic-margin);
 }
+/* Mobile entry-nav menu toggle. Hidden on desktop — the docked rail and its
+   pinned Home-tab toggle cover it there. Below 1080px the rail can no
+   longer dock, so this is the only way to reach it (and /characters). */
+.workspace-mobile-nav-toggle {
+  display: none;
+}
+@media (max-width: 1080px) {
+  .workspace-mobile-nav-toggle {
+    /* ≥44px hit target for touch. */
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding: 0;
+    margin-right: 4px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+    transition: background 100ms var(--ease-out), color 100ms var(--ease-out);
+  }
+  .workspace-mobile-nav-toggle:hover {
+    background: var(--bg-muted);
+    color: var(--text);
+  }
+  .workspace-mobile-nav-toggle:focus-visible {
+    outline: 2px solid var(--accent, var(--text));
+    outline-offset: -2px;
+  }
+}
 .workspace-tabs-new-btn {
   width: 30px;
   height: 30px;

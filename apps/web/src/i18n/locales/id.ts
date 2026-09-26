@@ -819,6 +819,7 @@ export const id: Dict = {
   'entry.workspaceTeamsAria': 'Buka halaman Workspace untuk Tim',
   'entry.navExpand': 'Buka bilah sisi',
   'entry.navCollapse': 'Tutup bilah sisi',
+  'entry.navMenu': 'Menu',
   'entry.navNewProject': 'Proyek baru',
   'entry.navHome': 'Beranda',
   'entry.navProjects': 'Proyek',

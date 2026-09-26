@@ -819,6 +819,7 @@ export const ru: Dict = {
   'entry.workspaceTeamsAria': 'Открыть страницу Workspace для команд',
   'entry.navExpand': 'Развернуть боковую панель',
   'entry.navCollapse': 'Свернуть боковую панель',
+  'entry.navMenu': 'Меню',
   'entry.navNewProject': 'Новый проект',
   'entry.navHome': 'Главная',
   'entry.navProjects': 'Проекты',

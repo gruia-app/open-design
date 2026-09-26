@@ -819,6 +819,7 @@ export const ptBR: Dict = {
   'entry.workspaceTeamsAria': 'Abrir a página do Workspace para Times',
   'entry.navExpand': 'Expandir barra lateral',
   'entry.navCollapse': 'Recolher barra lateral',
+  'entry.navMenu': 'Menu',
   'entry.navNewProject': 'Novo projeto',
   'entry.navHome': 'Início',
   'entry.navProjects': 'Projetos',

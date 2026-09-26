@@ -819,6 +819,7 @@ export const ar: Dict = {
   'entry.workspaceTeamsAria': 'فتح صفحة Workspace للفِرَق',
   'entry.navExpand': 'توسيع الشريط الجانبي',
   'entry.navCollapse': 'طي الشريط الجانبي',
+  'entry.navMenu': 'القائمة',
   'entry.navNewProject': 'مشروع جديد',
   'entry.navHome': 'الرئيسية',
   'entry.navProjects': 'المشاريع',

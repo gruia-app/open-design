@@ -1204,6 +1204,7 @@ export interface Dict {
   // Left nav rail (icon-only) — surface labels also serve as tooltips
   'entry.navExpand': string;
   'entry.navCollapse': string;
+  'entry.navMenu': string;
   'entry.navNewProject': string;
   'entry.navHome': string;
   'entry.navProjects': string;

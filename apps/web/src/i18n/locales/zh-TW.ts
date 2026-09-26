@@ -826,6 +826,7 @@ export const zhTW: Dict = {
   "entry.workspaceTeamsAria": "開啟團隊版工作區頁面",
   "entry.navExpand": "展開側欄",
   "entry.navCollapse": "收合側欄",
+  "entry.navMenu": "選單",
   "entry.navNewProject": "新建專案",
   "entry.navHome": "主頁",
   "entry.navProjects": "專案",

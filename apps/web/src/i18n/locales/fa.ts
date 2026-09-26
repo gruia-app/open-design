@@ -819,6 +819,7 @@ export const fa: Dict = {
   'entry.workspaceTeamsAria': 'باز کردن صفحهٔ Workspace برای تیم‌ها',
   'entry.navExpand': 'باز کردن نوار کناری',
   'entry.navCollapse': 'جمع کردن نوار کناری',
+  'entry.navMenu': 'منو',
   'entry.navNewProject': 'پروژه جدید',
   'entry.navHome': 'خانه',
   'entry.navProjects': 'پروژه‌ها',

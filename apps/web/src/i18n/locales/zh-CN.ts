@@ -824,6 +824,7 @@ export const zhCN: Dict = {
   "entry.workspaceTeamsAria": "打开团队版工作区页面",
   "entry.navExpand": "展开侧栏",
   "entry.navCollapse": "收起侧栏",
+  "entry.navMenu": "菜单",
   "entry.navNewProject": "新建项目",
   "entry.navHome": "主页",
   "entry.navProjects": "项目",

@@ -819,6 +819,7 @@ export const en: Dict = {
   'entry.workspaceTeamsAria': 'Open the Workspace for Teams page',
   'entry.navExpand': 'Expand sidebar',
   'entry.navCollapse': 'Collapse sidebar',
+  'entry.navMenu': 'Menu',
   'entry.navNewProject': 'New project',
   'entry.navHome': 'Home',
   'entry.navProjects': 'Projects',

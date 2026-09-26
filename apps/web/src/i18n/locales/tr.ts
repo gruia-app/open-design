@@ -819,6 +819,7 @@ export const tr: Dict = {
   'entry.workspaceTeamsAria': 'Ekipler için Workspace sayfasını aç',
   'entry.navExpand': 'Kenar çubuğunu genişlet',
   'entry.navCollapse': 'Kenar çubuğunu daralt',
+  'entry.navMenu': 'Menü',
   'entry.navNewProject': 'Yeni proje',
   'entry.navHome': 'Ana sayfa',
   'entry.navProjects': 'Projeler',

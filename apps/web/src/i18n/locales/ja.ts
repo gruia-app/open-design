@@ -819,6 +819,7 @@ export const ja: Dict = {
   'entry.workspaceTeamsAria': 'Workspace チーム版のページを開く',
   'entry.navExpand': 'サイドバーを展開',
   'entry.navCollapse': 'サイドバーを折りたたむ',
+  'entry.navMenu': 'メニュー',
   'entry.navNewProject': '新規プロジェクト',
   'entry.navHome': 'ホーム',
   'entry.navProjects': 'プロジェクト',

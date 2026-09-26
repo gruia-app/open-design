@@ -819,6 +819,7 @@ export const hu: Dict = {
   'entry.workspaceTeamsAria': 'A „Workspace csapatoknak” oldal megnyitása',
   'entry.navExpand': 'Oldalsáv kibontása',
   'entry.navCollapse': 'Oldalsáv összecsukása',
+  'entry.navMenu': 'Menü',
   'entry.navNewProject': 'Új projekt',
   'entry.navHome': 'Kezdőlap',
   'entry.navProjects': 'Projektek',

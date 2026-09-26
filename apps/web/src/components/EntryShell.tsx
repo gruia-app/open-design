@@ -1132,6 +1132,58 @@ export function EntryShell({
   // route) and a reload, instead of snapping back to collapsed.
   const [railOpen, setRailOpen] = useState<boolean>(readStoredRailOpen);
   const [projectSearchOpen, setProjectSearchOpen] = useState(false);
+  // Below the docked split width (1080px — the same breakpoint entry-layout.css
+  // auto-collapses at) the open rail is an overlay drawer over the content,
+  // not a docked column: it closes on Escape / scrim tap / destination pick,
+  // and focus moves into it on open and back to the chrome menu button on
+  // close. Desktop rail behavior is untouched.
+  const [railOverlayMode, setRailOverlayMode] = useState<boolean>(
+    () =>
+      typeof window !== 'undefined'
+      && window.matchMedia('(max-width: 1080px)').matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1080px)');
+    const onChange = () => setRailOverlayMode(media.matches);
+    onChange();
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
+  // Drawer focus management: move focus into the rail on open so keyboard
+  // and assistive-tech users land inside the menu they just opened, and let
+  // Escape dismiss the drawer (the docked desktop rail has no dismiss
+  // affordance, so this stays overlay-only). A drawer that merely restores
+  // as open on page load (persisted rail state) must not steal focus —
+  // only opens that happen after mount move it.
+  const railRestoredRef = useRef(railOpen);
+  useEffect(() => {
+    if (!railOverlayMode || !railOpen) return;
+    const restored = railRestoredRef.current;
+    railRestoredRef.current = false;
+    if (!restored) {
+      const rail = document.getElementById('entry-nav-rail');
+      rail
+        ?.querySelector<HTMLElement>('button:not([disabled]), a[href]')
+        ?.focus();
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setRailOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [railOverlayMode, railOpen]);
+  // Drawer close returns focus to the chrome's menu button — the control
+  // that opened it — so the keyboard/touch user is never left on a hidden
+  // element.
+  const railWasOpenRef = useRef(railOpen);
+  useEffect(() => {
+    if (railOverlayMode && railWasOpenRef.current && !railOpen) {
+      document.getElementById('entry-mobile-nav-toggle')?.focus();
+    }
+    railWasOpenRef.current = railOpen;
+  }, [railOverlayMode, railOpen]);
 
   // ⌘K / Ctrl+K opens the project search palette — same as clicking the rail
   // search box. ⌘B / Ctrl+B toggles the nav rail — same as the pinned Home
@@ -1240,6 +1292,10 @@ export function EntryShell({
       });
     }
     navigate({ kind: 'home', view: next });
+    // The overlay drawer covers the destination it just navigated to — it
+    // dismisses on pick like any mobile menu. The docked desktop rail stays
+    // open as before.
+    if (railOverlayMode) setRailOpen(false);
   }
 
   // Project collection surfaces have no legacy page-level tracker. Community
