@@ -783,6 +783,83 @@
   padding: 0;
 }
 
+/* G-UX 4 composer */
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composerLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+textarea.generateInput {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+  font-size: 16px; /* ≥16px keeps iOS Safari from auto-zooming on focus */
+  min-height: 0;
+}
+
+.composerTry {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.composerExample {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.composerExample:hover {
+  border-color: var(--text);
+}
+
+.composerHint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Fixed bottom «Crear el mío» CTA — phone only. */
+.mobileCta {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .mobileCta {
+    display: block;
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 20;
+    min-height: 48px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--accent, #e5702a);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  }
+}
+
 .gallerySection {
   margin: 10px 0 0;
   font-size: 13px;

@@ -70,8 +70,11 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(chips.nth(1)).toHaveAttribute('data-testid', 'characters-emo-joy');
   await expect(chips.nth(2)).toHaveAttribute('data-testid', 'characters-emo-nudge');
 
-  // The composer placeholder switches to the goal's own prompt.
+  // The composer placeholder switches to the goal's own prompt, and the
+  // «Prueba con:» examples switch to the goal's set (app mascot ideas).
   await expect(page.getByTestId('characters-generate-input')).toHaveAttribute('placeholder', /mascota/);
+  await expect(page.getByTestId('characters-try-1')).toContainText('búho');
+  await expect(page.getByTestId('characters-composer-hint')).toContainText('lo verás moverse');
 
   // Pick Tinta as the base and generate from a phrase.
   await page.getByTestId('characters-starter-contenido-tinta').click();
@@ -229,4 +232,47 @@ test('mobile 390px: prompt field spans its own row and nothing overflows horizon
   // No horizontal scroll anywhere in the document at 390px.
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(scrollWidth).toBeLessThanOrEqual(390);
+});
+
+test('composer fits and invites: label, examples, Imagen attach, Dale vida and mobile CTA', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('od-personajes.meta-asked.v1', '1'));
+  await page.goto(`${baseUrl}/characters`);
+  await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
+
+  // G-UX 4: «Tu personaje» label, two-line growing field, examples and help.
+  const input = page.getByTestId('characters-generate-input');
+  await expect(page.getByTestId('characters-composer')).toContainText('Tu personaje');
+  await expect(input).toHaveAttribute('rows', '2');
+  await expect(page.getByTestId('characters-generate-attach')).toContainText('Imagen');
+  await expect(page.getByTestId('characters-generate')).toContainText('Dale vida');
+  await expect(page.getByTestId('characters-composer-hint')).toContainText('Tres palabras bastan');
+
+  // «Prueba con:» fills the field; the CTA needs three characters.
+  await expect(page.getByTestId('characters-generate')).toBeDisabled();
+  await page.getByTestId('characters-try-1').click();
+  await expect(input).toHaveValue('un zorro con gafas, curioso');
+  await expect(page.getByTestId('characters-generate')).toBeEnabled();
+  await input.fill('ab');
+  await expect(page.getByTestId('characters-generate')).toBeDisabled();
+});
+
+test('mobile 390px: fixed «Crear el mío» CTA scrolls to the composer and focuses it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => localStorage.setItem('od-personajes.meta-asked.v1', '1'));
+  await page.goto(`${baseUrl}/characters`);
+  await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
+
+  const cta = page.getByTestId('characters-mobile-cta');
+  await expect(cta).toBeVisible();
+  await expect(cta).toContainText('Crear el mío');
+  const ctaBox = await cta.boundingBox();
+  expect(ctaBox).not.toBeNull();
+  expect(ctaBox!.height).toBeGreaterThanOrEqual(44);
+
+  await cta.click();
+  await page.waitForTimeout(600);
+  const focused = await page.evaluate(
+    () => (document.activeElement as HTMLElement | null)?.dataset?.testid,
+  );
+  expect(focused).toBe('characters-generate-input');
 });
