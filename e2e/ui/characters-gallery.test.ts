@@ -162,6 +162,38 @@ test('living stage greets, reacts to chips and pokes, and speaks in the base voi
   await expect(page.getByTestId('characters-bubble-text')).toContainText('Tinta');
 });
 
+test('reactive personality: idle nudge, typing cue, generation steps and like', async ({ page }) => {
+  // Settle the meta flag so the goal card does not gate the nudges.
+  await page.addInitScript(() => localStorage.setItem('od-personajes.meta-asked.v1', '1'));
+  await page.goto(`${baseUrl}/characters`);
+  await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
+  const bubble = page.getByTestId('characters-bubble-text');
+
+  // First inactivity nudge lands ~9s in, in the character's voice.
+  await expect(bubble).toContainText('Psst', { timeout: T.long });
+  await expect(page.getByTestId('characters-emo-nudge')).toHaveAttribute('aria-pressed', 'true');
+
+  // Typing three or more characters, then a 0.7s pause, makes Gui think
+  // along and comment on the draft.
+  const input = page.getByTestId('characters-generate-input');
+  await input.fill('un zorro con gafas');
+  await expect(bubble).toContainText('Me gusta por dónde vas', { timeout: T.medium });
+
+  // «Generar» runs the three origami steps in the bubble before the
+  // result lands with a triumph reaction.
+  await input.fill('un zorro con gafas curioso');
+  await page.getByTestId('characters-generate').click();
+  await expect(bubble).toContainText(/Manos a la obra|Doblando el papel|Marcando los pliegues|cuerda/i, {
+    timeout: T.medium,
+  });
+  await expect(page.getByTestId('characters-results')).toBeVisible({ timeout: T.long });
+  await expect(bubble).toContainText('Tachán', { timeout: T.medium });
+
+  // Liking the fresh result gets a joy reaction back.
+  await page.locator('[data-testid^="characters-result-like-"]').first().click();
+  await expect(bubble).toContainText('me gusta a mí', { timeout: T.medium });
+});
+
 test('mobile 390px: prompt field spans its own row and nothing overflows horizontally', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${baseUrl}/characters`);

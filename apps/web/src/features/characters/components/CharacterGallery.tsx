@@ -35,6 +35,7 @@ import {
 } from '../gallery/types';
 import { EXPORTS_EVENT, exportCount } from '../gallery/metrics';
 import { chipOrderFor, GOAL_IDS, GOAL_PLAN, suggestedFor, type GoalId } from '../gallery/goalPlan';
+import { nudgeAllowed, nudgeDelayAt, TYPING_CUE_DELAY_MS, type Cue } from '../gallery/reactive';
 import { voiceForPack } from '../gallery/stage';
 import type { EmotionLoader } from './useEmotionCache';
 import { AnimatedThumb } from './AnimatedThumb';
@@ -145,7 +146,40 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const [storedGoal, setStoredGoal] = useState<StoredGoal | null>(storedGoalBefore);
   const [metaGoal, setMetaGoal] = useState<MetaGoal | null>(null);
   const [metaOther, setMetaOther] = useState('');
-  const [stageLine, setStageLine] = useState<string | undefined>(undefined);
+
+  // G-UX 3 reactive personality — every external stage line/emotion goes
+  // through `cue`: a monotonically increasing seq makes each event land
+  // once (typing cue, generation progress, reactions, inactivity nudges).
+  const [cue, setCue] = useState<Cue | undefined>(undefined);
+  const cueSeq = useRef(0);
+  const react = useCallback((line?: string, emotion?: string) => {
+    cueSeq.current += 1;
+    setCue({
+      seq: cueSeq.current,
+      ...(emotion ? { emotion } : {}),
+      ...(line !== undefined ? { line } : {}),
+    });
+  }, []);
+
+  // Idle bookkeeping for the three inactivity nudges: any user activity
+  // bumps `activity`, which restarts the current countdown.
+  const [activity, setActivity] = useState(0);
+  const touch = useCallback(() => setActivity((n) => n + 1), []);
+  const nudgesRef = useRef(0);
+  const focusedRef = useRef(false);
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
+  const resultsRef = useRef(results.length);
+  resultsRef.current = results.length;
+  const metaPhaseRef = useRef(metaPhase);
+  metaPhaseRef.current = metaPhase;
+  const metaStatusRef = useRef(metaStatus);
+  metaStatusRef.current = metaStatus;
+  const voiceRef = useRef<'gui' | 'tinta'>('gui');
+  const tRef = useRef(t);
+  tRef.current = t;
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progressTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const starters = catalogue.filter(
     (option) => option.available && STARTER_IDS.includes(option.id),
@@ -184,11 +218,28 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const basePack = bases.get(effectiveBaseId) ?? null;
   const baseEmotionKeys = basePack ? Object.keys(basePack.manifest.emotions) : [];
   const canGenerate = Boolean(basePack && (prompt.trim() || image)) && !busy;
+  const voice = basePack ? voiceForPack(basePack.manifest.id) : 'gui';
+  voiceRef.current = voice;
 
+  // G-UX 3 «Dale vida» reaction: the character goes thinking, calls out
+  // «¡Manos a la obra!» and narrates three origami steps while the result
+  // is derived. The reveal waits for the short personality window (~2.4s)
+  // so the steps actually land.
+  const GENERATE_MIN_MS = 2400;
+  const PROGRESS_STEP_MS = 750;
   const generate = useCallback(async () => {
     const base = bases.get(effectiveBaseId);
     if (!base || (!prompt.trim() && !image)) return;
     setBusy(true);
+    touch();
+    react(t(`characters.react.generate.${voice}`), 'thinking');
+    const startedAt = Date.now();
+    progressTimers.current = [1, 2, 3].map((step) =>
+      setTimeout(
+        () => react(t(`characters.react.progress.${step}` as Parameters<typeof t>[0])),
+        step * PROGRESS_STEP_MS,
+      ),
+    );
     try {
       const id = newResultId();
       const text = prompt.trim() || image?.name || id;
@@ -208,13 +259,20 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
         manifest: { ...deriveResultManifest(base.manifest, options, text, id), ...(meta ? { meta } : {}) },
       };
       await saveResult(result);
+      const wait = GENERATE_MIN_MS - (Date.now() - startedAt);
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+      progressTimers.current.forEach(clearTimeout);
+      progressTimers.current = [];
       setResults((prev) => [result, ...prev]);
       setPrompt('');
       setImage(null);
+      react(t(`characters.react.result.${voice}`), 'triumph');
     } finally {
+      progressTimers.current.forEach(clearTimeout);
+      progressTimers.current = [];
       setBusy(false);
     }
-  }, [bases, effectiveBaseId, prompt, image, options, storedGoal]);
+  }, [bases, effectiveBaseId, prompt, image, options, storedGoal, t, voice, react, touch]);
 
   const updateResult = useCallback((next: GenerationResult) => {
     setResults((prev) => prev.map((r) => (r.id === next.id ? next : r)));
@@ -230,13 +288,11 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   // ends. The answer personalizes the stage chips, the composer
   // placeholder and the plan card, persists as the stored goal and lands
   // on the newest result (and its manifest) so every export carries it.
-  const voice = basePack ? voiceForPack(basePack.manifest.id) : 'gui';
-
   const askMeta = useCallback(() => {
     if (metaStatus !== 'fresh' || metaPhase !== 'idle') return;
     setMetaPhase('ask');
-    setStageLine(t(`characters.goalask.question.${voice}`));
-  }, [metaStatus, metaPhase, t, voice]);
+    react(t(`characters.goalask.question.${voice}`));
+  }, [metaStatus, metaPhase, t, voice, react]);
 
   const answerMeta = useCallback(
     (goal: MetaGoal, detail: string) => {
@@ -255,22 +311,32 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
       setMetaStatus('settled');
       markMetaAsked('1');
       setMetaPhase('plan');
-      setStageLine(t(`characters.goalask.line.${voice}.${goal}` as Parameters<typeof t>[0]));
+      react(t(`characters.goalask.line.${voice}.${goal}` as Parameters<typeof t>[0]), 'joy');
+      touch();
     },
-    [results, updateResult, t, voice],
+    [results, updateResult, t, voice, react, touch],
   );
 
   const deferMeta = useCallback(() => {
-    setMetaStatus('deferred');
-    markMetaAsked('deferred');
+    // First «Ahora no» holds one re-ask for the inactivity nudge; a second
+    // one (after the re-ask already ran) settles the question for good.
+    if (metaStatus === 'fresh') {
+      setMetaStatus('deferred');
+      markMetaAsked('deferred');
+    } else {
+      setMetaStatus('settled');
+      markMetaAsked('1');
+    }
     setMetaPhase('idle');
-    setStageLine(t(`characters.goalask.skipped.${voice}`));
-  }, [t, voice]);
+    react(t(`characters.goalask.skipped.${voice}`), 'sad');
+    touch();
+  }, [metaStatus, t, voice, react, touch]);
 
   const changeGoal = useCallback(() => {
     setMetaPhase('ask');
-    setStageLine(t(`characters.goalask.changing.${voice}`));
-  }, [t, voice]);
+    react(t(`characters.goalask.changing.${voice}`), 'thinking');
+    touch();
+  }, [t, voice, react, touch]);
 
   const openResult = useCallback(
     async (result: GenerationResult) => {
@@ -318,6 +384,67 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
     }));
   }, []);
 
+  // G-UX 3 typing cue: three or more characters and a 0.7s pause make the
+  // character think along — «Mmm… "{texto}". Me gusta por dónde vas.»
+  const onPromptChange = useCallback(
+    (value: string) => {
+      setPrompt(value);
+      touch();
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      const text = value.trim();
+      if (text.length >= 3) {
+        typingTimer.current = setTimeout(() => {
+          if (!busyRef.current) {
+            react(t(`characters.react.typing.${voice}`, { text: text.slice(0, 60) }), 'thinking');
+          }
+        }, TYPING_CUE_DELAY_MS);
+      }
+    },
+    [t, voice, react, touch],
+  );
+
+  // G-UX 3 inactivity nudges: up to three. Any activity restarts the
+  // current countdown; they never fire while the field is focused, while
+  // a generation runs, while the meta question is up or once a result
+  // exists. The first nudge doubles as the deferred meta re-ask.
+  useEffect(() => {
+    const delay = nudgeDelayAt(nudgesRef.current);
+    if (delay == null || resultsRef.current > 0) return undefined;
+    const timer = setTimeout(() => {
+      const gate = {
+        hasResults: resultsRef.current > 0,
+        inputFocused: focusedRef.current,
+        generating: busyRef.current,
+      };
+      if (!nudgeAllowed(nudgesRef.current, gate) || metaPhaseRef.current === 'ask') {
+        touch(); // defer — the full countdown restarts on the next idle window
+        return;
+      }
+      nudgesRef.current += 1;
+      const index = nudgesRef.current;
+      const v = voiceRef.current;
+      const tt = tRef.current;
+      if (metaStatusRef.current === 'deferred' && index === 1) {
+        setMetaStatus('settled');
+        markMetaAsked('1');
+        setMetaPhase('ask');
+        react(tt(`characters.goalask.reask.${v}`), 'nudge');
+      } else {
+        react(tt(`characters.react.nudge.${v}.${index}` as Parameters<typeof tt>[0]), 'nudge');
+      }
+      touch();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [activity, touch, react]);
+
+  useEffect(
+    () => () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      progressTimers.current.forEach(clearTimeout);
+    },
+    [],
+  );
+
   return (
     <div className={styles.gallery} data-testid="characters-gallery">
       {basePack ? (
@@ -327,7 +454,8 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
             onEmotionEnd={askMeta}
             chipOrder={chipOrderFor(storedGoal?.goal ?? null)}
             highlighted={suggestedFor(storedGoal?.goal ?? null)}
-            forcedLine={stageLine}
+            cue={cue}
+            onInteract={touch}
           />
           {metaPhase !== 'idle' ? (
             <GoalCard
@@ -353,7 +481,14 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
           className={styles.generateInput}
           type="text"
           value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
+          onChange={(event) => onPromptChange(event.target.value)}
+          onFocus={() => {
+            focusedRef.current = true;
+          }}
+          onBlur={() => {
+            focusedRef.current = false;
+            touch();
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && canGenerate) void generate();
           }}
@@ -508,9 +643,17 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
                 key={result.id}
                 result={result}
                 base={bases.get(result.basePackId) ?? null}
-                onOpen={() => void openResult(result)}
+                onOpen={() => {
+                  react(t(`characters.react.editor.${voice}`), 'triumph');
+                  void openResult(result);
+                }}
                 onOpenExports={() => void openResultExports(result)}
-                onChange={updateResult}
+                onChange={(next) => {
+                  if (next.liked && !result.liked) {
+                    react(t(`characters.react.like.${voice}`), 'joy');
+                  }
+                  updateResult(next);
+                }}
                 onRemove={() => discardResult(result.id)}
               />
             ))}
