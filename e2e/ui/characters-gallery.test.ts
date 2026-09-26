@@ -60,22 +60,49 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   const card = results.locator('[data-testid^="characters-result-"]').first();
   await expect(card).toBeVisible();
 
+  // r150 meta question: appears once, warm and skippable — answer «app».
+  const meta = page.getByTestId('characters-meta');
+  await expect(meta).toBeVisible();
+  await expect(page.getByTestId('characters-meta-question')).toContainText(/para qué/i);
+  await page.getByTestId('characters-meta-app').click();
+  await expect(meta).toHaveCount(0);
+
+  // The card now carries the goal CTA («Exportar para tu app») plus the
+  // always-on Roberto CTA.
+  const cardId = (await card.getAttribute('data-testid'))!.replace('characters-result-', '');
+  const cta = page.getByTestId(`characters-meta-cta-app-${cardId}`);
+  await expect(cta).toBeVisible();
+  await expect(card).toContainText('Construimos tu app con Roberto');
+
   // Likes and notes on the card (v1.1 fields).
   await card.locator('[data-testid^="characters-result-like-"]').click();
   await card.locator('[data-testid^="characters-result-note-"]').fill('nota de prueba');
   // The note write is debounced (400 ms) — let it land before navigating.
   await page.waitForTimeout(700);
 
-  // Opening the result mounts the review surface — grid, then player + editor.
-  await card.locator('[data-testid^="characters-result-open-"]').click();
-  await expect(page.getByTestId('characters-grid')).toBeVisible();
-  await page.getByTestId('characters-emotion-joy').click();
-  await expect(page.getByTestId('characters-player')).toBeVisible();
+  // «Exportar para tu app» opens the result straight into the player, where
+  // the export buttons live.
+  await cta.click();
+  await expect(page.getByTestId('characters-player')).toBeVisible({ timeout: T.long });
+  await expect(page.getByTestId('characters-canvas')).toBeVisible();
   await expect(page.getByTestId('emotion-editor')).toBeVisible();
 
-  // Reload: the result survives (IndexedDB) with its like and note.
+  // Exporting the pack counts the character as used outside design.
+  const download = page.waitForEvent('download');
+  await page.getByTestId('characters-export-zip').click();
+  await download;
+
+  // Back at the gallery the card shows the discreet exported mark.
   await page.goto(`${baseUrl}/characters`);
   await expect(results).toBeVisible({ timeout: T.long });
+  await expect(
+    page.getByTestId('characters-results').locator('[data-testid^="characters-result-"]').first(),
+  ).toContainText('Exportado');
+
+  // Reload: meta stays answered (no re-ask), CTA + like + note persist.
+  await page.reload();
+  await expect(page.getByTestId('characters-meta')).toHaveCount(0);
+  await expect(page.getByTestId(`characters-meta-cta-app-${cardId}`)).toBeVisible();
   const persisted = page.getByTestId('characters-results').locator('[data-testid^="characters-result-note-"]');
   await expect(persisted.first()).toHaveValue('nota de prueba');
   await expect(

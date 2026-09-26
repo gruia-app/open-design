@@ -28,6 +28,7 @@ import { frameDurationMs, MAX_FPS, MIN_FPS } from '../playback/timeline';
 import { buildSpriteSheet, downloadBlob, downloadJson } from '../export/spritesheet';
 import { buildAnimationExport, collectPlaybackFrames, type AnimFormat } from '../export/animated';
 import { downloadEditedPackZip } from '../export/packZip';
+import { recordExport } from '../gallery/metrics';
 import type { EmotionLoader } from './useEmotionCache';
 import { FrameStrip } from './FrameStrip';
 import { EmotionEditor } from './EmotionEditor';
@@ -196,6 +197,7 @@ export function EmotionPlayer({
       });
       downloadBlob(sheet.pngFileName, sheet.pngBlob);
       downloadJson(sheet.jsonFileName, sheet.json);
+      recordExport(pack.id);
     } finally {
       setExporting(null);
     }
@@ -217,6 +219,7 @@ export function EmotionPlayer({
         );
         const result = await buildAnimationExport(format, pack, emotionKey, frames);
         downloadBlob(result.fileName, result.blob);
+        recordExport(pack.id);
       } finally {
         setExporting(null);
       }
@@ -229,10 +232,11 @@ export function EmotionPlayer({
     setExporting('zip');
     try {
       await downloadEditedPackZip(loadedPack, edits);
+      recordExport(pack.id);
     } finally {
       setExporting(null);
     }
-  }, [exporting, loadedPack, edits]);
+  }, [exporting, loadedPack, edits, pack.id]);
 
   const saveToDisk = useCallback(async () => {
     setSaveMsg(null);
