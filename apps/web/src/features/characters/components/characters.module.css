@@ -1187,7 +1187,119 @@
   border-color: var(--text-strong);
 }
 
+/* Suggested chips once a goal is chosen (G-UX 2): accent ring, first in
+ * the row. */
+.stageChipSuggested {
+  border-color: var(--accent, #e5702a);
+  background: #fdebdd;
+}
+
+/* Stage + goal card layout: card sits right of the stage on wide
+ * containers, below it on mobile (G-UX 2). */
+.stageRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stageRow > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.goalCard {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-panel);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goalCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.goalPill {
+  display: inline-block;
+  border: 1px solid var(--accent, #e5702a);
+  color: #8a3a0c;
+  background: #fdebdd;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.goalAskTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.goalAskText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.goalChange {
+  border: 0;
+  background: none;
+  padding: 2px 4px;
+  font-size: 13px;
+  color: var(--accent, #e5702a);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.goalChange:hover {
+  text-decoration: underline;
+}
+
+.goalPlanTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.goalPlanList {
+  margin: 0;
+  padding: 0 0 0 4px;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-strong);
+}
+
+.goalPlanList li::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--accent, #e5702a);
+}
+
+.goalFormat {
+  font-size: 13px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
 @media (min-width: 861px) {
+  .stageRow {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .goalCard {
+    flex: 0 0 330px;
+  }
+
   .stageInner {
     height: 420px;
   }
