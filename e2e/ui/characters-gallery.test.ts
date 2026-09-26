@@ -50,6 +50,29 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(page.getByTestId('characters-adv-engine')).toHaveValue('raster-frames');
   await expect(page.getByTestId('characters-adv-emotions')).toBeVisible();
 
+  // G-UX 2: the character asks «¿Para qué quieres tu personaje?» in the
+  // bubble only after the first user-touched emotion finishes — never
+  // before. Tap joy and wait for its passes to run out.
+  await page.getByTestId('characters-emo-joy').click();
+  const goalCard = page.getByTestId('characters-goal-card');
+  await expect(goalCard).toBeVisible({ timeout: T.long });
+  await expect(page.getByTestId('characters-bubble-text')).toContainText(/para qué/i);
+  await expect(page.getByTestId('characters-goal-title')).toContainText(/para qué/i);
+
+  // Answering «app» turns the card into the plan: goal pill, per-emotion
+  // uses, recommended format — and the stage chips reorder + highlight.
+  await page.getByTestId('characters-goal-app').click();
+  await expect(page.getByTestId('characters-goal-pill')).toContainText(/Para:/);
+  await expect(page.getByTestId('characters-goal-plan')).toContainText('al abrir la app');
+  await expect(page.getByTestId('characters-goal-format')).toContainText(/Formato:/);
+  const chips = page.getByTestId('characters-emo-chips').locator('button');
+  await expect(chips.nth(0)).toHaveAttribute('data-testid', 'characters-emo-wave');
+  await expect(chips.nth(1)).toHaveAttribute('data-testid', 'characters-emo-joy');
+  await expect(chips.nth(2)).toHaveAttribute('data-testid', 'characters-emo-nudge');
+
+  // The composer placeholder switches to the goal's own prompt.
+  await expect(page.getByTestId('characters-generate-input')).toHaveAttribute('placeholder', /mascota/);
+
   // Pick Tinta as the base and generate from a phrase.
   await page.getByTestId('characters-starter-contenido-tinta').click();
   await page.getByTestId('characters-generate-input').fill('una tinta que celebra');
@@ -59,13 +82,6 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(results).toBeVisible();
   const card = results.locator('[data-testid^="characters-result-"]').first();
   await expect(card).toBeVisible();
-
-  // r150 meta question: appears once, warm and skippable — answer «app».
-  const meta = page.getByTestId('characters-meta');
-  await expect(meta).toBeVisible();
-  await expect(page.getByTestId('characters-meta-question')).toContainText(/para qué/i);
-  await page.getByTestId('characters-meta-app').click();
-  await expect(meta).toHaveCount(0);
 
   // The card now carries the goal CTA («Exportar para tu app») plus the
   // always-on Roberto CTA.
@@ -99,9 +115,11 @@ test('gallery lands first, generates a result, and the editor opens from it', as
     page.getByTestId('characters-results').locator('[data-testid^="characters-result-"]').first(),
   ).toContainText('Exportado');
 
-  // Reload: meta stays answered (no re-ask), CTA + like + note persist.
+  // Reload: the goal persists (plan card still up, no re-ask), and the
+  // CTA + like + note persist too.
   await page.reload();
-  await expect(page.getByTestId('characters-meta')).toHaveCount(0);
+  await expect(page.getByTestId('characters-goal-pill')).toBeVisible({ timeout: T.long });
+  await expect(page.getByTestId('characters-goal-title')).toHaveCount(0);
   await expect(page.getByTestId(`characters-meta-cta-app-${cardId}`)).toBeVisible();
   const persisted = page.getByTestId('characters-results').locator('[data-testid^="characters-result-note-"]');
   await expect(persisted.first()).toHaveValue('nota de prueba');
@@ -111,6 +129,9 @@ test('gallery lands first, generates a result, and the editor opens from it', as
 });
 
 test('living stage greets, reacts to chips and pokes, and speaks in the base voice', async ({ page }) => {
+  // The meta question (G-UX 2) is covered by its own flow — settle the
+  // flag here so the card + forced bubble line do not race the asserts.
+  await page.addInitScript(() => localStorage.setItem('od-personajes.meta-asked.v1', '1'));
   await page.goto(`${baseUrl}/characters`);
   await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
 

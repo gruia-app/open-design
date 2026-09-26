@@ -41,20 +41,32 @@ interface Playing {
   startedAt: number;
   /** Forward passes before falling back to idle — Infinity for idle. */
   passes: number;
+  /** True when the user asked for this emotion (chip tap or poke) — the
+   *  entry greeting does not count as a user-touched emotion. */
+  user: boolean;
 }
 
 interface Props {
   pack: LoadedPack;
-  /** Fires when a chip/poke emotion finishes its passes naturally — the
-   *  «primer valor» hook the meta question (r150/G-UX 2) attaches to. */
+  /** Fires when a user-touched emotion finishes its passes naturally —
+   *  the «primer valor» hook the meta question (G-UX 2) attaches to. The
+   *  entry wave and the idle fallback never fire it. */
   onEmotionEnd?: (key: string) => void;
+  /** Chip order override — the goal answer (G-UX 2) moves its suggested
+   *  emotions first. Defaults to the G-UX order. */
+  chipOrder?: readonly string[];
+  /** Chips rendered with the suggested highlight once a goal is chosen. */
+  highlighted?: ReadonlySet<string>;
+  /** Line the bubble must say now (the meta question, the goal reaction,
+   *  the «Ahora no» line…). Internal lines take over again afterwards. */
+  forcedLine?: string;
 }
 
-export function StageHero({ pack, onEmotionEnd }: Props) {
+export function StageHero({ pack, onEmotionEnd, chipOrder, highlighted, forcedLine }: Props) {
   const { t } = useI18n();
   const voice = voiceForPack(pack.manifest.id);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const playingRef = useRef<Playing>({ key: 'wave', startedAt: 0, passes: 2 });
+  const playingRef = useRef<Playing>({ key: 'wave', startedAt: 0, passes: 2, user: false });
   const loadedRef = useRef(new Map<string, LoadedEmotion>());
   const pendingRef = useRef(new Set<string>());
   const endedRef = useRef(false);
@@ -75,13 +87,13 @@ export function StageHero({ pack, onEmotionEnd }: Props) {
   );
 
   const play = useCallback(
-    (key: string) => {
+    (key: string, user = false) => {
       const emotion = emotions[key];
       if (!emotion) return;
       const passes =
         key === 'idle' ? Number.POSITIVE_INFINITY : emotionPasses(emotion, pack.manifest.defaults.playback);
       endedRef.current = false;
-      playingRef.current = { key, startedAt: performance.now(), passes };
+      playingRef.current = { key, startedAt: performance.now(), passes, user };
       setCurrent(key);
     },
     [emotions, pack.manifest.defaults.playback],
@@ -120,9 +132,9 @@ export function StageHero({ pack, onEmotionEnd }: Props) {
           if (elapsed >= timeline.total * playing.passes && playing.passes !== Number.POSITIVE_INFINITY) {
             if (!endedRef.current) {
               endedRef.current = true;
-              onEmotionEndRef.current?.(playing.key);
+              if (playing.user) onEmotionEndRef.current?.(playing.key);
             }
-            playingRef.current = { key: 'idle', startedAt: performance.now(), passes: Number.POSITIVE_INFINITY };
+            playingRef.current = { key: 'idle', startedAt: performance.now(), passes: Number.POSITIVE_INFINITY, user: false };
             setCurrent('idle');
           } else {
             const mode: 'loop' | 'pingpong' =
@@ -152,10 +164,16 @@ export function StageHero({ pack, onEmotionEnd }: Props) {
     say(`characters.stage.hello.${voice}`);
   }, [pack.manifest.id, voice, play, say]);
 
+  // External voice line (meta question, goal reactions…): lasts until the
+  // next chip/poke line replaces it.
+  useEffect(() => {
+    if (forcedLine) setLine(forcedLine);
+  }, [forcedLine]);
+
   const chip = useCallback(
     (key: string) => {
       if (!emotions[key]) return;
-      play(key);
+      play(key, true);
       say(`characters.stage.line.${voice}.${key}`);
     },
     [emotions, play, say, voice],
@@ -164,7 +182,7 @@ export function StageHero({ pack, onEmotionEnd }: Props) {
   const poke = useCallback(() => {
     const index = pokesRef.current;
     pokesRef.current += 1;
-    play(pokeEmotionAt(index));
+    play(pokeEmotionAt(index), true);
     say(`characters.stage.poke.${voice}.${index % POKE_EMOTIONS.length}`);
   }, [play, say, voice]);
 
@@ -195,16 +213,16 @@ export function StageHero({ pack, onEmotionEnd }: Props) {
           </span>
         </div>
         <div className={styles.stageChips} data-testid="characters-emo-chips">
-          {STAGE_CHIP_ORDER.filter((key) => emotions[key]).map((key) => (
+          {(chipOrder ?? STAGE_CHIP_ORDER).filter((key) => emotions[key]).map((key) => (
             <button
               key={key}
               type="button"
-              className={styles.stageChip}
+              className={`${styles.stageChip} ${highlighted?.has(key) ? styles.stageChipSuggested : ''}`}
               aria-pressed={current === key}
               onClick={() => chip(key)}
               data-testid={`characters-emo-${key}`}
             >
-              {t(`characters.stage.chip.${key}`)}
+              {t(`characters.stage.chip.${key}` as Parameters<typeof t>[0])}
             </button>
           ))}
         </div>

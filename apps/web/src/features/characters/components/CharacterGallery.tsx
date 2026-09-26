@@ -34,6 +34,8 @@ import {
   type GenerationResult,
 } from '../gallery/types';
 import { EXPORTS_EVENT, exportCount } from '../gallery/metrics';
+import { chipOrderFor, GOAL_IDS, GOAL_PLAN, suggestedFor, type GoalId } from '../gallery/goalPlan';
+import { voiceForPack } from '../gallery/stage';
 import type { EmotionLoader } from './useEmotionCache';
 import { AnimatedThumb } from './AnimatedThumb';
 import { StageHero } from './StageHero';
@@ -45,23 +47,53 @@ const STARTER_IDS = ['gruia-grulla', 'contenido-tinta'];
 
 const BACKGROUNDS = ['transparent', 'white', 'magenta'] as const;
 
-/** r150 meta question — asked once per project, always skippable. The flag
- *  lives in localStorage; the answer lives on the result (and its manifest). */
+/** r150/G-UX-2 meta question — asked once per project, always skippable,
+ *  and now asked by the character on the stage right after the first
+ *  user-touched emotion ends. The flag lives in localStorage ('1' settled,
+ *  'deferred' after «Ahora no» so the inactivity nudge can re-ask once);
+ *  the goal itself persists beside it so pre-generation personalization
+ *  (chips, placeholder, plan) survives reloads and lands on every result. */
 const META_DONE_KEY = 'od-personajes.meta-asked.v1';
-const META_GOALS = ['app', 'video', 'brand', 'story', 'other'] as const;
-type MetaGoal = (typeof META_GOALS)[number];
+const META_GOAL_KEY = 'od-personajes.meta-goal.v1';
+const META_GOALS = GOAL_IDS;
+type MetaGoal = GoalId;
 
-function metaAskedBefore(): boolean {
+function metaStateBefore(): 'settled' | 'deferred' | 'fresh' {
   try {
-    return localStorage.getItem(META_DONE_KEY) === '1';
+    const v = localStorage.getItem(META_DONE_KEY);
+    return v === '1' ? 'settled' : v === 'deferred' ? 'deferred' : 'fresh';
   } catch {
-    return true;
+    return 'settled';
   }
 }
 
-function markMetaAsked(): void {
+function markMetaAsked(value: '1' | 'deferred'): void {
   try {
-    localStorage.setItem(META_DONE_KEY, '1');
+    localStorage.setItem(META_DONE_KEY, value);
+  } catch {
+    // best-effort
+  }
+}
+
+interface StoredGoal {
+  goal: MetaGoal;
+  detail?: string;
+}
+
+function storedGoalBefore(): StoredGoal | null {
+  try {
+    const raw = localStorage.getItem(META_GOAL_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredGoal;
+    return META_GOALS.includes(parsed.goal) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeGoal(stored: StoredGoal): void {
+  try {
+    localStorage.setItem(META_GOAL_KEY, JSON.stringify(stored));
   } catch {
     // best-effort
   }
@@ -103,9 +135,17 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const [options, setOptions] = useState<GenerationOptions>(DEFAULT_GENERATION_OPTIONS);
   const [results, setResults] = useState<GenerationResult[]>([]);
   const [busy, setBusy] = useState(false);
-  const [metaDone, setMetaDone] = useState(metaAskedBefore);
+  // Meta question phases: 'idle' no card, 'ask' the five-goal card, 'plan'
+  // the «Te preparo estas emociones» card. 'deferred' («Ahora no») keeps
+  // the card hidden and holds the one re-ask for the inactivity nudge.
+  const [metaStatus, setMetaStatus] = useState(metaStateBefore);
+  const [metaPhase, setMetaPhase] = useState<'idle' | 'ask' | 'plan'>(() =>
+    metaStateBefore() === 'settled' && storedGoalBefore() ? 'plan' : 'idle',
+  );
+  const [storedGoal, setStoredGoal] = useState<StoredGoal | null>(storedGoalBefore);
   const [metaGoal, setMetaGoal] = useState<MetaGoal | null>(null);
   const [metaOther, setMetaOther] = useState('');
+  const [stageLine, setStageLine] = useState<string | undefined>(undefined);
 
   const starters = catalogue.filter(
     (option) => option.available && STARTER_IDS.includes(option.id),
@@ -152,6 +192,9 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
     try {
       const id = newResultId();
       const text = prompt.trim() || image?.name || id;
+      const meta: PackMeta | undefined = storedGoal
+        ? { goal: storedGoal.goal, ...(storedGoal.detail ? { detail: storedGoal.detail } : {}) }
+        : undefined;
       const result: GenerationResult = {
         id,
         createdAt: Date.now(),
@@ -161,7 +204,8 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
         basePackId: effectiveBaseId,
         baseLabel: base.manifest.name,
         options,
-        manifest: deriveResultManifest(base.manifest, options, text, id),
+        ...(meta ? { meta } : {}),
+        manifest: { ...deriveResultManifest(base.manifest, options, text, id), ...(meta ? { meta } : {}) },
       };
       await saveResult(result);
       setResults((prev) => [result, ...prev]);
@@ -170,7 +214,7 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
     } finally {
       setBusy(false);
     }
-  }, [bases, effectiveBaseId, prompt, image, options]);
+  }, [bases, effectiveBaseId, prompt, image, options, storedGoal]);
 
   const updateResult = useCallback((next: GenerationResult) => {
     setResults((prev) => prev.map((r) => (r.id === next.id ? next : r)));
@@ -182,29 +226,51 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
     void removeResult(id).catch(() => {});
   }, []);
 
-  // r150 meta: the answer lands on the newest result and is mirrored into its
-  // manifest (`meta` field, pack v1.1) so every export carries it.
+  // G-UX 2 meta: the character asks when the first user-touched emotion
+  // ends. The answer personalizes the stage chips, the composer
+  // placeholder and the plan card, persists as the stored goal and lands
+  // on the newest result (and its manifest) so every export carries it.
+  const voice = basePack ? voiceForPack(basePack.manifest.id) : 'gui';
+
+  const askMeta = useCallback(() => {
+    if (metaStatus !== 'fresh' || metaPhase !== 'idle') return;
+    setMetaPhase('ask');
+    setStageLine(t(`characters.goalask.question.${voice}`));
+  }, [metaStatus, metaPhase, t, voice]);
+
   const answerMeta = useCallback(
     (goal: MetaGoal, detail: string) => {
+      const stored: StoredGoal = { goal, ...(detail.trim() ? { detail: detail.trim() } : {}) };
+      setStoredGoal(stored);
+      storeGoal(stored);
       const target = results[0];
       if (target) {
-        const meta: PackMeta = { goal, ...(detail.trim() ? { detail: detail.trim() } : {}) };
+        const meta: PackMeta = { ...stored };
         updateResult({
           ...target,
           meta,
           manifest: { ...target.manifest, meta },
         });
       }
-      setMetaDone(true);
-      markMetaAsked();
+      setMetaStatus('settled');
+      markMetaAsked('1');
+      setMetaPhase('plan');
+      setStageLine(t(`characters.goalask.line.${voice}.${goal}` as Parameters<typeof t>[0]));
     },
-    [results, updateResult],
+    [results, updateResult, t, voice],
   );
 
-  const skipMeta = useCallback(() => {
-    setMetaDone(true);
-    markMetaAsked();
-  }, []);
+  const deferMeta = useCallback(() => {
+    setMetaStatus('deferred');
+    markMetaAsked('deferred');
+    setMetaPhase('idle');
+    setStageLine(t(`characters.goalask.skipped.${voice}`));
+  }, [t, voice]);
+
+  const changeGoal = useCallback(() => {
+    setMetaPhase('ask');
+    setStageLine(t(`characters.goalask.changing.${voice}`));
+  }, [t, voice]);
 
   const openResult = useCallback(
     async (result: GenerationResult) => {
@@ -254,7 +320,34 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
 
   return (
     <div className={styles.gallery} data-testid="characters-gallery">
-      {basePack ? <StageHero pack={basePack} /> : null}
+      {basePack ? (
+        <div className={styles.stageRow}>
+          <StageHero
+            pack={basePack}
+            onEmotionEnd={askMeta}
+            chipOrder={chipOrderFor(storedGoal?.goal ?? null)}
+            highlighted={suggestedFor(storedGoal?.goal ?? null)}
+            forcedLine={stageLine}
+          />
+          {metaPhase !== 'idle' ? (
+            <GoalCard
+              phase={metaPhase}
+              stored={storedGoal}
+              selected={metaGoal}
+              voice={voice}
+              other={metaOther}
+              onSelect={(goal) => {
+                setMetaGoal(goal);
+                if (goal !== 'other') answerMeta(goal, '');
+              }}
+              onOther={setMetaOther}
+              onConfirm={() => answerMeta('other', metaOther)}
+              onSkip={deferMeta}
+              onChange={changeGoal}
+            />
+          ) : null}
+        </div>
+      ) : null}
       <div className={styles.generateRow}>
         <input
           className={styles.generateInput}
@@ -264,7 +357,11 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
           onKeyDown={(event) => {
             if (event.key === 'Enter' && canGenerate) void generate();
           }}
-          placeholder={t('characters.gallery.promptPlaceholder')}
+          placeholder={
+            storedGoal
+              ? t(`characters.goalask.placeholder.${storedGoal.goal}` as Parameters<typeof t>[0])
+              : t('characters.gallery.promptPlaceholder')
+          }
           data-testid="characters-generate-input"
         />
         <div className={styles.generateActions}>
@@ -402,21 +499,6 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
         </div>
       </details>
 
-      {results.length > 0 && !metaDone && !results[0]?.meta ? (
-        <MetaPrompt
-          baseId={results[0]!.basePackId}
-          goal={metaGoal}
-          other={metaOther}
-          onSelect={(goal) => {
-            setMetaGoal(goal);
-            if (goal !== 'other') answerMeta(goal, '');
-          }}
-          onOther={setMetaOther}
-          onConfirm={() => answerMeta('other', metaOther)}
-          onSkip={skipMeta}
-        />
-      ) : null}
-
       {results.length > 0 ? (
         <>
           <h2 className={styles.gallerySection}>{t('characters.gallery.results')}</h2>
@@ -490,57 +572,96 @@ function StarterCard({ pack, emotionKey, emotion, selected, onSelect }: StarterP
   );
 }
 
-/** The r150 meta question — one warm inline prompt in the base character's
- *  voice, five chips, free text for «otra», always skippable. */
-interface MetaPromptProps {
-  baseId: string;
-  goal: MetaGoal | null;
+/** The G-UX-2 goal card — sits beside the stage (below it on mobile). In
+ *  `ask` it offers the five goals plus «Ahora no»; in `plan` it becomes
+ *  «Te preparo estas emociones» with the per-goal uses, the recommended
+ *  format and a «Cambiar» link that reopens the question. */
+interface GoalCardProps {
+  phase: 'ask' | 'plan';
+  stored: StoredGoal | null;
+  selected: MetaGoal | null;
+  voice: 'gui' | 'tinta';
   other: string;
   onSelect: (goal: MetaGoal) => void;
   onOther: (text: string) => void;
   onConfirm: () => void;
   onSkip: () => void;
+  onChange: () => void;
 }
 
-function MetaPrompt({ baseId, goal, other, onSelect, onOther, onConfirm, onSkip }: MetaPromptProps) {
+function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, onConfirm, onSkip, onChange }: GoalCardProps) {
   const { t } = useI18n();
-  const voice = baseId === 'contenido-tinta' ? 'tinta' : 'gui';
+  if (phase === 'plan' && stored) {
+    return (
+      <div className={styles.goalCard} data-testid="characters-goal-card">
+        <div className={styles.goalCardTop}>
+          <span className={styles.goalPill} data-testid="characters-goal-pill">
+            {t('characters.goalask.for', { goal: t(`characters.meta.option.${stored.goal}` as Parameters<typeof t>[0]) })}
+          </span>
+          <button
+            type="button"
+            className={styles.goalChange}
+            onClick={onChange}
+            data-testid="characters-goal-change"
+          >
+            {t('characters.goalask.change')}
+          </button>
+        </div>
+        <span className={styles.goalPlanTitle}>{t('characters.goalask.planTitle')}</span>
+        <ul className={styles.goalPlanList} data-testid="characters-goal-plan">
+          {GOAL_PLAN[stored.goal].map((emotion) => (
+            <li key={emotion}>
+              <strong>{t(`characters.stage.chip.${emotion}` as Parameters<typeof t>[0])}</strong>
+              {' · '}
+              {t(`characters.goalask.use.${stored.goal}.${emotion}` as Parameters<typeof t>[0])}
+            </li>
+          ))}
+        </ul>
+        <span className={styles.goalFormat} data-testid="characters-goal-format">
+          {t(`characters.goalask.format.${stored.goal}` as Parameters<typeof t>[0])}
+        </span>
+      </div>
+    );
+  }
   return (
-    <div className={styles.metaPrompt} data-testid="characters-meta">
-      <div className={styles.metaQuestion}>
-        <span data-testid="characters-meta-question">{t(`characters.meta.question.${voice}`)}</span>
+    <div className={styles.goalCard} data-testid="characters-goal-card">
+      <div className={styles.goalCardTop}>
+        <span className={styles.goalAskTitle} data-testid="characters-goal-title">
+          {t('characters.goalask.title')}
+        </span>
         <button
           type="button"
-          className={styles.metaSkip}
+          className={styles.goalChange}
           onClick={onSkip}
-          data-testid="characters-meta-skip"
+          data-testid="characters-goal-skip"
         >
-          {t('characters.meta.skip')}
+          {t('characters.goalask.skipNow')}
         </button>
       </div>
+      <p className={styles.goalAskText}>{t(`characters.goalask.text.${voice}`)}</p>
       <div className={styles.metaOptions}>
         {META_GOALS.map((option) => (
           <button
             key={option}
             type="button"
-            className={`${styles.metaChip} ${goal === option ? styles.metaChipOn : ''}`}
+            className={`${styles.metaChip} ${selected === option ? styles.metaChipOn : ''}`}
             onClick={() => onSelect(option)}
-            data-testid={`characters-meta-${option}`}
+            data-testid={`characters-goal-${option}`}
           >
             {t(`characters.meta.option.${option}`)}
           </button>
         ))}
       </div>
-      {goal === 'other' ? (
+      {selected === 'other' ? (
         <div className={styles.metaOtherRow}>
           <input
             type="text"
             value={other}
             onChange={(event) => onOther(event.target.value)}
             placeholder={t('characters.meta.otherPlaceholder')}
-            data-testid="characters-meta-other-input"
+            data-testid="characters-goal-other-input"
           />
-          <Button variant="primary" onClick={onConfirm} data-testid="characters-meta-confirm">
+          <Button variant="primary" onClick={onConfirm} data-testid="characters-goal-confirm">
             {t('characters.meta.confirm')}
           </Button>
         </div>
