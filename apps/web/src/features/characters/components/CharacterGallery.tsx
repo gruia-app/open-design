@@ -540,6 +540,39 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
           ) : null}
         </div>
       ) : null}
+      {/* G-UX 6: compact cast — round avatars under the stage. Picking one
+          switches the stage character and opens its detail view; «+ Crear
+          el tuyo» jumps to the composer. */}
+      {basePack ? (
+        <div className={styles.castRow} data-testid="characters-cast">
+          <span className={styles.castLabel}>{t('characters.cast.label')}</span>
+          {starters.map((starter) => {
+            const pack = bases.get(starter.id);
+            if (!pack) return null;
+            return (
+              <CastButton
+                key={starter.id}
+                pack={pack}
+                selected={effectiveBaseId === starter.id}
+                onSelect={() => {
+                  setBaseId(starter.id);
+                  onOpenPack(pack);
+                  touch();
+                }}
+              />
+            );
+          })}
+          <button
+            type="button"
+            className={styles.castNew}
+            onClick={scrollToComposer}
+            data-testid="characters-cast-new"
+          >
+            {t('characters.cast.new')}
+          </button>
+        </div>
+      ) : null}
+
       {/* G-UX 4: the composer — label, two-line field that grows, «Imagen»
           attach with text, «Dale vida» CTA, examples and the help line. */}
       <div
@@ -646,27 +679,9 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
         </button>
       ) : null}
 
-      <h2 className={styles.gallerySection}>{t('characters.gallery.starters')}</h2>
-      <div className={styles.galleryCards}>
-        {starters.map((starter) => {
-          const pack = bases.get(starter.id);
-          if (!pack) return null;
-          const [key, emotion] = previewEmotion(pack.manifest.emotions);
-          return (
-            <StarterCard
-              key={starter.id}
-              pack={pack}
-              emotionKey={key}
-              emotion={emotion}
-              selected={effectiveBaseId === starter.id}
-              onSelect={() => setBaseId(starter.id)}
-            />
-          );
-        })}
-      </div>
-
       <details className={styles.advanced} data-testid="characters-advanced">
         <summary>{t('characters.gallery.advanced')}</summary>
+        <p className={styles.advancedHint}>{t('characters.gallery.advancedHint')}</p>
         <div className={styles.advancedGrid}>
           <label className={styles.advancedField}>
             <span>{t('characters.gallery.style')}</span>
@@ -777,50 +792,33 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   );
 }
 
-interface StarterProps {
+interface CastProps {
   pack: LoadedPack;
-  emotionKey: string;
-  emotion: CharacterEmotion;
   selected: boolean;
   onSelect: () => void;
 }
 
-function StarterCard({ pack, emotionKey, emotion, selected, onSelect }: StarterProps) {
-  const { t } = useI18n();
+function CastButton({ pack, selected, onSelect }: CastProps) {
   const load = useMemo(() => loaderFor((src) => pack.resolve(src)), [pack]);
+  const [key, emotion] = previewEmotion(pack.manifest.emotions);
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className={`${styles.card} ${selected ? styles.cardSelected : ''}`}
+    <button
+      type="button"
+      className={`${styles.castAvatar} ${selected ? styles.castAvatarOn : ''}`}
+      aria-pressed={selected}
       onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
-      data-testid={`characters-starter-${pack.manifest.id}`}
+      data-testid={`characters-cast-${pack.manifest.id}`}
     >
       <AnimatedThumb
         pack={pack.manifest}
-        emotionKey={emotionKey}
+        emotionKey={key}
         emotion={emotion}
         load={load}
-        className={`${styles.cardThumb} ${styles.checker}`}
+        className={`${styles.castThumb} ${styles.checker}`}
         label={pack.manifest.name}
       />
-      <div className={styles.cardBody}>
-        <span className={styles.cardLabel}>{pack.manifest.name}</span>
-        <span className={styles.cardKey}>{pack.manifest.id}</span>
-      </div>
-      <div className={styles.cardMeta}>
-        <span>{t('characters.grid.emotionCount', { count: Object.keys(pack.manifest.emotions).length })}</span>
-        <span className={`${styles.badge} ${selected ? styles.badgeSelected : ''}`}>
-          {selected ? t('characters.gallery.baseSelected') : t('characters.gallery.useAsBase')}
-        </span>
-      </div>
-    </div>
+      <span>{pack.manifest.name}</span>
+    </button>
   );
 }
 

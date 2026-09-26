@@ -5697,4 +5697,8 @@ export interface Dict {
   'characters.composer.ex.other.1': string;
   'characters.composer.ex.other.2': string;
   'characters.composer.ex.other.3': string;
+  'characters.header.importMenu': string;
+  'characters.cast.label': string;
+  'characters.cast.new': string;
+  'characters.gallery.advancedHint': string;
 }

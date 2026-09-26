@@ -3,7 +3,6 @@
 // emotion grid or, when the route carries an emotion id, the player.
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Button, Select } from '@open-design/components';
 
 import { I18nProvider, manualLocaleOverride, useI18n } from '../../../i18n';
 import { Icon } from '../../../components/Icon';
@@ -15,7 +14,6 @@ import {
   type LoadedPack,
 } from '../import/importPack';
 import {
-  BUNDLED_PACKS,
   loadBundledPack,
   loadDefaultPack,
   probeBundledPacks,
@@ -84,17 +82,6 @@ function CharactersViewInner({ emotionId }: Props) {
     }
   }, [adoptPack]);
 
-  const loadBundledById = useCallback(
-    async (id: string) => {
-      setState({ kind: 'loading' });
-      try {
-        adoptPack(await loadBundledPack(id));
-      } catch (error) {
-        setState({ kind: 'error', ...describeError(error) });
-      }
-    },
-    [adoptPack],
-  );
 
   // F4: the gallery is the landing surface — the review grid only mounts
   // after the user generates a result or explicitly picks a pack/import, so
@@ -161,10 +148,6 @@ function CharactersViewInner({ emotionId }: Props) {
     navigate({ kind: 'home', view: 'characters' });
   }, []);
 
-  const bundledId = pack
-    ? (BUNDLED_PACKS.find((entry) => entry.base === pack.sourceLabel)?.id ?? '')
-    : '';
-
   const emotion =
     emotionId && pack
       ? (edits?.emotionFor(emotionId) ?? pack.manifest.emotions[emotionId])
@@ -181,36 +164,37 @@ function CharactersViewInner({ emotionId }: Props) {
           <p className={styles.tagline}>{t('characters.tagline')}</p>
         </div>
         <div className={styles.actions}>
-          <Button
-            variant="subtle"
-            onClick={() => folderInputRef.current?.click()}
-            data-testid="characters-import-folder"
-          >
-            <Icon name="folder" size={14} /> {t('characters.actions.folder')}
-          </Button>
-          <Button
-            variant="subtle"
-            onClick={() => zipInputRef.current?.click()}
-            data-testid="characters-import-zip"
-          >
-            <Icon name="import" size={14} /> {t('characters.actions.zip')}
-          </Button>
-          <Select
-            value={bundledId}
-            onChange={(event) => {
-              const id = event.target.value;
-              if (id) void loadBundledById(id);
-            }}
-            aria-label={t('characters.actions.choosePack')}
-            data-testid="characters-pack-select"
-          >
-            {pack && !bundledId ? <option value="">{pack.manifest.name}</option> : null}
-            {catalogue.map((option) => (
-              <option key={option.id} value={option.id} disabled={!option.available}>
-                {option.available ? option.label : `${option.label} · ${t('characters.engine.comingSoon')}`}
-              </option>
-            ))}
-          </Select>
+          {/* G-UX 5: one secondary import entry — «Traer mis archivos» —
+              replaces the two always-visible import buttons. The bundled
+              pack selector is gone: the cast row (G-UX 6) picks the active
+              character. */}
+          <details className={styles.importMenu}>
+            <summary className={styles.importMenuButton} data-testid="characters-import-menu">
+              <Icon name="import" size={14} /> {t('characters.header.importMenu')}
+            </summary>
+            <div className={styles.importMenuList}>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                  folderInputRef.current?.click();
+                }}
+                data-testid="characters-import-folder"
+              >
+                <Icon name="folder" size={14} /> {t('characters.actions.folder')}
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                  zipInputRef.current?.click();
+                }}
+                data-testid="characters-import-zip"
+              >
+                <Icon name="import" size={14} /> {t('characters.actions.zip')}
+              </button>
+            </div>
+          </details>
           <input
             ref={folderInputRef}
             type="file"

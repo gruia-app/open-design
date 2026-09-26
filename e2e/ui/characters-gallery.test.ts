@@ -37,8 +37,8 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(page.getByTestId('emotion-editor')).toHaveCount(0);
 
   // Animated starters for the characters that already work.
-  await expect(page.getByTestId('characters-starter-gruia-grulla')).toBeVisible();
-  await expect(page.getByTestId('characters-starter-contenido-tinta')).toBeVisible();
+  await expect(page.getByTestId('characters-cast-gruia-grulla')).toBeVisible();
+  await expect(page.getByTestId('characters-cast-contenido-tinta')).toBeVisible();
 
   // Advanced options collapsed by default; frame count defaults to 8.
   const advanced = page.getByTestId('characters-advanced');
@@ -85,7 +85,7 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await page.getByTestId('characters-generate-input').blur();
 
   // Pick Tinta as the base and generate from a phrase.
-  await page.getByTestId('characters-starter-contenido-tinta').click();
+  await page.getByTestId('characters-cast-contenido-tinta').click();
   await page.getByTestId('characters-generate-input').fill('una tinta que celebra');
   await page.getByTestId('characters-generate').click();
 
@@ -169,7 +169,7 @@ test('living stage greets, reacts to chips and pokes, and speaks in the base voi
   await expect(page.getByTestId('characters-bubble-text')).toContainText('cosquillas');
 
   // Switching the base to Tinta switches the stage voice.
-  await page.getByTestId('characters-starter-contenido-tinta').click();
+  await page.getByTestId('characters-cast-contenido-tinta').click();
   await expect(page.getByTestId('characters-bubble-text')).toContainText('Tinta');
 });
 

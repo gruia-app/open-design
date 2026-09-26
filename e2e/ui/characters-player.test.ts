@@ -30,8 +30,11 @@ async function gotoCharacters(page: Page, path = '/characters') {
   await gotoEntryHome(page);
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
-  // The bundled sample pack loads on its own; wait for the grid (or the
-  // player, when the path already names an emotion) to materialize.
+  // On a deep link the default pack loads on its own; on the gallery the
+  // cast row (G-UX 6) opens the review grid for the picked character.
+  if (path === '/characters') {
+    await page.getByTestId('characters-cast-gruia-grulla').click();
+  }
   await expect(
     page.getByTestId('characters-grid').or(page.getByTestId('characters-player')),
   ).toBeVisible({ timeout: T.long });
@@ -110,16 +113,14 @@ test('frame strip seeks to the clicked frame', async ({ page }) => {
   await expect(frames.nth(5)).toHaveAttribute('data-active', 'true');
 });
 
-test('pack picker switches between bundled characters', async ({ page }) => {
+test('cast row switches between bundled characters', async ({ page }) => {
   await gotoCharacters(page);
-  const picker = page.getByTestId('characters-pack-select');
-  await expect(picker).toBeVisible();
-  const first = await picker.inputValue();
+  const cast = page.getByTestId('characters-cast');
+  await expect(cast).toBeVisible();
 
   // Another bundled character loads its own manifest and grid.
-  const second = first === 'gruia-grulla' ? 'contenido-tinta' : 'gruia-grulla';
-  await picker.selectOption(second);
-  await expect(page.locator('[class*="packMeta"]')).toContainText(second, {
+  await page.getByTestId('characters-cast-contenido-tinta').click();
+  await expect(page.locator('[class*="packMeta"]')).toContainText('contenido-tinta', {
     timeout: T.medium,
   });
   for (const key of EMOTION_KEYS) {
