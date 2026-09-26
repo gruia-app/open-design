@@ -36,6 +36,7 @@ import {
 import { EXPORTS_EVENT, exportCount } from '../gallery/metrics';
 import type { EmotionLoader } from './useEmotionCache';
 import { AnimatedThumb } from './AnimatedThumb';
+import { StageHero } from './StageHero';
 import styles from './characters.module.css';
 
 /** Starters are the two shipped characters — pixel-demo stays in the header
@@ -253,6 +254,7 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
 
   return (
     <div className={styles.gallery} data-testid="characters-gallery">
+      {basePack ? <StageHero pack={basePack} /> : null}
       <div className={styles.generateRow}>
         <input
           className={styles.generateInput}
