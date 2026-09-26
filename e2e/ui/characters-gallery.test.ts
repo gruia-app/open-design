@@ -93,10 +93,21 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(results).toBeVisible();
   const card = results.locator('[data-testid^="characters-result-"]').first();
   await expect(card).toBeVisible();
+  const cardId = (await card.getAttribute('data-testid'))!.replace('characters-result-', '');
+
+  // G-UX 7: the card reads «Propuesta 1 · {prompt}» with the goal meta
+  // («Para … · … en bucle · N emociones listas»), a «Dale vida» opener,
+  // a «Me gusta» button and the trash tucked into a «…» menu.
+  await expect(card).toContainText('Propuesta 1 · una tinta que celebra');
+  await expect(card).toContainText(/Para .* en bucle · \d+ emociones listas/);
+  await expect(page.getByTestId(`characters-result-open-${cardId}`)).toContainText('Dale vida');
+  await expect(card.locator('[data-testid^="characters-result-like-"]')).toContainText('Me gusta');
+  await expect(card.locator('[data-testid^="characters-result-remove-"]')).toBeHidden();
+  await page.getByTestId(`characters-result-more-${cardId}`).click();
+  await expect(card.locator('[data-testid^="characters-result-remove-"]')).toBeVisible();
 
   // The card now carries the goal CTA («Exportar para tu app») plus the
   // always-on Roberto CTA.
-  const cardId = (await card.getAttribute('data-testid'))!.replace('characters-result-', '');
   const cta = page.getByTestId(`characters-meta-cta-app-${cardId}`);
   await expect(cta).toBeVisible();
   await expect(card).toContainText('Construimos tu app con Roberto');
