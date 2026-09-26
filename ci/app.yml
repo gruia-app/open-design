@@ -14,6 +14,14 @@ stack:
   type: [node, next, monorepo]
 
 ci:
+  resources:
+    enabled: true
+    # Request the 4 GiB pool for build stages; a verified cgroup OOM promotes
+    # the persisted profile one tier at a time up to large, and an unavailable
+    # resource-profile API fails safe to large instead of stranding the build.
+    build_class: small
+    adaptive_build_class: true
+    max_build_class: large
   # guard/typecheck/test are independent read-mostly stages; test writes only
   # vitest artifacts. Same playbook as contenido/b2bweb.
   parallel_checks: true
@@ -52,6 +60,13 @@ commands:
     - pnpm --filter @open-design/components build
     - pnpm --filter @open-design/daemon build
   e2e: []
+
+release_control:
+  # Required for ci.resources.adaptive_build_class: the pipeline reads the
+  # persisted build-class profile from this endpoint and reports verified
+  # cgroup OOM promotions to it. Same binding as SEO's manifest.
+  api_url: https://coding.gruia.app
+  agent_token_credential_id: release-control-agent-token
 
 deploy:
   type: none
