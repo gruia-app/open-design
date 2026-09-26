@@ -4,6 +4,7 @@ import { createServer, request as httpRequest, type IncomingHttpHeaders, type In
 import { Transform, pipeline } from "node:stream";
 import type { Duplex } from "node:stream";
 import { renderGatewayMetrics } from "./metrics.js";
+import { truncateClientIp } from "./session-store.js";
 import type { AuthAuditContext, AuthAuditEvent, AuthorizationRepository, GatewayConfig, GatewayIdentity, GatewayStoreMetrics, SessionStore, StoredSession } from "./types.js";
 
 type Authorized = Readonly<{ session: StoredSession; identity: GatewayIdentity }>;
@@ -121,9 +122,11 @@ export class GatewayCore {
   recordAuthEvent(event: AuthAuditEvent, fields: Omit<Parameters<SessionStore["recordAuthEvent"]>[0], "event" | "at"> = {}): void {
     this.store.recordAuthEvent({ event, at: this.clock(), ...fields });
   }
-  async login(email: string, password: string, context?: AuthAuditContext): Promise<{ id: string; expiresAt: number } | null> {
+  async login(email: string, password: string, context?: AuthAuditContext, limiterIp?: string): Promise<{ id: string; expiresAt: number } | null> {
     const audit = (detail: string): void => this.recordAuthEvent("login_failure", { email, detail, ...(context ?? {}) });
-    if (!this.limiter.allow(email, context?.ip)) { audit("rate_limited"); return null; }
+    // The audit context carries a truncated ip; rate limiting still keys on
+    // the full client ip so a shared /24 cannot exhaust someone's budget.
+    if (!this.limiter.allow(email, limiterIp ?? context?.ip)) { audit("rate_limited"); return null; }
     const user = await this.identities.findLoginUser(email, this.admittedOrganizationIds());
     const validPassword = await verifyCanonicalPassword(password, user?.hashedPassword ?? DUMMY_BCRYPT_HASH);
     if (!user || !validPassword) { audit("invalid_credentials"); return null; }
@@ -221,10 +224,13 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   await proxy(request, response, core, authorized.identity.organizationId);
 }
 
-function authContext(request: IncomingMessage): AuthAuditContext {
+function clientIp(request: IncomingMessage): string | undefined {
   const forwarded = request.headers["x-forwarded-for"];
   const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",", 1)[0]?.trim();
-  const ip = first && first.length <= 64 ? first : request.socket.remoteAddress;
+  return first && first.length <= 64 ? first : request.socket.remoteAddress;
+}
+function authContext(request: IncomingMessage): AuthAuditContext {
+  const ip = truncateClientIp(clientIp(request));
   const agent = request.headers["user-agent"];
   return { ...(ip ? { ip } : {}), ...(typeof agent === "string" && agent.length <= 512 ? { userAgent: agent } : {}) };
 }
@@ -250,7 +256,7 @@ async function handleLogin(request: IncomingMessage, response: ServerResponse, c
   if (!validCsrf) { core.recordAuthEvent("login_failure", { detail: "csrf_rejected", ...context }); loginPage(response, core, 403, "No fue posible iniciar sesión."); return; }
   const email = normalizeEmail(form.get("email")); const password = form.get("password");
   if (!email || typeof password !== "string") { core.recordAuthEvent("login_failure", { detail: "malformed_form", ...context }); loginPage(response, core, 401, "Credenciales inválidas o acceso no autorizado."); return; }
-  const result = await core.login(email, password, context);
+  const result = await core.login(email, password, context, clientIp(request));
   if (!result) { loginPage(response, core, 401, "Credenciales inválidas o acceso no autorizado."); return; }
   noStore(response); response.setHeader("set-cookie", [expiredCookie(core.config, csrfName), cookie(core.config, core.config.cookieName, result.id, result.expiresAt)]); response.writeHead(303, { location: "/" }); response.end();
 }
@@ -266,7 +272,7 @@ async function proxy(request: IncomingMessage, response: ServerResponse, core: G
   const target = core.config.organizations.get(organizationId); if (!target || !isSafeProxyPath(request.url)) { json(response, 403, { error: "forbidden" }); return; }
   const upstream = new URL(target.upstream); const contentLength = Number(request.headers["content-length"] ?? 0);
   if (!Number.isSafeInteger(contentLength) || contentLength < 0 || contentLength > core.config.requestBodyLimitBytes) { json(response, 413, { error: "payload_too_large" }); return; }
-  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
+  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, clientIp(request));
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs }, (upstreamResponse) => {
     if (response.destroyed || response.writableEnded) { upstreamResponse.destroy(); return; }
     try {
@@ -295,7 +301,7 @@ async function handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buf
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request));
   if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER") { deny(); return; }
   const target = core.config.organizations.get(authorized.identity.organizationId); if (!target) { deny(); return; }
-  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
+  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, clientIp(request));
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs });
   upstreamRequest.on("response", (upstreamResponse) => { upstreamResponse.resume(); deny(); });
   upstreamRequest.on("upgrade", (upstreamResponse, upstreamSocket, upstreamHead) => { let lines = `HTTP/${upstreamResponse.httpVersion} ${upstreamResponse.statusCode} ${upstreamResponse.statusMessage}\r\n`; for (const [name, value] of Object.entries(upstreamResponse.headers)) if (value !== undefined && name.toLowerCase() !== "set-cookie") lines += `${name}: ${Array.isArray(value) ? value.join(", ") : value}\r\n`; socket.write(`${lines}\r\n`); if (upstreamHead.length) socket.write(upstreamHead); if (head.length) upstreamSocket.write(head); upstreamSocket.pipe(socket).pipe(upstreamSocket); });

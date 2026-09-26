@@ -61,7 +61,13 @@ in `deploy/gruia/Caddyfile`.
 
 Auth events (logins, denials, session revocations, expirations) are written to
 the `auth_audit` table in the gateway SQLite database, retained for 90 days or
-100,000 rows, whichever bound hits first. For per-tenant usage or incident
+100,000 rows, whichever bound hits first. Rows carry event, timestamp,
+organization, user agent, detail, a truncated client IP (IPv4 /24, IPv6 /64 —
+the full address is only forwarded upstream) and keyed HMAC pseudonyms
+(`user_hash`, `email_hash`) instead of cleartext user ids or emails — never
+passwords or tokens. The migration only adds columns; pre-existing rows keep
+their data but are pseudonymized/truncated on read. For per-tenant usage or
+incident
 triage, run the read-only report locally — over SSH on the gateway host or
 against a mounted/copied database file:
 

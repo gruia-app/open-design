@@ -64,7 +64,7 @@ describe("SqliteSessionStore", () => {
     expect(s.readSession("stale", now)).toBeNull();
     const rows = s.readAuthAudit(10);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toEqual({ event: "session_expired", at: now, userId: "u1", organizationId: "org1", ip: "198.51.100.9", userAgent: "audit-test" });
+    expect(rows[0]).toEqual({ event: "session_expired", at: now, userHash: s.principalHash("u1"), organizationId: "org1", ip: "198.51.100.0", userAgent: "audit-test" });
     expect(s.readSession("missing", now)).toBeNull();
     expect(s.readAuthAudit(10)).toHaveLength(1);
   });
@@ -80,7 +80,7 @@ describe("SqliteSessionStore", () => {
     expect(s.readSession("tampered", now, { ip: "203.0.113.99" })).toBeNull();
     const rows = s.readAuthAudit(10);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ event: "session_revoked", detail: "csrf_undecryptable", userId: "u1", organizationId: "org1", ip: "203.0.113.99" });
+    expect(rows[0]).toMatchObject({ event: "session_revoked", detail: "csrf_undecryptable", userHash: s.principalHash("u1"), organizationId: "org1", ip: "203.0.113.0" });
     expect(rowCount(path)).toBe(0);
   });
 
@@ -127,10 +127,13 @@ describe("SqliteSessionStore", () => {
     s.recordAuthEvent({ event: "login_success", at: now, email: "user@gruia.app", userId: "u1", organizationId: "org1", ip: "10.0.0.1" });
     const rows = s.readAuthAudit(10);
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toEqual({ event: "login_success", at: now, email: "user@gruia.app", userId: "u1", organizationId: "org1", ip: "10.0.0.1" });
+    expect(rows[0]).toEqual({ event: "login_success", at: now, emailHash: s.principalHash("user@gruia.app"), userHash: s.principalHash("u1"), organizationId: "org1", ip: "10.0.0.0" });
     expect(rows[1].detail).toBe("invalid_credentials");
     expect(rows[1].userAgent).toBe("agent");
-    expect(rows[1].userId).toBeUndefined();
+    expect(rows[1].userHash).toBeUndefined();
+    expect(rows[1].emailHash).toBe(s.principalHash("user@gruia.app"));
+    expect(rows[0].email).toBeUndefined();
+    expect(rows[0].userId).toBeUndefined();
     expect(s.readAuthAudit(1)).toHaveLength(1);
   });
 
