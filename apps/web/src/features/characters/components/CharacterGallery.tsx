@@ -202,40 +202,42 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
           placeholder={t('characters.gallery.promptPlaceholder')}
           data-testid="characters-generate-input"
         />
-        <Button
-          variant="subtle"
-          onClick={() => imageInputRef.current?.click()}
-          aria-label={t('characters.gallery.attachImage')}
-          data-testid="characters-generate-attach"
-        >
-          <Icon name="image" size={14} />
-        </Button>
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-            setImage(event.target.files?.[0] ?? null);
-            event.target.value = '';
-          }}
-        />
-        {image ? (
-          <span className={styles.imageChip} data-testid="characters-generate-image">
-            {image.name}
-            <button type="button" onClick={() => setImage(null)} aria-label={t('characters.gallery.removeImage')}>
-              ×
-            </button>
-          </span>
-        ) : null}
-        <Button
-          variant="primary"
-          onClick={() => void generate()}
-          disabled={!canGenerate}
-          data-testid="characters-generate"
-        >
-          <Icon name="sparkles" size={14} /> {t('characters.gallery.generate')}
-        </Button>
+        <div className={styles.generateActions}>
+          <Button
+            variant="subtle"
+            onClick={() => imageInputRef.current?.click()}
+            aria-label={t('characters.gallery.attachImage')}
+            data-testid="characters-generate-attach"
+          >
+            <Icon name="image" size={14} />
+          </Button>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(event: ChangeEvent<HTMLInputElement>) => {
+              setImage(event.target.files?.[0] ?? null);
+              event.target.value = '';
+            }}
+          />
+          {image ? (
+            <span className={styles.imageChip} data-testid="characters-generate-image">
+              {image.name}
+              <button type="button" onClick={() => setImage(null)} aria-label={t('characters.gallery.removeImage')}>
+                ×
+              </button>
+            </span>
+          ) : null}
+          <Button
+            variant="primary"
+            onClick={() => void generate()}
+            disabled={!canGenerate}
+            data-testid="characters-generate"
+          >
+            <Icon name="sparkles" size={14} /> {t('characters.gallery.generate')}
+          </Button>
+        </div>
       </div>
 
       <h2 className={styles.gallerySection}>{t('characters.gallery.starters')}</h2>

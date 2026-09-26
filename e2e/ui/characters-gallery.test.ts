@@ -82,3 +82,40 @@ test('gallery lands first, generates a result, and the editor opens from it', as
     page.getByTestId('characters-results').locator('[data-testid^="characters-result-like-"]').first(),
   ).toHaveAttribute('aria-pressed', 'true');
 });
+
+test('mobile 390px: prompt field spans its own row and nothing overflows horizontally', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${baseUrl}/characters`);
+  await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
+  const gallery = page.getByTestId('characters-gallery');
+  await expect(gallery).toBeVisible();
+
+  // The field gets its own full-width row — at least 90% of the gallery
+  // container (the R140 report left it squeezed to ~47% with a clipped
+  // placeholder).
+  const input = page.getByTestId('characters-generate-input');
+  await expect(input).toBeVisible();
+  const galleryBox = await gallery.boundingBox();
+  const inputBox = await input.boundingBox();
+  expect(galleryBox).not.toBeNull();
+  expect(inputBox).not.toBeNull();
+  expect(inputBox!.width).toBeGreaterThanOrEqual(galleryBox!.width * 0.9);
+
+  // The attach and Generar buttons sit below the field, each a ≥44px
+  // touch target.
+  const attach = page.getByTestId('characters-generate-attach');
+  const generate = page.getByTestId('characters-generate');
+  const attachBox = await attach.boundingBox();
+  const generateBox = await generate.boundingBox();
+  expect(attachBox).not.toBeNull();
+  expect(generateBox).not.toBeNull();
+  expect(attachBox!.y).toBeGreaterThanOrEqual(inputBox!.y + inputBox!.height);
+  expect(generateBox!.y).toBeGreaterThanOrEqual(inputBox!.y + inputBox!.height);
+  expect(attachBox!.height).toBeGreaterThanOrEqual(44);
+  expect(generateBox!.height).toBeGreaterThanOrEqual(44);
+  expect(attachBox!.width).toBeGreaterThanOrEqual(44);
+
+  // No horizontal scroll anywhere in the document at 390px.
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(390);
+});

@@ -734,6 +734,13 @@
   gap: 8px;
 }
 
+/* The buttons group stays `display: contents` on desktop so the row lays out
+   exactly as before; below the phone breakpoint it becomes a real flex row
+   under the full-width prompt field. */
+.generateActions {
+  display: contents;
+}
+
 .generateInput {
   flex: 1;
   min-width: 0;
@@ -913,4 +920,55 @@
 
 .likeOn {
   color: #e2557a;
+}
+
+/* Phone layout: the prompt field takes its own full-width row and the
+   attach/generate controls move below it, all at 44px touch targets. */
+@media (max-width: 600px) {
+  .root {
+    padding: 20px 16px 40px;
+  }
+
+  .generateRow {
+    flex-wrap: wrap;
+  }
+
+  .generateInput {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+
+  .generateActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .generateActions > button {
+    min-height: 44px;
+  }
+
+  .generateActions > button:last-child {
+    flex: 1;
+  }
+
+  .imageChip {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    max-width: none;
+  }
+
+  .imageChip button {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px;
+  }
+
+  .actions > button,
+  .actions > select {
+    min-height: 44px;
+  }
 }
