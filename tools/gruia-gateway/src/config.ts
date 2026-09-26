@@ -52,6 +52,16 @@ function parseOrganizations(value: unknown): ReadonlyMap<string, OrganizationTar
   return organizations;
 }
 
+const MAX_OPERATOR_IDS = 256;
+
+function parseOperatorUserIds(value: unknown): readonly string[] {
+  if (value === undefined) return Object.freeze([]);
+  if (!Array.isArray(value) || value.length > MAX_OPERATOR_IDS) throw new Error("Invalid studioOperatorUserIds");
+  const ids = new Set<string>();
+  for (const entry of value) ids.add(text(entry, "studioOperatorUserIds entry", 255));
+  return Object.freeze([...ids]);
+}
+
 export function loadConfig(path: string): GatewayConfig {
   let raw: unknown;
   try { raw = JSON.parse(readFileSync(resolve(path), "utf8")); } catch { throw new Error("Unable to read Gruia gateway configuration"); }
@@ -80,6 +90,7 @@ export function loadConfig(path: string): GatewayConfig {
     requestBodyLimitBytes: integer(value.requestBodyLimitBytes, "requestBodyLimitBytes", 10 * 1024 * 1024, 1, 50 * 1024 * 1024),
     upstreamTimeoutMs: integer(value.upstreamTimeoutMs, "upstreamTimeoutMs", 30_000, 1000, 120_000),
     clientAccessOpen: value.clientAccessOpen === true,
+    studioOperatorUserIds: parseOperatorUserIds(value.studioOperatorUserIds),
     testMode,
     ...(value.metricsToken === undefined ? {} : { metricsToken: text(value.metricsToken, "metricsToken", 512) }),
   });

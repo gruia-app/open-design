@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { pbkdf2, randomBytes, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import { createServer, request as httpRequest, type IncomingHttpHeaders, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { Transform, pipeline } from "node:stream";
 import type { Duplex } from "node:stream";
@@ -218,15 +219,39 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   if (!authorized || !sessionId) { if ((request.headers.accept ?? "").includes("text/html")) { response.writeHead(302, { location: "/auth", "cache-control": "no-store" }); response.end(); } else json(response, 401, { error: "authentication_required" }); return; }
   if (unsafeMethods.has(method) && (!isExpectedOrigin(request.headers.origin, core.config) || authorized.identity.role.toUpperCase() === "VIEWER")) { json(response, 403, { error: "forbidden" }); return; }
   if (url.pathname === "/auth/session") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } json(response, 200, { userId: authorized.identity.userId, organizationId: authorized.identity.organizationId, role: authorized.identity.role, csrfToken: authorized.session.csrfToken }); return; }
+  if (!isStudioOperator(core, authorized.identity, url.pathname, request)) { json(response, 403, { code: "studio_operator_only" }); return; }
   await proxy(request, response, core, authorized.identity.organizationId);
 }
 
-function authContext(request: IncomingMessage): AuthAuditContext {
+function clientIp(request: IncomingMessage): string | undefined {
   const forwarded = request.headers["x-forwarded-for"];
   const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(",", 1)[0]?.trim();
-  const ip = first && first.length <= 64 ? first : request.socket.remoteAddress;
+  return first && first.length <= 64 ? first : request.socket.remoteAddress;
+}
+/** Audit rows keep a network prefix, not the host: IPv4 /24, IPv6 /64. */
+export function truncateClientIp(ip: string | undefined): string | undefined {
+  const mapped = ip?.toLowerCase().startsWith("::ffff:") ? ip.slice(7) : ip;
+  const version = mapped ? isIP(mapped) : 0;
+  if (version === 4) { const [a, b, c] = mapped!.split("."); return `${a}.${b}.${c}.0`; }
+  if (version === 6) {
+    const [head = "", tail = ""] = mapped!.split("::");
+    const heads = head ? head.split(":") : [];
+    const tails = tail ? tail.split(":") : [];
+    const groups = [...heads, ...Array<string>(8 - heads.length - tails.length).fill("0"), ...tails];
+    return `${groups.slice(0, 4).join(":")}::`;
+  }
+  return undefined;
+}
+function authContext(request: IncomingMessage): AuthAuditContext {
+  const ip = truncateClientIp(clientIp(request));
   const agent = request.headers["user-agent"];
   return { ...(ip ? { ip } : {}), ...(typeof agent === "string" && agent.length <= 512 ? { userAgent: agent } : {}) };
+}
+/** Fail-closed studio allowlist: only configured operator user ids reach the daemon. */
+function isStudioOperator(core: GatewayCore, identity: GatewayIdentity, detail: string, request: IncomingMessage): boolean {
+  if (core.config.studioOperatorUserIds.includes(identity.userId)) return true;
+  core.recordAuthEvent("studio_operator_denied", { userId: identity.userId, organizationId: identity.organizationId, detail: `${request.method ?? ""} ${detail}`.slice(0, 128), ...authContext(request) });
+  return false;
 }
 function serveMetrics(request: IncomingMessage, response: ServerResponse, core: GatewayCore, method: string, startedAt: number): void {
   const token = core.config.metricsToken;
@@ -266,7 +291,7 @@ async function proxy(request: IncomingMessage, response: ServerResponse, core: G
   const target = core.config.organizations.get(organizationId); if (!target || !isSafeProxyPath(request.url)) { json(response, 403, { error: "forbidden" }); return; }
   const upstream = new URL(target.upstream); const contentLength = Number(request.headers["content-length"] ?? 0);
   if (!Number.isSafeInteger(contentLength) || contentLength < 0 || contentLength > core.config.requestBodyLimitBytes) { json(response, 413, { error: "payload_too_large" }); return; }
-  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
+  const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, clientIp(request));
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs }, (upstreamResponse) => {
     if (response.destroyed || response.writableEnded) { upstreamResponse.destroy(); return; }
     try {
@@ -293,9 +318,9 @@ async function handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buf
   const deny = (): void => { socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n"); socket.destroy(); };
   if (!isSafeProxyPath(request.url) || head.length > core.config.requestBodyLimitBytes || !isAuthorizedWebSocketHandshake(request.headers, core.config)) { deny(); return; }
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request));
-  if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER") { deny(); return; }
+  if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER" || !isStudioOperator(core, authorized.identity, "websocket", request)) { deny(); return; }
   const target = core.config.organizations.get(authorized.identity.organizationId); if (!target) { deny(); return; }
-  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
+  const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, clientIp(request));
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs });
   upstreamRequest.on("response", (upstreamResponse) => { upstreamResponse.resume(); deny(); });
   upstreamRequest.on("upgrade", (upstreamResponse, upstreamSocket, upstreamHead) => { let lines = `HTTP/${upstreamResponse.httpVersion} ${upstreamResponse.statusCode} ${upstreamResponse.statusMessage}\r\n`; for (const [name, value] of Object.entries(upstreamResponse.headers)) if (value !== undefined && name.toLowerCase() !== "set-cookie") lines += `${name}: ${Array.isArray(value) ? value.join(", ") : value}\r\n`; socket.write(`${lines}\r\n`); if (upstreamHead.length) socket.write(upstreamHead); if (head.length) upstreamSocket.write(head); upstreamSocket.pipe(socket).pipe(upstreamSocket); });

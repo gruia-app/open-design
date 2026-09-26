@@ -36,6 +36,14 @@ organization has its own loopback daemon, private API token and storage volume.
 Ambiguous membership across admitted studios is denied until organization
 selection is implemented.
 
+`studioOperatorUserIds` is a list of canonical `public.users` ids allowed to use
+the studio proxy (HTTP and WebSocket). Membership still controls who can log
+in, but only listed operator ids are proxied to the daemon; everyone else gets
+`403` with `{"code":"studio_operator_only"}` and a `studio_operator_denied`
+audit row. An empty or absent list is fail-closed — no proxied request passes.
+Sessions, memberships and user data are never touched by the gate. Example
+(ids truncated): `"studioOperatorUserIds": ["5821…", "9b3a…"]`.
+
 Every protected HTTP, SSE and WebSocket request revalidates canonical membership.
 Mutations and WebSockets require the exact public Origin. VIEWER members cannot
 mutate or use WebSockets. The proxy strips caller cookies and identity headers,
@@ -61,7 +69,10 @@ in `deploy/gruia/Caddyfile`.
 
 Auth events (logins, denials, session revocations, expirations) are written to
 the `auth_audit` table in the gateway SQLite database, retained for 90 days or
-100,000 rows, whichever bound hits first. For per-tenant usage or incident
+100,000 rows, whichever bound hits first. Rows carry event, timestamp, email,
+user id, organization, a truncated client IP (IPv4 /24, IPv6 /64 — the full
+address is only forwarded upstream) and user agent — never passwords or
+tokens. For per-tenant usage or incident
 triage, run the read-only report locally — over SSH on the gateway host or
 against a mounted/copied database file:
 
