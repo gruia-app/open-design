@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { truncateClientIp } from "./session-store.js";
 
 export interface AuditReportOptions {
   days?: number;
@@ -42,10 +43,18 @@ export function buildAuditReport(databasePath: string, options: AuditReportOptio
       if (row.last_at > (summary.lastActivityAt ?? 0)) summary.lastActivityAt = row.last_at;
     }
     for (const org of Object.keys(organizations)) {
-      const counted = db.prepare(`SELECT COUNT(DISTINCT user_id) AS n FROM auth_audit WHERE at >= ? AND organization_id IS ?`).get(since, org === "(none)" ? null : org) as { n: number };
+      // user_hash for pseudonymized rows, user_id for pre-migration ones.
+      const counted = db.prepare(`SELECT COUNT(DISTINCT COALESCE(user_hash, user_id)) AS n FROM auth_audit WHERE at >= ? AND organization_id IS ?`).get(since, org === "(none)" ? null : org) as { n: number };
       organizations[org]!.distinctUsers = counted.n;
     }
-    const topIps = (db.prepare(`SELECT ip, COUNT(*) AS n FROM auth_audit WHERE at >= ? AND ip IS NOT NULL${scope} GROUP BY ip ORDER BY n DESC LIMIT 10`).all(...args) as Array<{ ip: string; n: number }>).map((row) => ({ ip: row.ip, events: row.n }));
+    // Collapse stored addresses to their network prefix so pre-migration
+    // full IPs never leave the report either.
+    const ipCounts = new Map<string, number>();
+    for (const row of db.prepare(`SELECT ip, COUNT(*) AS n FROM auth_audit WHERE at >= ? AND ip IS NOT NULL${scope} GROUP BY ip`).all(...args) as Array<{ ip: string; n: number }>) {
+      const prefix = truncateClientIp(row.ip) ?? "(unknown)";
+      ipCounts.set(prefix, (ipCounts.get(prefix) ?? 0) + row.n);
+    }
+    const topIps = [...ipCounts.entries()].map(([ip, events]) => ({ ip, events })).sort((a, b) => b.events - a.events).slice(0, 10);
     return { generatedAt: new Date().toISOString(), since: new Date(since).toISOString(), days, totals, organizations, topIps };
   } finally {
     db.close();

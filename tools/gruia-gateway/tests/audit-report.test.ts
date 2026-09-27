@@ -32,8 +32,8 @@ describe("gateway audit report", () => {
     expect(org?.lastActivityAt).toBeTypeOf("number");
     expect(report.organizations["org-b"]).toBeUndefined();
     expect(report.organizations["(none)"]?.events.login_failure).toBe(1);
-    expect(report.topIps[0]?.ip).toBe("10.0.0.9");
-    expect(report.topIps[0]?.events).toBe(2);
+    expect(report.topIps[0]?.ip).toBe("10.0.0.0");
+    expect(report.topIps[0]?.events).toBe(4);
   });
 
   it("scopes to a single organization when asked", () => {

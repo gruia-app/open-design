@@ -55,8 +55,13 @@ export type AuthAuditContext = Readonly<{ ip?: string; userAgent?: string }>;
 export type AuthAuditRecord = Readonly<{
   event: AuthAuditEvent;
   at: number;
+  // Callers pass email/userId; the store pseudonymizes them into
+  // emailHash/userHash at rest and on read — audit rows never expose the
+  // cleartext values again.
   email?: string;
   userId?: string;
+  emailHash?: string;
+  userHash?: string;
   organizationId?: string;
   ip?: string;
   userAgent?: string;
