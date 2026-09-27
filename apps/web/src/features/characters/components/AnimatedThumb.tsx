@@ -10,6 +10,7 @@ import { getEngine } from '../engines/registry';
 import type { LoadedEmotion } from '../engines/types';
 import { buildTimeline, frameIndexAt } from '../playback/timeline';
 import type { EmotionLoader } from './useEmotionCache';
+import { useReducedMotion } from './useReducedMotion';
 
 interface Props {
   pack: CharacterPack;
@@ -27,6 +28,7 @@ export function AnimatedThumb({ pack, emotionKey, emotion, load, className, labe
   const [loaded, setLoaded] = useState<LoadedEmotion | null>(null);
   const fps = emotionFps(pack, emotion);
   const playback = emotionPlayback(pack, emotion);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (!engine) return;
@@ -56,14 +58,14 @@ export function AnimatedThumb({ pack, emotionKey, emotion, load, className, labe
     const startedAt = performance.now();
     let raf = 0;
     const tick = () => {
-      const index = frameIndexAt(timeline, playback, performance.now() - startedAt);
+      const index = reducedMotion ? 0 : frameIndexAt(timeline, playback, performance.now() - startedAt);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       engine.renderFrame(ctx, loaded, index);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [loaded, engine, emotion.frames, fps, playback]);
+  }, [loaded, engine, emotion.frames, fps, playback, reducedMotion]);
 
   return (
     <canvas

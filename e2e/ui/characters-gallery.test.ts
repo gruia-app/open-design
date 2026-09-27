@@ -264,6 +264,46 @@ test('composer fits and invites: label, examples, Imagen attach, Dale vida and m
   await expect(page.getByTestId('characters-generate')).toBeDisabled();
 });
 
+test('reduced motion: static stage, labelled canvas and 44px targets', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => localStorage.setItem('od-personajes.meta-asked.v1', '1'));
+  await page.goto(`${baseUrl}/characters`);
+  await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
+
+  // The stage still renders and speaks — the canvas just stays on the
+  // emotion's first frame (assertable: it keeps a static bitmap).
+  const canvas = page.getByTestId('characters-stage-canvas');
+  await expect(canvas).toHaveAttribute('role', 'img');
+  await expect(canvas).toHaveAttribute('aria-label', /Gui/);
+  await expect(page.getByTestId('characters-bubble')).toHaveAttribute('aria-live', 'polite');
+  await expect(page.getByTestId('characters-bubble-text')).toContainText('Soy Gui');
+  // Wait for the first frame to paint (any opaque pixel), then prove it
+  // does not advance.
+  const hasPaint = () =>
+    canvas.evaluate((el) => {
+      const c = el as HTMLCanvasElement;
+      const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+      for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return true;
+      return false;
+    });
+  await expect.poll(hasPaint, { timeout: T.medium }).toBe(true);
+  const firstFrame = await canvas.evaluate((el) => (el as HTMLCanvasElement).toDataURL());
+  await page.waitForTimeout(800);
+  expect(await canvas.evaluate((el) => (el as HTMLCanvasElement).toDataURL())).toBe(firstFrame);
+
+  // Chips still answer in the bubble and switch the pressed state —
+  // the character reacts in text even when it does not move.
+  await page.getByTestId('characters-emo-joy').click();
+  await expect(page.getByTestId('characters-bubble-text')).toContainText('Yuju');
+  await expect(page.getByTestId('characters-emo-joy')).toHaveAttribute('aria-pressed', 'true');
+
+  // CTAs and actions keep ≥44px touch targets on desktop too.
+  const generateBox = await page.getByTestId('characters-generate').boundingBox();
+  const attachBox = await page.getByTestId('characters-generate-attach').boundingBox();
+  expect(generateBox!.height).toBeGreaterThanOrEqual(44);
+  expect(attachBox!.height).toBeGreaterThanOrEqual(44);
+});
+
 test('mobile 390px: fixed «Crear el mío» CTA only shows off-viewport, then focuses the composer', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem('od-personajes.meta-asked.v1', '1'));
