@@ -17,6 +17,9 @@ export type GatewayConfig = Readonly<{
   requestBodyLimitBytes: number;
   upstreamTimeoutMs: number;
   clientAccessOpen: boolean;
+  // Canonical public.users ids allowed through the studio proxy. An empty list
+  // is fail-closed: every proxied request is denied with studio_operator_only.
+  studioOperatorUserIds: readonly string[];
   testMode: boolean;
   // Bearer token guarding GET /metrics. Absent disables the endpoint entirely —
   // the gateway sits behind a public proxy, so an unguarded scrape surface
@@ -45,7 +48,7 @@ export type StoredSession = Readonly<{
   expiresAt: number;
 }>;
 
-export type AuthAuditEvent = "login_success" | "login_failure" | "logout" | "logout_failure" | "session_revoked" | "session_expired";
+export type AuthAuditEvent = "login_success" | "login_failure" | "logout" | "logout_failure" | "session_revoked" | "session_expired" | "studio_operator_denied";
 
 export type AuthAuditContext = Readonly<{ ip?: string; userAgent?: string }>;
 

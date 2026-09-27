@@ -218,6 +218,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
   if (!authorized || !sessionId) { if ((request.headers.accept ?? "").includes("text/html")) { response.writeHead(302, { location: "/auth", "cache-control": "no-store" }); response.end(); } else json(response, 401, { error: "authentication_required" }); return; }
   if (unsafeMethods.has(method) && (!isExpectedOrigin(request.headers.origin, core.config) || authorized.identity.role.toUpperCase() === "VIEWER")) { json(response, 403, { error: "forbidden" }); return; }
   if (url.pathname === "/auth/session") { if (method !== "GET") { json(response, 405, { error: "method_not_allowed" }); return; } json(response, 200, { userId: authorized.identity.userId, organizationId: authorized.identity.organizationId, role: authorized.identity.role, csrfToken: authorized.session.csrfToken }); return; }
+  if (!isStudioOperator(core, authorized.identity, url.pathname, request)) { json(response, 403, { code: "studio_operator_only" }); return; }
   await proxy(request, response, core, authorized.identity.organizationId);
 }
 
@@ -227,6 +228,12 @@ function authContext(request: IncomingMessage): AuthAuditContext {
   const ip = first && first.length <= 64 ? first : request.socket.remoteAddress;
   const agent = request.headers["user-agent"];
   return { ...(ip ? { ip } : {}), ...(typeof agent === "string" && agent.length <= 512 ? { userAgent: agent } : {}) };
+}
+/** Fail-closed studio allowlist: only configured operator user ids reach the daemon. */
+function isStudioOperator(core: GatewayCore, identity: GatewayIdentity, detail: string, request: IncomingMessage): boolean {
+  if (core.config.studioOperatorUserIds.includes(identity.userId)) return true;
+  core.recordAuthEvent("studio_operator_denied", { userId: identity.userId, organizationId: identity.organizationId, detail: `${request.method ?? ""} ${detail}`.slice(0, 128), ...authContext(request) });
+  return false;
 }
 function serveMetrics(request: IncomingMessage, response: ServerResponse, core: GatewayCore, method: string, startedAt: number): void {
   const token = core.config.metricsToken;
@@ -293,7 +300,7 @@ async function handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buf
   const deny = (): void => { socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n"); socket.destroy(); };
   if (!isSafeProxyPath(request.url) || head.length > core.config.requestBodyLimitBytes || !isAuthorizedWebSocketHandshake(request.headers, core.config)) { deny(); return; }
   const sessionId = parseCookies(request.headers.cookie).get(core.config.cookieName); const authorized = await core.authorize(sessionId, authContext(request));
-  if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER") { deny(); return; }
+  if (!authorized || authorized.identity.role.toUpperCase() === "VIEWER" || !isStudioOperator(core, authorized.identity, "websocket", request)) { deny(); return; }
   const target = core.config.organizations.get(authorized.identity.organizationId); if (!target) { deny(); return; }
   const upstream = new URL(target.upstream); const headers = daemonUpstreamHeaders(request.headers, upstream, target.daemonApiToken, authContext(request).ip);
   const upstreamRequest = httpRequest({ protocol: upstream.protocol, hostname: upstream.hostname, port: upstream.port, method: request.method, path: request.url, headers, timeout: core.config.upstreamTimeoutMs });

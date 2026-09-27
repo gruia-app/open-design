@@ -69,4 +69,19 @@ describe("loadConfig", () => {
       expect(() => loadConfig(write(valid({ metricsToken })))).toThrow(/metricsToken/);
     }
   });
+
+  it("defaults studioOperatorUserIds to a fail-closed empty list and honors configured ids", () => {
+    expect(loadConfig(write(valid())).studioOperatorUserIds).toEqual([]);
+    const configured = loadConfig(write(valid({ studioOperatorUserIds: ["4f5d5be1-aaaa-bbbb-cccc-111111111111", "4f5d5be1-aaaa-bbbb-cccc-222222222222"] })));
+    expect(configured.studioOperatorUserIds).toHaveLength(2);
+    // Duplicates collapse; the order is preserved.
+    expect(loadConfig(write(valid({ studioOperatorUserIds: ["id-1", "id-1"] }))).studioOperatorUserIds).toEqual(["id-1"]);
+    expect(loadConfig(write(valid({ studioOperatorUserIds: [] }))).studioOperatorUserIds).toEqual([]);
+  });
+
+  it("rejects malformed studioOperatorUserIds values", () => {
+    for (const studioOperatorUserIds of ["not-an-array", 42, ["ok", ""], [42], [" padded "]]) {
+      expect(() => loadConfig(write(valid({ studioOperatorUserIds })))).toThrow(/studioOperatorUserIds/);
+    }
+  });
 });
