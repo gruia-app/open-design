@@ -1140,9 +1140,11 @@ export function EntryShell({
   const [railOverlayMode, setRailOverlayMode] = useState<boolean>(
     () =>
       typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
       && window.matchMedia('(max-width: 1080px)').matches,
   );
   useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
     const media = window.matchMedia('(max-width: 1080px)');
     const onChange = () => setRailOverlayMode(media.matches);
     onChange();
