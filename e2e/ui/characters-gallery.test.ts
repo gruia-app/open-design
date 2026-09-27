@@ -76,6 +76,14 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(page.getByTestId('characters-try-1')).toContainText('búho');
   await expect(page.getByTestId('characters-composer-hint')).toContainText('lo verás moverse');
 
+  // U7-delta1: the plan ends with «Crear el mío», which scrolls to the
+  // composer, focuses its field (with the goal's placeholder) and
+  // highlights it briefly.
+  await expect(page.getByTestId('characters-goal-create')).toContainText('Crear el mío');
+  await page.getByTestId('characters-goal-create').click();
+  await expect(page.getByTestId('characters-generate-input')).toBeFocused({ timeout: T.medium });
+  await page.getByTestId('characters-generate-input').blur();
+
   // Pick Tinta as the base and generate from a phrase.
   await page.getByTestId('characters-starter-contenido-tinta').click();
   await page.getByTestId('characters-generate-input').fill('una tinta que celebra');
@@ -256,12 +264,20 @@ test('composer fits and invites: label, examples, Imagen attach, Dale vida and m
   await expect(page.getByTestId('characters-generate')).toBeDisabled();
 });
 
-test('mobile 390px: fixed «Crear el mío» CTA scrolls to the composer and focuses it', async ({ page }) => {
+test('mobile 390px: fixed «Crear el mío» CTA only shows off-viewport, then focuses the composer', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem('od-personajes.meta-asked.v1', '1'));
   await page.goto(`${baseUrl}/characters`);
   await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
 
+  // While the composer is in the viewport there is no fixed CTA — scrolling
+  // to something already visible gains nothing (U7-delta1).
+  const composer = page.getByTestId('characters-composer');
+  await composer.scrollIntoViewIfNeeded();
+  await expect(page.getByTestId('characters-mobile-cta')).toHaveCount(0);
+
+  // Scrolling past the composer makes the fixed CTA appear.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const cta = page.getByTestId('characters-mobile-cta');
   await expect(cta).toBeVisible();
   await expect(cta).toContainText('Crear el mío');
@@ -269,6 +285,17 @@ test('mobile 390px: fixed «Crear el mío» CTA scrolls to the composer and focu
   expect(ctaBox).not.toBeNull();
   expect(ctaBox!.height).toBeGreaterThanOrEqual(44);
 
+  // …and it must not cover content: the last element of the gallery is
+  // fully above the CTA thanks to the reserved bottom padding.
+  const lastBottom = await page.evaluate(() => {
+    const gallery = document.querySelector('[data-testid="characters-gallery"]');
+    if (!gallery || !gallery.lastElementChild) return -1;
+    const rect = gallery.lastElementChild.getBoundingClientRect();
+    return Math.min(rect.bottom, window.innerHeight);
+  });
+  expect(lastBottom).toBeLessThanOrEqual(844 - ctaBox!.height - 10);
+
+  // Clicking it scrolls back to the composer and focuses the field.
   await cta.click();
   await page.waitForTimeout(600);
   const focused = await page.evaluate(

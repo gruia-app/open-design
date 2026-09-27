@@ -5483,6 +5483,7 @@ export const esES: Dict = {
   'characters.goalask.changing.tinta': "¿Cambio de planes? Perfecto, se reescribe. Cuéntame.",
   'characters.goalask.reask.gui': "Oye, lo de antes… ¿para qué lo querías? Sin presión. Bueno, un poquito.",
   'characters.goalask.reask.tinta': "Oye, lo de antes… ¿para qué lo querías? Sin presión. Bueno, un poquito.",
+  'characters.goalask.create': "Crear el mío",
   'characters.react.typing.gui': "Mmm… «{text}». Me gusta por dónde vas.",
   'characters.react.typing.tinta': "Mmm… «{text}». Eso tiene gancho.",
   'characters.react.generate.gui': "¡Manos a la obra! Bueno, alas a la obra.",

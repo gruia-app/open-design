@@ -5483,6 +5483,7 @@ export const uk: Dict = {
   'characters.goalask.changing.tinta': "Change of plans? Perfect, we rewrite. Tell me.",
   'characters.goalask.reask.gui': "Hey, about earlier… what did you want it for? No pressure. Well, a little.",
   'characters.goalask.reask.tinta': "Hey, about earlier… what did you want it for? No pressure. Well, a little.",
+  'characters.goalask.create': "Create mine",
   'characters.react.typing.gui': "Mmm… «{text}». I like where this is going.",
   'characters.react.typing.tinta': "Mmm… «{text}». That has a hook.",
   'characters.react.generate.gui': "Let's get to work! Well, wings to work.",

@@ -182,6 +182,7 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const progressTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const starters = catalogue.filter(
     (option) => option.available && STARTER_IDS.includes(option.id),
@@ -444,6 +445,7 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   useEffect(
     () => () => {
       if (typingTimer.current) clearTimeout(typingTimer.current);
+      if (flashTimer.current) clearTimeout(flashTimer.current);
       progressTimers.current.forEach(clearTimeout);
     },
     [],
@@ -457,11 +459,44 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   }, [prompt]);
 
+  // The fixed «Crear el mío» CTA only shows while the composer is off-viewport:
+  // scrolling to something already visible gains nothing (U7-delta1).
+  const [composerVisible, setComposerVisible] = useState(true);
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el || typeof IntersectionObserver !== 'function') {
+      setComposerVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => setComposerVisible(entries[0]?.isIntersecting ?? true),
+      { threshold: 0.05 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   // Mobile CTA / «+ Crear el tuyo»: jump to the composer and focus it.
   const scrollToComposer = useCallback(() => {
-    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => promptRef.current?.focus({ preventScroll: true }), 350);
+    const reduced =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    composerRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    setTimeout(() => promptRef.current?.focus({ preventScroll: true }), reduced ? 0 : 350);
   }, []);
+
+  // Goal plan CTA: same jump plus a brief composer highlight. The highlight is
+  // a static ring under prefers-reduced-motion and a pulse otherwise (CSS).
+  const [composerFlashing, setComposerFlashing] = useState(false);
+  const flashComposer = useCallback(() => {
+    scrollToComposer();
+    setComposerFlashing(true);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => {
+      setComposerFlashing(false);
+      flashTimer.current = null;
+    }, 1600);
+  }, [scrollToComposer]);
 
   const fillExample = useCallback(
     (value: string) => {
@@ -500,13 +535,18 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
               onConfirm={() => answerMeta('other', metaOther)}
               onSkip={deferMeta}
               onChange={changeGoal}
+              onCreate={flashComposer}
             />
           ) : null}
         </div>
       ) : null}
       {/* G-UX 4: the composer — label, two-line field that grows, «Imagen»
           attach with text, «Dale vida» CTA, examples and the help line. */}
-      <div className={styles.composer} ref={composerRef} data-testid="characters-composer">
+      <div
+        className={`${styles.composer} ${composerFlashing ? styles.composerFlash : ''}`}
+        ref={composerRef}
+        data-testid="characters-composer"
+      >
         <label className={styles.composerLabel} htmlFor="characters-generate-input">
           {t('characters.composer.label')}
         </label>
@@ -595,14 +635,16 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
           {storedGoal ? t('characters.composer.hint.goal') : t('characters.composer.hint.default')}
         </p>
       </div>
-      <button
-        type="button"
-        className={styles.mobileCta}
-        onClick={scrollToComposer}
-        data-testid="characters-mobile-cta"
-      >
-        {t('characters.composer.mobileCta')}
-      </button>
+      {!composerVisible ? (
+        <button
+          type="button"
+          className={styles.mobileCta}
+          onClick={scrollToComposer}
+          data-testid="characters-mobile-cta"
+        >
+          {t('characters.composer.mobileCta')}
+        </button>
+      ) : null}
 
       <h2 className={styles.gallerySection}>{t('characters.gallery.starters')}</h2>
       <div className={styles.galleryCards}>
@@ -797,9 +839,10 @@ interface GoalCardProps {
   onConfirm: () => void;
   onSkip: () => void;
   onChange: () => void;
+  onCreate: () => void;
 }
 
-function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, onConfirm, onSkip, onChange }: GoalCardProps) {
+function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, onConfirm, onSkip, onChange, onCreate }: GoalCardProps) {
   const { t } = useI18n();
   if (phase === 'plan' && stored) {
     return (
@@ -830,6 +873,9 @@ function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, on
         <span className={styles.goalFormat} data-testid="characters-goal-format">
           {t(`characters.goalask.format.${stored.goal}` as Parameters<typeof t>[0])}
         </span>
+        <Button variant="primary" onClick={onCreate} data-testid="characters-goal-create">
+          {t('characters.goalask.create')}
+        </Button>
       </div>
     );
   }

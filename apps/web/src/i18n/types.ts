@@ -5652,6 +5652,7 @@ export interface Dict {
   'characters.goalask.changing.tinta': string;
   'characters.goalask.reask.gui': string;
   'characters.goalask.reask.tinta': string;
+  'characters.goalask.create': string;
   'characters.react.typing.gui': string;
   'characters.react.typing.tinta': string;
   'characters.react.generate.gui': string;
