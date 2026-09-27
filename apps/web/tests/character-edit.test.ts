@@ -8,6 +8,7 @@ import {
   applyVariantFrame,
   duplicateFrame,
   moveFrame,
+  nextUploadOrigin,
   removeFrame,
   setEmotionLiked,
   setEmotionNote,
@@ -95,6 +96,26 @@ describe('emotion edit ops', () => {
     expect(applyVariantFrame(emotion, 1, variant).frames[1]!.src).toBe('jobs/x/out/000.png');
     expect(applyVariantFrame(emotion, -1, variant).frames.map((f) => f.src))
       .toEqual(['a.png', 'b.png', 'jobs/x/out/000.png']);
+  });
+
+  it('tags manual replacements with a unique upload origin', () => {
+    // The emotion cache keys on src+ms+origin — repeated uploads of the same
+    // slot must produce distinct identities or the previous image stays drawn.
+    let emotion = makeEmotion(['a.png', 'b.png']);
+    emotion = applyVariantFrame(emotion, 0, {
+      src: 'idle/000.png',
+      ms: null,
+      origin: nextUploadOrigin(emotion.frames[0]!.origin),
+    });
+    expect(emotion.frames[0]!.origin).toBe('upload');
+    emotion = applyVariantFrame(emotion, 0, {
+      src: 'idle/000.png',
+      ms: null,
+      origin: nextUploadOrigin(emotion.frames[0]!.origin),
+    });
+    expect(emotion.frames[0]!.origin).toBe('upload#2');
+    expect(nextUploadOrigin('regen:job-1')).toBe('upload');
+    expect(nextUploadOrigin(undefined)).toBe('upload');
   });
 });
 

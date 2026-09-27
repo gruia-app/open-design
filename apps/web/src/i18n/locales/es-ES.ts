@@ -5302,6 +5302,8 @@ export const esES: Dict = {
   'characters.editor.like': 'Me gusta este fotograma',
   'characters.editor.duplicate': 'Duplicar fotograma',
   'characters.editor.remove': 'Quitar fotograma',
+  'characters.editor.replace': 'Sustituir fotograma con una imagen…',
+  'characters.editor.replaceError': 'Ese archivo no se pudo leer como imagen.',
   'characters.editor.moveLeft': 'Mover fotograma a la izquierda',
   'characters.editor.moveRight': 'Mover fotograma a la derecha',
   'characters.editor.undo': 'Deshacer',

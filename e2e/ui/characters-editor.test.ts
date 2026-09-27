@@ -4,9 +4,10 @@
 
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { Server } from 'node:http';
 import { T } from '@/timeouts';
-import { serveCharactersStaticExport } from '@/playwright/static-export';
+import { REPO_ROOT, serveCharactersStaticExport } from '@/playwright/static-export';
 import type { Page } from '@playwright/test';
 
 test.describe.configure({ timeout: 10 * 60_000 });
@@ -102,6 +103,43 @@ test('edits persist in IndexedDB across reloads', async ({ page }) => {
   await page.reload();
   await expect(page.getByTestId('characters-player')).toBeVisible({ timeout: T.long });
   await expect.poll(() => frameCount(page)).toBe(initial - 1);
+});
+
+test('replace frame swaps in a local image and stays undoable', async ({ page }) => {
+  await openEditor(page);
+  const initial = await frameCount(page);
+  await page.getByTestId('editor-frame-1').click();
+
+  // A real pack PNG stands in for the user's corrected frame.
+  const replacement = join(
+    REPO_ROOT,
+    'apps/web/public/character-packs/gruia-grulla/idle/002.png',
+  );
+  await page.getByTestId('editor-replace-input').setInputFiles(replacement);
+
+  // Same frame count, the slot is marked dirty and the edit can be undone.
+  expect(await frameCount(page)).toBe(initial);
+  await expect(page.getByTestId('editor-undo')).toBeEnabled();
+  await expect(page.getByTestId('editor-replace-error')).toHaveCount(0);
+
+  // Re-uploading the same file works — the input resets between picks.
+  await page.getByTestId('editor-replace-input').setInputFiles(replacement);
+  await expect(page.getByTestId('editor-replace-error')).toHaveCount(0);
+});
+
+test('replace frame rejects a non-image file with an inline error', async ({ page }) => {
+  await openEditor(page);
+  await page.getByTestId('editor-frame-0').click();
+
+  await page.getByTestId('editor-replace-input').setInputFiles({
+    name: 'notas.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('esto no es una imagen'),
+  });
+
+  await expect(page.getByTestId('editor-replace-error')).toBeVisible();
+  // The failed pick never enters history — undo stays disabled.
+  await expect(page.getByTestId('editor-undo')).toBeDisabled();
 });
 
 test('before/after compare toggle draws the baseline', async ({ page }) => {

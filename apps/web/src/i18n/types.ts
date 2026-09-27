@@ -5471,6 +5471,8 @@ export interface Dict {
   'characters.editor.like': string;
   'characters.editor.duplicate': string;
   'characters.editor.remove': string;
+  'characters.editor.replace': string;
+  'characters.editor.replaceError': string;
   'characters.editor.moveLeft': string;
   'characters.editor.moveRight': string;
   'characters.editor.undo': string;
