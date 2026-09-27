@@ -5548,4 +5548,9 @@ export const esES: Dict = {
   'characters.nextstep.action.png': "Descargar PNG de perfil",
   'characters.nextstep.action.frames': "Descargar frames PNG",
   'characters.nextstep.copied': "Copiado",
+  'characters.trial.wall.title': "Tu personaje ya se mueve. ¿Lo guardamos?",
+  'characters.trial.wall.text': "Crea tu cuenta gratis para editarlo frame a frame y exportarlo sin marca.",
+  'characters.trial.wall.save': "Guardar mi personaje",
+  'characters.trial.wall.gif': "Descargar GIF con marca",
+  'characters.trial.wall.later': "Seguir probando",
 };

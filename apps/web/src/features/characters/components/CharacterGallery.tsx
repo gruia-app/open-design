@@ -35,9 +35,10 @@ import {
 } from '../gallery/types';
 import { EXPORTS_EVENT, exportCount, recordExport } from '../gallery/metrics';
 import { buildAnimationExport, collectPlaybackFrames } from '../export/animated';
+import { buildBrandedGif } from '../export/branded';
 import { buildSpriteSheet, downloadBlob, downloadJson } from '../export/spritesheet';
 import { buildTimeline, frameDurationMs } from '../playback/timeline';
-import { emotionFps } from '../pack/types';
+import { emotionFps, emotionPlayback } from '../pack/types';
 import { chipOrderFor, GOAL_IDS, GOAL_PLAN, suggestedFor, type GoalId } from '../gallery/goalPlan';
 import { nudgeAllowed, nudgeDelayAt, TYPING_CUE_DELAY_MS, type Cue } from '../gallery/reactive';
 import { voiceForPack } from '../gallery/stage';
@@ -128,9 +129,13 @@ function previewEmotion(emotions: Record<string, CharacterEmotion>): [string, Ch
 interface Props {
   catalogue: BundledPackOption[];
   onOpenPack: (pack: LoadedPack) => void;
+  /** Public trial mode (G-UX 8A): the stage, meta question and reactive
+   *  personality all run; «Dale vida» opens the sign-up wall instead of
+   *  generating, and only the watermarked GIF download stays free. */
+  trial?: boolean;
 }
 
-export function CharacterGallery({ catalogue, onOpenPack }: Props) {
+export function CharacterGallery({ catalogue, onOpenPack, trial = false }: Props) {
   const { t } = useI18n();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [bases, setBases] = useState<Map<string, LoadedPack>>(new Map());
@@ -150,6 +155,8 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const [storedGoal, setStoredGoal] = useState<StoredGoal | null>(storedGoalBefore);
   const [metaGoal, setMetaGoal] = useState<MetaGoal | null>(null);
   const [metaOther, setMetaOther] = useState('');
+  const [wallOpen, setWallOpen] = useState(false);
+  const [gifBusy, setGifBusy] = useState(false);
 
   // G-UX 3 reactive personality — every external stage line/emotion goes
   // through `cue`: a monotonically increasing seq makes each event land
@@ -212,6 +219,9 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   }, [catalogue]); // eslint-disable-line react-hooks/exhaustive-deps -- starters derive from it
 
   useEffect(() => {
+    // The public trial surface never shows a visitor's saved results —
+    // it has no session and «guardar» is exactly what the wall asks for.
+    if (trial) return;
     let alive = true;
     void loadResults().then((stored) => {
       if (alive) setResults(stored);
@@ -219,7 +229,7 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [trial]);
 
   const effectiveBaseId = baseId || starters[0]?.id || '';
   const basePack = bases.get(effectiveBaseId) ?? null;
@@ -239,6 +249,13 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const generate = useCallback(async () => {
     const base = bases.get(effectiveBaseId);
     if (!base || (!prompt.trim() && !image)) return;
+    // G-UX 8A: on the public trial route «Generar» costs an account — the
+    // wall offers sign-up plus the watermarked GIF as the free takeaway.
+    if (trial) {
+      touch();
+      setWallOpen(true);
+      return;
+    }
     setBusy(true);
     touch();
     react(t(`characters.react.generate.${voice}`), 'thinking');
@@ -281,7 +298,35 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
       progressTimers.current = [];
       setBusy(false);
     }
-  }, [bases, effectiveBaseId, prompt, image, options, storedGoal, t, voice, react, touch]);
+  }, [bases, effectiveBaseId, prompt, image, options, storedGoal, t, voice, react, touch, trial]);
+
+  // G-UX 8A: the wall's free path — the current character rendered as a
+  // GIF with the discreet «hecho con gruia» mark, from the goal's
+  // recommended emotion (or «wave»/first available). Fully local.
+  const downloadBrandedGif = useCallback(async () => {
+    if (!basePack || gifBusy) return;
+    setGifBusy(true);
+    try {
+      const manifest = basePack.manifest;
+      const planned = storedGoal ? GOAL_PLAN[storedGoal.goal] : [];
+      const emotionKey =
+        planned.find((k) => manifest.emotions[k] !== undefined)
+        ?? (manifest.emotions.wave ? 'wave' : Object.keys(manifest.emotions)[0])
+        ?? '';
+      const emotion = manifest.emotions[emotionKey];
+      const engine = emotion ? getEngine(emotion.engine) : undefined;
+      if (!engine || !emotion) return;
+      const loaded = await loaderFor((src) => basePack.resolve(src))(emotionKey, emotion);
+      if (!loaded) return;
+      const out = buildBrandedGif(
+        engine, manifest, emotionKey, emotion, loaded, emotionPlayback(manifest, emotion),
+      );
+      downloadBlob(out.fileName, out.blob);
+      recordExport(manifest.id);
+    } finally {
+      setGifBusy(false);
+    }
+  }, [basePack, storedGoal, gifBusy]);
 
   const updateResult = useCallback((next: GenerationResult) => {
     setResults((prev) => prev.map((r) => (r.id === next.id ? next : r)));
@@ -803,6 +848,51 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
           {t('characters.gallery.resultsEmpty')}
         </p>
       )}
+
+      {/* G-UX 8A: the sign-up wall appears only after value — the visitor
+          has played with the character and pressed «Dale vida». It offers
+          the account or the watermarked GIF; nothing else is gated here. */}
+      {wallOpen ? (
+        <div
+          className={styles.trialWallBackdrop}
+          data-testid="characters-trial-wall"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('characters.trial.wall.title')}
+        >
+          <div className={styles.trialWall}>
+            <h2 className={styles.trialWallTitle}>{t('characters.trial.wall.title')}</h2>
+            <p className={styles.trialWallText}>{t('characters.trial.wall.text')}</p>
+            <div className={styles.nextStepActions}>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  window.location.href = '/';
+                }}
+                data-testid="characters-trial-save"
+              >
+                {t('characters.trial.wall.save')}
+              </Button>
+              <Button
+                variant="subtle"
+                onClick={() => void downloadBrandedGif()}
+                disabled={gifBusy}
+                data-testid="characters-trial-gif"
+              >
+                {t('characters.trial.wall.gif')}
+              </Button>
+            </div>
+            <button
+              type="button"
+              className={styles.trialWallLater}
+              onClick={() => setWallOpen(false)}
+              data-testid="characters-trial-later"
+            >
+              {t('characters.trial.wall.later')}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

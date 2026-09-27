@@ -1078,6 +1078,59 @@ textarea.generateInput {
   min-height: 44px;
 }
 
+/* G-UX 8A — public trial wall: shows only after value («Dale vida»). */
+.trialWallBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(24, 18, 12, 0.45);
+}
+
+.trialWall {
+  width: min(460px, 100%);
+  padding: 24px;
+  border-radius: 14px;
+  border: 1px solid var(--border, #e4d9cc);
+  background: var(--surface, #fffaf4);
+  box-shadow: 0 18px 48px rgba(24, 18, 12, 0.25);
+  text-align: center;
+}
+
+.trialWallTitle {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: var(--text-strong);
+}
+
+.trialWallText {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.trialWall .nextStepActions {
+  justify-content: center;
+}
+
+.trialWallLater {
+  margin-top: 12px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  color: #8a3a0c;
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.trialWallLater:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 600px) {
   .castLabel {
     flex-basis: 100%;
