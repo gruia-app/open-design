@@ -5701,4 +5701,9 @@ export interface Dict {
   'characters.cast.label': string;
   'characters.cast.new': string;
   'characters.gallery.advancedHint': string;
+  'characters.gallery.proposal': string;
+  'characters.gallery.cardMeta': string;
+  'characters.gallery.cardMetaNoGoal': string;
+  'characters.gallery.like': string;
+  'characters.gallery.more': string;
 }

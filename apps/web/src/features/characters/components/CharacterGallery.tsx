@@ -762,10 +762,11 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
         <>
           <h2 className={styles.gallerySection}>{t('characters.gallery.results')}</h2>
           <div className={styles.galleryCards} data-testid="characters-results">
-            {results.map((result) => (
+            {results.map((result, index) => (
               <ResultCard
                 key={result.id}
                 result={result}
+                index={index}
                 base={bases.get(result.basePackId) ?? null}
                 onOpen={() => {
                   react(t(`characters.react.editor.${voice}`), 'triumph');
@@ -926,6 +927,7 @@ function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, on
 
 interface ResultProps {
   result: GenerationResult;
+  index: number;
   base: LoadedPack | null;
   onOpen: () => void;
   onOpenExports: () => void;
@@ -933,7 +935,7 @@ interface ResultProps {
   onRemove: () => void;
 }
 
-function ResultCard({ result, base, onOpen, onOpenExports, onChange, onRemove }: ResultProps) {
+function ResultCard({ result, index, base, onOpen, onOpenExports, onChange, onRemove }: ResultProps) {
   const { t } = useI18n();
   const [note, setNote] = useState(result.note ?? '');
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -942,7 +944,18 @@ function ResultCard({ result, base, onOpen, onOpenExports, onChange, onRemove }:
     () => (base ? loaderFor((src) => base.resolve(src)) : null),
     [base],
   );
-  const [key, emotion] = previewEmotion(result.manifest.emotions);
+  // G-UX 7: the card loops the emotion most useful for the chosen goal —
+  // not just any frame. The goal stamped on the result decides the pick.
+  const goal = (result.meta?.goal ?? null) as GoalId | null;
+  const loopKey = goal
+    ? GOAL_PLAN[goal].find((k) => result.manifest.emotions[k] !== undefined)
+    : undefined;
+  const [key, emotion] =
+    loopKey !== undefined
+      ? ([loopKey, result.manifest.emotions[loopKey]!] as const)
+      : previewEmotion(result.manifest.emotions);
+  const emotionText = emotionLabel(t, key, emotion.label ?? key);
+  const emotionCount = Object.keys(result.manifest.emotions).length;
 
   // The export counter lives in localStorage; refresh when any export lands.
   useEffect(() => {
@@ -985,13 +998,20 @@ function ResultCard({ result, base, onOpen, onOpenExports, onChange, onRemove }:
         ) : null}
       </div>
       <div className={styles.resultBody}>
-        <span className={styles.cardLabel}>{result.manifest.name}</span>
+        <span className={styles.cardLabel}>
+          {t('characters.gallery.proposal', { n: index + 1, prompt: result.prompt })}
+        </span>
         <span className={styles.resultMeta}>
-          {t('characters.gallery.basedOn', { name: result.baseLabel })}
+          {goal
+            ? t('characters.gallery.cardMeta', {
+                goal: t(`characters.meta.option.${goal}` as Parameters<typeof t>[0]),
+                emotion: emotionText,
+                count: emotionCount,
+              })
+            : t('characters.gallery.cardMetaNoGoal', { emotion: emotionText, count: emotionCount })}
           {result.imageName ? ` · ${result.imageName}` : ''}
           {exports > 0 ? ` · ${t('characters.gallery.exportedBadge')}` : ''}
         </span>
-        <span className={styles.resultMeta}>{result.prompt}</span>
         <div className={styles.resultActions}>
           <Button
             variant="subtle"
@@ -1002,24 +1022,34 @@ function ResultCard({ result, base, onOpen, onOpenExports, onChange, onRemove }:
           </Button>
           <Button
             variant="subtle"
-            size="icon"
             onClick={() => onChange({ ...result, liked: !result.liked })}
-            aria-label={t('characters.editor.like')}
             aria-pressed={Boolean(result.liked)}
             data-testid={`characters-result-like-${result.id}`}
             className={result.liked ? styles.likeOn : ''}
           >
-            <Icon name="thumbs-up" size={14} />
+            <Icon name="thumbs-up" size={14} /> {t('characters.gallery.like')}
           </Button>
-          <Button
-            variant="subtle"
-            size="icon"
-            onClick={onRemove}
-            aria-label={t('characters.gallery.remove')}
-            data-testid={`characters-result-remove-${result.id}`}
-          >
-            <Icon name="trash" size={14} />
-          </Button>
+          <details className={styles.resultMenu}>
+            <summary
+              className={styles.resultMenuButton}
+              aria-label={t('characters.gallery.more')}
+              data-testid={`characters-result-more-${result.id}`}
+            >
+              <Icon name="more-horizontal" size={14} />
+            </summary>
+            <div className={styles.resultMenuList}>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.currentTarget.closest('details')?.removeAttribute('open');
+                  onRemove();
+                }}
+                data-testid={`characters-result-remove-${result.id}`}
+              >
+                <Icon name="trash" size={14} /> {t('characters.gallery.remove')}
+              </button>
+            </div>
+          </details>
         </div>
         {result.meta?.goal ? (
           <div className={styles.metaCtas} data-testid={`characters-meta-ctas-${result.id}`}>
