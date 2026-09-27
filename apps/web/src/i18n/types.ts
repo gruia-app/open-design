@@ -5652,6 +5652,7 @@ export interface Dict {
   'characters.goalask.changing.tinta': string;
   'characters.goalask.reask.gui': string;
   'characters.goalask.reask.tinta': string;
+  'characters.goalask.create': string;
   'characters.react.typing.gui': string;
   'characters.react.typing.tinta': string;
   'characters.react.generate.gui': string;
@@ -5671,4 +5672,29 @@ export interface Dict {
   'characters.react.nudge.tinta.1': string;
   'characters.react.nudge.tinta.2': string;
   'characters.react.nudge.tinta.3': string;
+  'characters.composer.label': string;
+  'characters.composer.attach': string;
+  'characters.composer.cta': string;
+  'characters.composer.try': string;
+  'characters.composer.hint.default': string;
+  'characters.composer.hint.goal': string;
+  'characters.composer.mobileCta': string;
+  'characters.composer.ex.default.1': string;
+  'characters.composer.ex.default.2': string;
+  'characters.composer.ex.default.3': string;
+  'characters.composer.ex.app.1': string;
+  'characters.composer.ex.app.2': string;
+  'characters.composer.ex.app.3': string;
+  'characters.composer.ex.video.1': string;
+  'characters.composer.ex.video.2': string;
+  'characters.composer.ex.video.3': string;
+  'characters.composer.ex.brand.1': string;
+  'characters.composer.ex.brand.2': string;
+  'characters.composer.ex.brand.3': string;
+  'characters.composer.ex.story.1': string;
+  'characters.composer.ex.story.2': string;
+  'characters.composer.ex.story.3': string;
+  'characters.composer.ex.other.1': string;
+  'characters.composer.ex.other.2': string;
+  'characters.composer.ex.other.3': string;
 }

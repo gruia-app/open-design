@@ -180,6 +180,9 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   tRef.current = t;
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const starters = catalogue.filter(
     (option) => option.available && STARTER_IDS.includes(option.id),
@@ -217,7 +220,9 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   const effectiveBaseId = baseId || starters[0]?.id || '';
   const basePack = bases.get(effectiveBaseId) ?? null;
   const baseEmotionKeys = basePack ? Object.keys(basePack.manifest.emotions) : [];
-  const canGenerate = Boolean(basePack && (prompt.trim() || image)) && !busy;
+  // G-UX 4: «Dale vida» wakes up with three characters — or an attached
+  // reference drawing.
+  const canGenerate = Boolean(basePack && (prompt.trim().length >= 3 || image)) && !busy;
   const voice = basePack ? voiceForPack(basePack.manifest.id) : 'gui';
   voiceRef.current = voice;
 
@@ -440,10 +445,68 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
   useEffect(
     () => () => {
       if (typingTimer.current) clearTimeout(typingTimer.current);
+      if (flashTimer.current) clearTimeout(flashTimer.current);
       progressTimers.current.forEach(clearTimeout);
     },
     [],
   );
+
+  // G-UX 4: the field grows with the draft (up to ~4 lines).
+  useEffect(() => {
+    const el = promptRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [prompt]);
+
+  // The fixed «Crear el mío» CTA only shows while the composer is off-viewport:
+  // scrolling to something already visible gains nothing (U7-delta1).
+  const [composerVisible, setComposerVisible] = useState(true);
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el || typeof IntersectionObserver !== 'function') {
+      setComposerVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => setComposerVisible(entries[0]?.isIntersecting ?? true),
+      { threshold: 0.05 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Mobile CTA / «+ Crear el tuyo»: jump to the composer and focus it.
+  const scrollToComposer = useCallback(() => {
+    const reduced =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    composerRef.current?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    setTimeout(() => promptRef.current?.focus({ preventScroll: true }), reduced ? 0 : 350);
+  }, []);
+
+  // Goal plan CTA: same jump plus a brief composer highlight. The highlight is
+  // a static ring under prefers-reduced-motion and a pulse otherwise (CSS).
+  const [composerFlashing, setComposerFlashing] = useState(false);
+  const flashComposer = useCallback(() => {
+    scrollToComposer();
+    setComposerFlashing(true);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => {
+      setComposerFlashing(false);
+      flashTimer.current = null;
+    }, 1600);
+  }, [scrollToComposer]);
+
+  const fillExample = useCallback(
+    (value: string) => {
+      onPromptChange(value);
+      promptRef.current?.focus();
+    },
+    [onPromptChange],
+  );
+
+  const examplePrefix = storedGoal ? `characters.composer.ex.${storedGoal.goal}` : 'characters.composer.ex.default';
 
   return (
     <div className={styles.gallery} data-testid="characters-gallery">
@@ -472,70 +535,116 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
               onConfirm={() => answerMeta('other', metaOther)}
               onSkip={deferMeta}
               onChange={changeGoal}
+              onCreate={flashComposer}
             />
           ) : null}
         </div>
       ) : null}
-      <div className={styles.generateRow}>
-        <input
-          className={styles.generateInput}
-          type="text"
-          value={prompt}
-          onChange={(event) => onPromptChange(event.target.value)}
-          onFocus={() => {
-            focusedRef.current = true;
-          }}
-          onBlur={() => {
-            focusedRef.current = false;
-            touch();
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && canGenerate) void generate();
-          }}
-          placeholder={
-            storedGoal
-              ? t(`characters.goalask.placeholder.${storedGoal.goal}` as Parameters<typeof t>[0])
-              : t('characters.gallery.promptPlaceholder')
-          }
-          data-testid="characters-generate-input"
-        />
-        <div className={styles.generateActions}>
-          <Button
-            variant="subtle"
-            onClick={() => imageInputRef.current?.click()}
-            aria-label={t('characters.gallery.attachImage')}
-            data-testid="characters-generate-attach"
-          >
-            <Icon name="image" size={14} />
-          </Button>
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              setImage(event.target.files?.[0] ?? null);
-              event.target.value = '';
+      {/* G-UX 4: the composer — label, two-line field that grows, «Imagen»
+          attach with text, «Dale vida» CTA, examples and the help line. */}
+      <div
+        className={`${styles.composer} ${composerFlashing ? styles.composerFlash : ''}`}
+        ref={composerRef}
+        data-testid="characters-composer"
+      >
+        <label className={styles.composerLabel} htmlFor="characters-generate-input">
+          {t('characters.composer.label')}
+        </label>
+        <div className={styles.generateRow}>
+          <textarea
+            ref={promptRef}
+            id="characters-generate-input"
+            className={styles.generateInput}
+            rows={2}
+            value={prompt}
+            onChange={(event) => onPromptChange(event.target.value)}
+            onFocus={() => {
+              focusedRef.current = true;
             }}
+            onBlur={() => {
+              focusedRef.current = false;
+              touch();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                if (canGenerate) void generate();
+              }
+            }}
+            placeholder={
+              storedGoal
+                ? t(`characters.goalask.placeholder.${storedGoal.goal}` as Parameters<typeof t>[0])
+                : t('characters.gallery.promptPlaceholder')
+            }
+            data-testid="characters-generate-input"
           />
-          {image ? (
-            <span className={styles.imageChip} data-testid="characters-generate-image">
-              {image.name}
-              <button type="button" onClick={() => setImage(null)} aria-label={t('characters.gallery.removeImage')}>
-                ×
-              </button>
-            </span>
-          ) : null}
-          <Button
-            variant="primary"
-            onClick={() => void generate()}
-            disabled={!canGenerate}
-            data-testid="characters-generate"
-          >
-            <Icon name="sparkles" size={14} /> {t('characters.gallery.generate')}
-          </Button>
+          <div className={styles.generateActions}>
+            <Button
+              variant="subtle"
+              onClick={() => imageInputRef.current?.click()}
+              aria-label={t('characters.gallery.attachImage')}
+              data-testid="characters-generate-attach"
+            >
+              <Icon name="image" size={14} /> {t('characters.composer.attach')}
+            </Button>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                setImage(event.target.files?.[0] ?? null);
+                event.target.value = '';
+              }}
+            />
+            {image ? (
+              <span className={styles.imageChip} data-testid="characters-generate-image">
+                {image.name}
+                <button type="button" onClick={() => setImage(null)} aria-label={t('characters.gallery.removeImage')}>
+                  ×
+                </button>
+              </span>
+            ) : null}
+            <Button
+              variant="primary"
+              onClick={() => void generate()}
+              disabled={!canGenerate}
+              data-testid="characters-generate"
+            >
+              <Icon name="sparkles" size={14} /> {t('characters.composer.cta')}
+            </Button>
+          </div>
         </div>
+        <div className={styles.composerTry} data-testid="characters-try">
+          <span>{t('characters.composer.try')}</span>
+          {[1, 2, 3].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={styles.composerExample}
+              onClick={() =>
+                fillExample(t(`${examplePrefix}.${n}` as Parameters<typeof t>[0]))
+              }
+              data-testid={`characters-try-${n}`}
+            >
+              {t(`${examplePrefix}.${n}` as Parameters<typeof t>[0])}
+            </button>
+          ))}
+        </div>
+        <p className={styles.composerHint} data-testid="characters-composer-hint">
+          {storedGoal ? t('characters.composer.hint.goal') : t('characters.composer.hint.default')}
+        </p>
       </div>
+      {!composerVisible ? (
+        <button
+          type="button"
+          className={styles.mobileCta}
+          onClick={scrollToComposer}
+          data-testid="characters-mobile-cta"
+        >
+          {t('characters.composer.mobileCta')}
+        </button>
+      ) : null}
 
       <h2 className={styles.gallerySection}>{t('characters.gallery.starters')}</h2>
       <div className={styles.galleryCards}>
@@ -730,9 +839,10 @@ interface GoalCardProps {
   onConfirm: () => void;
   onSkip: () => void;
   onChange: () => void;
+  onCreate: () => void;
 }
 
-function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, onConfirm, onSkip, onChange }: GoalCardProps) {
+function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, onConfirm, onSkip, onChange, onCreate }: GoalCardProps) {
   const { t } = useI18n();
   if (phase === 'plan' && stored) {
     return (
@@ -763,6 +873,9 @@ function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, on
         <span className={styles.goalFormat} data-testid="characters-goal-format">
           {t(`characters.goalask.format.${stored.goal}` as Parameters<typeof t>[0])}
         </span>
+        <Button variant="primary" onClick={onCreate} data-testid="characters-goal-create">
+          {t('characters.goalask.create')}
+        </Button>
       </div>
     );
   }
