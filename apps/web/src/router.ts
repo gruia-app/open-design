@@ -57,6 +57,12 @@ export type Route =
        * grid with a notice.
        */
       emotionId?: string;
+      /**
+       * Public trial surface (`/characters/try`): Gui and Tinta stay fully
+       * interactive with no session; «Generar», saving and unbranded export
+       * hit the sign-up wall instead.
+       */
+      trial?: boolean;
     }
   | { kind: 'design-system-create' }
   | { kind: 'design-system-detail'; designSystemId: string }
@@ -149,6 +155,9 @@ export function parseRoute(pathname: string): Route {
     return { kind: 'home', view: 'settings' };
   }
   if (parts[0] === 'characters' || parts[0] === 'personajes') {
+    if (parts[1] === 'try' && !parts[2]) {
+      return { kind: 'home', view: 'characters', trial: true };
+    }
     return {
       kind: 'home',
       view: 'characters',
@@ -212,6 +221,7 @@ export function buildPath(route: Route): string {
     if (route.view === 'workspace-settings') return '/workspace-settings';
     if (route.view === 'settings') return '/settings';
     if (route.view === 'characters') {
+      if (route.trial) return '/characters/try';
       return route.emotionId ? `/characters/${encodeURIComponent(route.emotionId)}` : '/characters';
     }
     return '/';

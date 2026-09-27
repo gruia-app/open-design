@@ -5548,4 +5548,9 @@ export const de: Dict = {
   'characters.nextstep.action.png': "Download profile PNG",
   'characters.nextstep.action.frames': "Download PNG frames",
   'characters.nextstep.copied': "Copied",
+  'characters.trial.wall.title': "Your character already moves. Shall we save it?",
+  'characters.trial.wall.text': "Create your free account to edit it frame by frame and export it without the mark.",
+  'characters.trial.wall.save': "Save my character",
+  'characters.trial.wall.gif': "Download branded GIF",
+  'characters.trial.wall.later': "Keep trying",
 };

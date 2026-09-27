@@ -11,8 +11,8 @@ import { CharactersView } from './CharactersView';
 
 export function CharactersStandalone() {
   const route = useRoute();
-  const emotionId =
-    route.kind === 'home' && route.view === 'characters' ? route.emotionId : undefined;
+  const characters = route.kind === 'home' && route.view === 'characters' ? route : null;
+  const emotionId = characters?.emotionId;
   // The static export's <title> still reads "OpenDesign" — this surface is a
   // standalone review page, so the tab should not carry the product brand.
   // React owns the <title> element via the root layout's metadata and can
@@ -28,5 +28,5 @@ export function CharactersStandalone() {
     observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
     return () => observer.disconnect();
   }, []);
-  return <CharactersView emotionId={emotionId} />;
+  return <CharactersView emotionId={emotionId} trial={characters?.trial === true} />;
 }

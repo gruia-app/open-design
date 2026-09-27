@@ -5717,4 +5717,9 @@ export interface Dict {
   'characters.nextstep.action.png': string;
   'characters.nextstep.action.frames': string;
   'characters.nextstep.copied': string;
+  'characters.trial.wall.title': string;
+  'characters.trial.wall.text': string;
+  'characters.trial.wall.save': string;
+  'characters.trial.wall.gif': string;
+  'characters.trial.wall.later': string;
 }

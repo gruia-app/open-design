@@ -1996,7 +1996,10 @@ export function EntryShell({
               />
             </div>
             {view === 'characters' ? (
-              <CharactersView emotionId={route.kind === 'home' ? route.emotionId : undefined} />
+              <CharactersView
+                emotionId={route.kind === 'home' ? route.emotionId : undefined}
+                trial={route.kind === 'home' && route.view === 'characters' && route.trial === true}
+              />
             ) : null}
             {view === 'integrations' ? (
               <IntegrationsView

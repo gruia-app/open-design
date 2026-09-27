@@ -31,6 +31,9 @@ import styles from './characters.module.css';
 interface Props {
   /** Emotion id from `/characters/<emotion>`; undefined renders the grid. */
   emotionId?: string;
+  /** Public trial mode (`/characters/try`): the stage stays interactive and
+   *  «Generar»/save/unbranded export lead to the sign-up wall (G-UX 8A). */
+  trial?: boolean;
 }
 
 type LoadState =
@@ -58,7 +61,7 @@ export function CharactersView(props: Props) {
   );
 }
 
-function CharactersViewInner({ emotionId }: Props) {
+function CharactersViewInner({ emotionId, trial }: Props) {
   const { t } = useI18n();
   const folderInputRef = useRef<HTMLInputElement>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
@@ -256,7 +259,9 @@ function CharactersViewInner({ emotionId }: Props) {
         </div>
       ) : null}
 
-      {!emotionId ? <CharacterGallery catalogue={catalogue} onOpenPack={adoptPack} /> : null}
+      {!emotionId ? (
+        <CharacterGallery catalogue={catalogue} onOpenPack={adoptPack} trial={trial === true} />
+      ) : null}
 
       {pack && emotion && edits && baseline ? (
         <EmotionPlayer
