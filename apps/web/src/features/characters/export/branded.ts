@@ -54,7 +54,7 @@ export function buildBrandedGif(
   const stamped = stampFrames(frames, pack.canvas.w, pack.canvas.h);
   return {
     fileName: `${pack.id}-${emotionKey}-gruia.gif`,
-    blob: new Blob([encodeGif(stamped, pack.canvas.w, pack.canvas.h) as BlobPart], {
+    blob: new Blob([encodeGif(stamped, pack.canvas.w, pack.canvas.h, playback === 'once' ? -1 : 0) as BlobPart], {
       type: 'image/gif',
     }),
   };
