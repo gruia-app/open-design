@@ -41,8 +41,16 @@ test('renders the read-only player on a daemon-less static host', async ({ page 
   await expect(page.getByTestId('characters-gallery')).toBeVisible();
   await expect(page.getByText('Sign in to OpenDesign')).toHaveCount(0);
 
-  // Open a pack for review through the header picker.
-  await page.getByTestId('characters-pack-select').selectOption('gruia-grulla');
+  // G-UX 5: one «Traer mis archivos» menu owns both import actions.
+  const importMenu = page.getByTestId('characters-import-menu');
+  await expect(importMenu).toBeVisible();
+  await expect(page.getByTestId('characters-import-folder')).toBeHidden();
+  await importMenu.click();
+  await expect(page.getByTestId('characters-import-folder')).toBeVisible();
+  await expect(page.getByTestId('characters-import-zip')).toBeVisible();
+
+  // Open a pack for review through the cast row (G-UX 6).
+  await page.getByTestId('characters-cast-gruia-grulla').click();
   await expect(page.getByTestId('characters-grid')).toBeVisible();
 
   for (const key of ['idle', 'smile', 'joy', 'surprise', 'sad', 'annoyed', 'thinking', 'wave', 'nudge', 'triumph']) {
@@ -100,7 +108,7 @@ test('deep link /characters/nudge plays the synced nudge frames', async ({ page 
 test('triumph ships in the grid with its Spanish label and plays once', async ({ page }) => {
   await page.goto(`${baseUrl}/characters`);
   await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
-  await page.getByTestId('characters-pack-select').selectOption('gruia-grulla');
+  await page.getByTestId('characters-cast-gruia-grulla').click();
   const card = page.getByTestId('characters-emotion-triumph');
   await expect(card).toBeVisible();
   await expect(card).toContainText('Triunfo');
