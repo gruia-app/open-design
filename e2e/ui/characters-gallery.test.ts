@@ -95,6 +95,14 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(card).toBeVisible();
   const cardId = (await card.getAttribute('data-testid'))!.replace('characters-result-', '');
 
+  // G-UX 9: with the «app» goal saved, the first result surfaces the
+  // next-step card — «Tu mascota ya saluda» + copy/pack actions.
+  const nextStep = page.getByTestId('characters-nextstep');
+  await expect(nextStep).toBeVisible();
+  await expect(page.getByTestId('characters-nextstep-text')).toContainText('mascota ya saluda');
+  await expect(page.getByTestId('characters-nextstep-copy')).toContainText('Copiar código');
+  await expect(page.getByTestId('characters-nextstep-pack')).toContainText('WebP + JSON');
+
   // G-UX 7: the card reads «Propuesta 1 · {prompt}» with the goal meta
   // («Para … · … en bucle · N emociones listas»), a «Dale vida» opener,
   // a «Me gusta» button and the trash tucked into a «…» menu.
@@ -148,6 +156,22 @@ test('gallery lands first, generates a result, and the editor opens from it', as
   await expect(
     page.getByTestId('characters-results').locator('[data-testid^="characters-result-like-"]').first(),
   ).toHaveAttribute('aria-pressed', 'true');
+});
+
+// G-UX 9: «other» keeps no next-step card after the first «Dale vida».
+test('omits the next step for the «other» goal', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('od-personajes.meta-asked.v1', '1');
+    window.localStorage.setItem('od-personajes.meta-goal.v1', JSON.stringify({ goal: 'other' }));
+  });
+  await page.goto(`${baseUrl}/characters`);
+  await expect(page.getByTestId('characters-view')).toBeVisible({ timeout: T.long });
+  await page.getByTestId('characters-cast-gruia-grulla').click();
+  const prompt = page.getByTestId('characters-generate-input');
+  await prompt.fill('una tinta tranquila');
+  await page.getByTestId('characters-generate').click();
+  await expect(page.getByTestId('characters-results')).toBeVisible({ timeout: T.long });
+  await expect(page.getByTestId('characters-nextstep')).toHaveCount(0);
 });
 
 test('living stage greets, reacts to chips and pokes, and speaks in the base voice', async ({ page }) => {

@@ -33,7 +33,11 @@ import {
   type GenerationOptions,
   type GenerationResult,
 } from '../gallery/types';
-import { EXPORTS_EVENT, exportCount } from '../gallery/metrics';
+import { EXPORTS_EVENT, exportCount, recordExport } from '../gallery/metrics';
+import { buildAnimationExport, collectPlaybackFrames } from '../export/animated';
+import { buildSpriteSheet, downloadBlob, downloadJson } from '../export/spritesheet';
+import { buildTimeline, frameDurationMs } from '../playback/timeline';
+import { emotionFps } from '../pack/types';
 import { chipOrderFor, GOAL_IDS, GOAL_PLAN, suggestedFor, type GoalId } from '../gallery/goalPlan';
 import { nudgeAllowed, nudgeDelayAt, TYPING_CUE_DELAY_MS, type Cue } from '../gallery/reactive';
 import { voiceForPack } from '../gallery/stage';
@@ -758,6 +762,16 @@ export function CharacterGallery({ catalogue, onOpenPack }: Props) {
         </div>
       </details>
 
+      {/* G-UX 9: after the first «Dale vida», the next step towards the
+          saved goal — its own card, driven by meta-goal.v1. */}
+      {results.length > 0 && storedGoal && NEXT_STEP_GOALS.includes(storedGoal.goal) ? (
+        <NextStepCard
+          goal={storedGoal.goal}
+          result={results[0]!}
+          base={bases.get(results[0]!.basePackId) ?? null}
+        />
+      ) : null}
+
       {results.length > 0 ? (
         <>
           <h2 className={styles.gallerySection}>{t('characters.gallery.results')}</h2>
@@ -921,6 +935,127 @@ function GoalCard({ phase, stored, selected, voice, other, onSelect, onOther, on
           </Button>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Goals that have a defined next step (G-UX 9). «other» gets none. */
+const NEXT_STEP_GOALS: readonly GoalId[] = ['app', 'video', 'brand', 'story'];
+
+interface NextStepProps {
+  goal: GoalId;
+  result: GenerationResult;
+  base: LoadedPack | null;
+}
+
+function NextStepCard({ goal, result, base }: NextStepProps) {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const manifest = result.manifest;
+  const loopKey = GOAL_PLAN[goal].find((k) => manifest.emotions[k] !== undefined);
+  const emotionKey = loopKey ?? Object.keys(manifest.emotions)[0] ?? '';
+  const emotion = manifest.emotions[emotionKey];
+
+  const run = useCallback(
+    async (kind: 'webp' | 'sheet' | 'png') => {
+      if (!base || !emotion || busy) return;
+      setBusy(kind);
+      try {
+        const engine = getEngine(emotion.engine);
+        if (!engine) return;
+        const loaded = await loaderFor((src) => base.resolve(src))(emotionKey, emotion);
+        if (!loaded) return;
+        const fps = emotionFps(manifest, emotion);
+        if (kind === 'png') {
+          const image = engine.frameImage?.(loaded, 0);
+          if (!image) return;
+          const canvas = document.createElement('canvas');
+          canvas.width = manifest.canvas.w;
+          canvas.height = manifest.canvas.h;
+          canvas.getContext('2d')?.drawImage(image, 0, 0);
+          const blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob(resolve, 'image/png'),
+          );
+          if (blob) downloadBlob(`${manifest.id}-${emotionKey}.png`, blob);
+        } else if (kind === 'webp') {
+          const durations = emotion.frames.map((frame) => frameDurationMs(frame, fps));
+          const frames = collectPlaybackFrames(
+            engine, loaded, durations, manifest.canvas.w, manifest.canvas.h, 'loop',
+          );
+          const out = await buildAnimationExport('webp', manifest, emotionKey, frames);
+          downloadBlob(out.fileName, out.blob);
+          downloadJson(`${manifest.id}.json`, JSON.stringify(manifest, null, 2));
+        } else {
+          const frames = emotion.frames.map((frame, index) => ({
+            image: engine.frameImage?.(loaded, index),
+            durationMs: frameDurationMs(frame, fps),
+          }));
+          if (frames.some((frame) => !frame.image)) return;
+          const sheet = await buildSpriteSheet({
+            pack: manifest,
+            emotionKey,
+            playback: 'loop',
+            frames: frames as Array<{ image: CanvasImageSource; durationMs: number }>,
+          });
+          downloadBlob(sheet.pngFileName, sheet.pngBlob);
+          downloadJson(sheet.jsonFileName, sheet.json);
+        }
+        recordExport(manifest.id);
+      } finally {
+        setBusy(null);
+      }
+    },
+    [base, busy, emotion, emotionKey, manifest],
+  );
+
+  const copyEmbed = useCallback(() => {
+    const snippet = `<img src="${manifest.id}-${emotionKey}.webp" alt="${manifest.name.replace(/"/g, '')}" width="${manifest.canvas.w}" height="${manifest.canvas.h}" />`;
+    void navigator.clipboard?.writeText(snippet).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [emotionKey, manifest]);
+
+  if (!emotion) return null;
+  return (
+    <div className={styles.nextStep} data-testid="characters-nextstep">
+      <span className={styles.nextStepTitle}>{t('characters.nextstep.title')}</span>
+      <p className={styles.nextStepText} data-testid="characters-nextstep-text">
+        {t(`characters.nextstep.text.${goal}` as Parameters<typeof t>[0])}
+      </p>
+      <div className={styles.nextStepActions}>
+        {goal === 'app' ? (
+          <>
+            <Button variant="subtle" onClick={copyEmbed} data-testid="characters-nextstep-copy">
+              {copied ? t('characters.nextstep.copied') : t('characters.nextstep.action.copy')}
+            </Button>
+            <Button variant="subtle" onClick={() => void run('webp')} disabled={busy !== null} data-testid="characters-nextstep-pack">
+              {t('characters.nextstep.action.pack')}
+            </Button>
+          </>
+        ) : null}
+        {goal === 'video' ? (
+          <>
+            <Button variant="subtle" onClick={() => void run('sheet')} disabled={busy !== null} data-testid="characters-nextstep-sheet">
+              {t('characters.nextstep.action.sheet')}
+            </Button>
+            <span className={styles.metaChip} title={t('characters.meta.ctaTodo')}>
+              {t('characters.meta.cta.video')}
+            </span>
+          </>
+        ) : null}
+        {goal === 'brand' ? (
+          <Button variant="subtle" onClick={() => void run('png')} disabled={busy !== null} data-testid="characters-nextstep-png">
+            {t('characters.nextstep.action.png')}
+          </Button>
+        ) : null}
+        {goal === 'story' ? (
+          <Button variant="subtle" onClick={() => void run('sheet')} disabled={busy !== null} data-testid="characters-nextstep-frames">
+            {t('characters.nextstep.action.frames')}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

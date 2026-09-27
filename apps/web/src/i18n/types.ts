@@ -5706,4 +5706,15 @@ export interface Dict {
   'characters.gallery.cardMetaNoGoal': string;
   'characters.gallery.like': string;
   'characters.gallery.more': string;
+  'characters.nextstep.title': string;
+  'characters.nextstep.text.app': string;
+  'characters.nextstep.text.video': string;
+  'characters.nextstep.text.brand': string;
+  'characters.nextstep.text.story': string;
+  'characters.nextstep.action.copy': string;
+  'characters.nextstep.action.pack': string;
+  'characters.nextstep.action.sheet': string;
+  'characters.nextstep.action.png': string;
+  'characters.nextstep.action.frames': string;
+  'characters.nextstep.copied': string;
 }
