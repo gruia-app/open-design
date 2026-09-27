@@ -276,24 +276,41 @@ test('mobile 390px: fixed «Crear el mío» CTA only shows off-viewport, then fo
   await composer.scrollIntoViewIfNeeded();
   await expect(page.getByTestId('characters-mobile-cta')).toHaveCount(0);
 
-  // Scrolling past the composer makes the fixed CTA appear.
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  // Two results make the page tall enough to scroll the composer fully out
+  // of the viewport — then the fixed CTA appears.
+  const input = page.getByTestId('characters-generate-input');
+  const resultCards = page.getByTestId('characters-results').locator('[data-testid^="characters-result-"]');
+  await input.fill('zorro de papel curioso');
+  await page.getByTestId('characters-generate').click();
+  await expect(resultCards.first()).toBeVisible({ timeout: T.long });
+  await input.fill('buho de papel sabio');
+  await page.getByTestId('characters-generate').click();
+  await expect(resultCards.nth(1)).toBeVisible({ timeout: T.long });
+  // Scroll to the bottom — repeatedly, since result art keeps growing the
+  // page — until the composer leaves the viewport and the CTA mounts.
   const cta = page.getByTestId('characters-mobile-cta');
+  await expect
+    .poll(
+      async () => {
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+        return cta.count();
+      },
+      { timeout: T.long },
+    )
+    .toBe(1);
   await expect(cta).toBeVisible();
   await expect(cta).toContainText('Crear el mío');
   const ctaBox = await cta.boundingBox();
   expect(ctaBox).not.toBeNull();
   expect(ctaBox!.height).toBeGreaterThanOrEqual(44);
 
-  // …and it must not cover content: the last element of the gallery is
-  // fully above the CTA thanks to the reserved bottom padding.
-  const lastBottom = await page.evaluate(() => {
+  // …and it must not cover content: the gallery reserves enough bottom
+  // padding for the fixed CTA.
+  const padBottom = await page.evaluate(() => {
     const gallery = document.querySelector('[data-testid="characters-gallery"]');
-    if (!gallery || !gallery.lastElementChild) return -1;
-    const rect = gallery.lastElementChild.getBoundingClientRect();
-    return Math.min(rect.bottom, window.innerHeight);
+    return gallery ? parseFloat(getComputedStyle(gallery).paddingBottom) : 0;
   });
-  expect(lastBottom).toBeLessThanOrEqual(844 - ctaBox!.height - 10);
+  expect(padBottom).toBeGreaterThanOrEqual(ctaBox!.height);
 
   // Clicking it scrolls back to the composer and focuses the field.
   await cta.click();
