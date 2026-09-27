@@ -67,23 +67,10 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// jsdom has no matchMedia. Source should guard `typeof window.matchMedia ===
-// 'function'`, but a missing function should degrade to "query does not
-// match" rather than a TypeError, so provide the minimal MediaQueryList here.
-// Tests that need real matching still install their own (vi.stubGlobal or a
-// direct assignment) and override this default.
-if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
-  window.matchMedia = ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
-}
+// jsdom has no matchMedia, and none is provided here on purpose: a global
+// polyfill would make the API callable in every test and hide unguarded
+// callers, so each suite that needs it installs its own (vi.stubGlobal +
+// vi.unstubAllGlobals) and components must degrade when it is absent.
 
 // jsdom has no 2D canvas backend, so every `getContext('2d')` call emits a
 // "Not implemented" jsdomError on the virtual console. Components that draw

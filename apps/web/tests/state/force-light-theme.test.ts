@@ -96,6 +96,7 @@ describe('forced light theme — persisted config', () => {
 describe('forced light theme — document', () => {
   afterEach(() => {
     document.documentElement.removeAttribute('data-theme');
+    vi.unstubAllGlobals();
   });
 
   it('stamps data-theme=light on the root element', () => {
