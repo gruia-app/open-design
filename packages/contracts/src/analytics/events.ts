@@ -10,6 +10,7 @@
 // This file is a barrel. The typed catalog is split by concern under `./events/`.
 
 export * from './events/event-names.js';
+export * from './events/characters.js';
 export * from './events/shared-enums.js';
 export * from './events/onboarding.js';
 export * from './events/amr-auth.js';

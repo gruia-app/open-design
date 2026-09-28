@@ -107,7 +107,10 @@ export type AnalyticsEventName =
   | 'design_system_enrich_result'
   // Manual save / PNG export from the Excalidraw sketch editor.
   | 'sketch_save_result'
-  | 'sketch_export_result';
+  | 'sketch_export_result'
+  // Character-pack animated/pack export (Personajes). Daemon-authoritative:
+  // account_id and occurred_at are stamped server-side.
+  | 'character_export_result';
 
 // ---- Pages ---------------------------------------------------------------
 

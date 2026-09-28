@@ -4,6 +4,8 @@ import express, { type Express } from 'express';
 import { SIDECAR_DEFAULTS } from '@open-design/sidecar-proto';
 import { randomUUID } from 'node:crypto';
 import {
+  isCharacterExportFormat,
+  type CharacterExportRequest,
   type McpAnalyticsEventRequest,
   type McpAnalyticsContextResponse,
   type ObservabilityEventRequest,
@@ -13,7 +15,8 @@ import {
   readAnalyticsContext,
   readPublicConfigResponse,
 } from '../analytics.js';
-import type { AnalyticsContext } from '../analytics.js';
+import type { AnalyticsContext, AnalyticsService } from '../analytics.js';
+import { readVelaLoginStatus, type VelaLoginStatus } from '../integrations/vela.js';
 import type { readAppConfig, writeAppConfig } from '../app-config.js';
 import { readCurrentAppVersionInfo, UNKNOWN_APP_VERSION } from '../app-version.js';
 import { reportRunFeedbackFromDaemon } from '../langfuse-bridge.js';
@@ -42,6 +45,13 @@ export interface RegisterTelemetryRoutesDeps {
   namespace?: string;
   readAppConfig: typeof readAppConfig;
   writeAppConfig: typeof writeAppConfig;
+  /** Resolves the daemon's authenticated AMR session for account-stamped
+   *  events. Defaults to the file-backed Vela login status; injected in
+   *  tests. */
+  readLoginStatus?: () => VelaLoginStatus;
+  /** Injected capture pipeline for tests; defaults to the PostHog service
+   *  built from `dataDir` (consent re-checked per capture). */
+  analyticsService?: AnalyticsService;
 }
 
 export function resolveInstallerObservationNamespace(namespace: string | undefined): string {
@@ -112,7 +122,8 @@ export async function resolveTrustedMcpEventContext(
 
 export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRoutesDeps): DaemonTelemetry {
   const { dataDir } = deps;
-  const analyticsService = createAnalyticsService({ dataDir });
+  const analyticsService = deps.analyticsService ?? createAnalyticsService({ dataDir });
+  const readLoginStatus = deps.readLoginStatus ?? readVelaLoginStatus;
   let cachedAppVersion: any = null;
 
   // PostHog runtime config.
@@ -232,6 +243,37 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
     res.json({ ok: true });
   });
 
+  // Personajes export KPI (r-loop): the web reports each finished export
+  // download; the daemon stamps `account_id` from its own authenticated AMR
+  // session and `occurred_at` from the server clock — browser-supplied
+  // identities or timestamps are never trusted. Missing analytics headers
+  // mean the user did not consent (or a non-web caller): answer 200 and skip
+  // the capture instead of failing the download report.
+  app.post('/api/analytics/character-export', express.json({ limit: '4kb' }), async (req, res) => {
+    const body = (req.body ?? {}) as Partial<CharacterExportRequest>;
+    if (!isCharacterExportFormat(body.format)) {
+      sendApiError(res, 400, 'BAD_REQUEST', 'invalid character export format');
+      return;
+    }
+    const context = readAnalyticsContext(req);
+    if (!context) {
+      res.json({ ok: true, captured: false });
+      return;
+    }
+    const result = await analyticsService.capture({
+      eventName: 'character_export_result',
+      context,
+      appVersion: cachedAppVersion?.version ?? UNKNOWN_APP_VERSION,
+      properties: {
+        format: body.format,
+        account_id: characterExportAccountId(readLoginStatus()),
+        occurred_at: new Date().toISOString(),
+      },
+      insertId: randomUUID(),
+    });
+    res.json({ ok: true, captured: result.status === 'queued' });
+  });
+
   app.post('/api/observability/event', express.json({ limit: '64kb' }), (req, res) => {
     const body = (req.body ?? {}) as Partial<ObservabilityEventRequest>;
     const eventName = typeof body.event === 'string' ? body.event.trim() : '';
@@ -309,6 +351,15 @@ export function registerTelemetryRoutes(app: Express, deps: RegisterTelemetryRou
         ...req,
       }),
   };
+}
+
+/** Account id for `character_export_result`: the daemon's own authenticated
+ *  AMR session (file-backed Vela sign-in). Env-key auth carries no profile,
+ *  so it yields '' — the KPI counts accounts, not devices, so it must never
+ *  fall back to the installation/device id. */
+export function characterExportAccountId(status: VelaLoginStatus | null): string {
+  if (status?.loggedIn !== true) return '';
+  return status.user?.id?.trim() ?? '';
 }
 
 const MCP_ANALYTICS_PROPERTY_KEYS = new Set([

@@ -5,6 +5,7 @@ import type { UpdateLifecycleObservedProps } from '../update-lifecycle.js';
  */
 import type { AnalyticsEventName } from './event-names.js';
 import type { AmrAuthStageProps } from './amr-auth.js';
+import type { CharacterExportResultProps } from './characters.js';
 import type { DesignSystemApplyResultProps, DesignSystemCreateResultProps, DesignSystemEnrichResultProps, DesignSystemReviewResultProps, DesignSystemSourceIngestResultProps, DesignSystemStatusResultProps } from './design-systems.js';
 import type { OnboardingCompletedProps, OnboardingCompleteResultProps, OnboardingFirstGenerationCompletedProps, OnboardingFirstPromptSentProps, OnboardingPromptPrefilledProps, OnboardingRuntimeScanResultProps } from './onboarding.js';
 import type { PageViewProps } from './page-view.js';
@@ -50,6 +51,7 @@ export type AnalyticsEventPayload =
   | { event: 'artifact_publish_result'; props: ArtifactPublishResultProps }
   | { event: 'sketch_save_result'; props: SketchSaveResultProps }
   | { event: 'sketch_export_result'; props: SketchExportResultProps }
+  | { event: 'character_export_result'; props: CharacterExportResultProps }
   | { event: 'file_version_restore_result'; props: FileVersionRestoreResultProps }
   | { event: 'workspace_switch_result'; props: WorkspaceSwitchResultProps }
   | { event: 'workspace_invite_result'; props: WorkspaceInviteResultProps }
