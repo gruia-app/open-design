@@ -36,18 +36,16 @@ beforeEach(() => {
   mocks.clickFn.mockClear();
   mocks.seen.value = false;
   // motion/react's useReducedMotion reads matchMedia; jsdom omits it.
-  if (!window.matchMedia) {
-    window.matchMedia = ((query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    })) as unknown as typeof window.matchMedia;
-  }
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }));
   vi.useFakeTimers();
 });
 
@@ -56,6 +54,7 @@ afterEach(() => {
     vi.runOnlyPendingTimers();
   });
   vi.useRealTimers();
+  vi.unstubAllGlobals();
   cleanup();
 });
 

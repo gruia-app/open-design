@@ -67,6 +67,11 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// jsdom has no matchMedia, and none is provided here on purpose: a global
+// polyfill would make the API callable in every test and hide unguarded
+// callers, so each suite that needs it installs its own (vi.stubGlobal +
+// vi.unstubAllGlobals) and components must degrade when it is absent.
+
 // jsdom has no 2D canvas backend, so every `getContext('2d')` call emits a
 // "Not implemented" jsdomError on the virtual console. Components that draw
 // (SpaceBackground, the kinetic grid, thumbnail rasterization) already treat a
