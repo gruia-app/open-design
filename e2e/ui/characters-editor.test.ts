@@ -184,6 +184,25 @@ test('APNG and animated WebP exports produce valid containers', async ({ page })
   expect(webp.includes(Buffer.from('ANIM'))).toBe(true);
 });
 
+test('play-once mode exports files that do not loop', async ({ page }) => {
+  await openEditor(page);
+  await page.getByTestId('characters-mode-once').click();
+
+  const gifDownload = page.waitForEvent('download', { timeout: T.medium });
+  await page.getByTestId('characters-export-gif').click();
+  const gif = await readFile((await (await gifDownload).path())!);
+  // No NETSCAPE2.0 application extension → the GIF plays a single pass.
+  expect(gif.includes(Buffer.from('NETSCAPE2.0'))).toBe(false);
+
+  const apngDownload = page.waitForEvent('download', { timeout: T.medium });
+  await page.getByTestId('characters-export-apng').click();
+  const apng = await readFile((await (await apngDownload).path())!);
+  const actl = apng.indexOf(Buffer.from('acTL'));
+  expect(actl).toBeGreaterThan(0);
+  // acTL payload: num_frames u32, then num_plays u32 — big-endian, 1 = once.
+  expect(apng.readUInt32BE(actl + 8)).toBe(1);
+});
+
 test('regeneration requests stay exportable on a static host', async ({ page }) => {
   await openEditor(page);
   await expect(page.getByTestId('jobs-panel')).toBeVisible();

@@ -6,8 +6,9 @@ import { describe, expect, it } from 'vitest';
 
 import { buildZip } from '../src/features/characters/export/zipWriter';
 import { openZip } from '../src/features/characters/import/zip';
-import { encodeApng, encodeGif, effectiveFrameOrder } from '../src/features/characters/export/animated';
+import { encodeApng, encodeGif, effectiveFrameOrder, setApngLoopCount } from '../src/features/characters/export/animated';
 import { extractFrameData, muxAnimatedWebp } from '../src/features/characters/export/webpAnim';
+import { crc32 } from '../src/features/characters/export/zipWriter';
 import type { RgbaFrame } from '../src/features/characters/export/animated';
 
 function rgba(width: number, height: number, fill: number[]): Uint8ClampedArray<ArrayBuffer> {
@@ -42,12 +43,25 @@ describe('zip writer', () => {
   });
 });
 
+function findAscii(haystack: Uint8Array, needle: string): number {
+  const bytes = [...needle].map((c) => c.charCodeAt(0));
+  for (let i = 0; i + bytes.length <= haystack.length; i += 1) {
+    if (bytes.every((b, j) => haystack[i + j] === b)) return i;
+  }
+  return -1;
+}
+
 describe('GIF encoder', () => {
   it('emits a GIF89a with both frames', () => {
     const bytes = encodeGif(FRAMES, 4, 4);
     expect(String.fromCharCode(...bytes.subarray(0, 6))).toBe('GIF89a');
     expect(bytes[bytes.length - 1]).toBe(0x3b); // trailer
     expect(bytes.length).toBeGreaterThan(40);
+  });
+
+  it('writes the NETSCAPE loop extension by default, omits it for repeat -1', () => {
+    expect(findAscii(encodeGif(FRAMES, 4, 4), 'NETSCAPE2.0')).toBeGreaterThan(0);
+    expect(findAscii(encodeGif(FRAMES, 4, 4, -1), 'NETSCAPE2.0')).toBe(-1);
   });
 });
 
@@ -59,6 +73,32 @@ describe('APNG encoder', () => {
     const text = new TextDecoder('latin1').decode(bytes);
     expect(text).toContain('acTL'); // animation control — proves it is APNG, not PNG
     expect(text).toContain('fcTL');
+  });
+
+  it('loops forever by default and rewrites acTL num_plays (with CRC) for bounded plays', () => {
+    const actlIndex = (buffer: ArrayBuffer) => {
+      const bytes = new Uint8Array(buffer);
+      return { bytes, at: findAscii(bytes, 'acTL') - 4 }; // chunk starts at length field
+    };
+
+    const forever = actlIndex(encodeApng(FRAMES, 4, 4));
+    expect(new DataView(forever.bytes.buffer).getUint32(forever.at + 8 + 4, false)).toBe(0);
+
+    const once = actlIndex(encodeApng(FRAMES, 4, 4, 1));
+    expect(once.at).toBeGreaterThan(0);
+    const view = new DataView(once.bytes.buffer);
+    const length = view.getUint32(once.at, false);
+    expect(length).toBe(8); // acTL payload: num_frames + num_plays
+    expect(view.getUint32(once.at + 8 + 4, false)).toBe(1);
+    // The CRC (type + data, big-endian) must be rewritten so strict decoders accept the file.
+    const storedCrc = view.getUint32(once.at + 8 + length, false);
+    expect(storedCrc).toBe(crc32(once.bytes.subarray(once.at + 4, once.at + 8 + length)));
+  });
+
+  it('setApngLoopCount leaves buffers without an acTL chunk untouched', () => {
+    const still = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]);
+    const out = setApngLoopCount(still.buffer as ArrayBuffer, 1);
+    expect([...new Uint8Array(out)]).toEqual([...still]);
   });
 });
 
@@ -130,6 +170,20 @@ describe('animated WebP muxer', () => {
     // RIFF length field covers the whole file minus its own 8-byte header.
     const riffSize = new DataView(out.buffer).getUint32(4, true);
     expect(riffSize).toBe(out.length - 8);
+  });
+
+  it('writes the ANIM loop count (0 = forever)', () => {
+    const frames = [
+      { bytes: fakeStill('VP8 '), delayMs: 100 },
+      { bytes: fakeStill('VP8 '), delayMs: 100 },
+    ];
+    const animLoopCount = (out: Uint8Array) => {
+      const at = findAscii(out, 'ANIM'); // RIFF chunk: fourcc first, then size
+      // ANIM payload: u32 bgcolor then u16 loopCount, little-endian.
+      return new DataView(out.buffer, out.byteOffset).getUint16(at + 8 + 4, true);
+    };
+    expect(animLoopCount(muxAnimatedWebp(frames, 96, 96))).toBe(0);
+    expect(animLoopCount(muxAnimatedWebp(frames, 96, 96, 1))).toBe(1);
   });
 
   it('rejects non-WebP input', () => {

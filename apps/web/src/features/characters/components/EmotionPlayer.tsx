@@ -217,7 +217,7 @@ export function EmotionPlayer({
           pack.canvas.h,
           mode,
         );
-        const result = await buildAnimationExport(format, pack, emotionKey, frames);
+        const result = await buildAnimationExport(format, pack, emotionKey, frames, mode);
         downloadBlob(result.fileName, result.blob);
         recordExport(pack.id);
       } finally {
