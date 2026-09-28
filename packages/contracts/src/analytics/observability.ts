@@ -34,3 +34,17 @@ export interface McpAnalyticsEventRequest {
   occurredAt: string;
   properties?: Record<string, unknown>;
 }
+
+// `POST /api/analytics/character-export` — the web client reports a finished
+// character-pack export download. `format` is the only client-controlled
+// field; the daemon stamps `account_id` (from its own authenticated AMR
+// session) and `occurred_at` (server clock, UTC) into the captured event.
+export interface CharacterExportRequest {
+  format: string;
+}
+
+export interface CharacterExportResponse {
+  ok: true;
+  /** False when the daemon did not capture (no analytics consent/context). */
+  captured: boolean;
+}

@@ -322,7 +322,7 @@ export function CharacterGallery({ catalogue, onOpenPack, trial = false }: Props
         engine, manifest, emotionKey, emotion, loaded, emotionPlayback(manifest, emotion),
       );
       downloadBlob(out.fileName, out.blob);
-      recordExport(manifest.id);
+      recordExport(manifest.id, 'gif');
     } finally {
       setGifBusy(false);
     }
@@ -1091,7 +1091,9 @@ function NextStepCard({ goal, result, base }: NextStepProps) {
           downloadBlob(sheet.pngFileName, sheet.pngBlob);
           downloadJson(sheet.jsonFileName, sheet.json);
         }
-        recordExport(manifest.id);
+        // KPI counts animated/pack exports only — sheet and single-frame PNG
+        // downloads stay on the local counter.
+        recordExport(manifest.id, kind === 'webp' ? 'webp' : undefined);
       } finally {
         setBusy(null);
       }

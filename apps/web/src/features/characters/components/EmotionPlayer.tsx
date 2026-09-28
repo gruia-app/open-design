@@ -219,7 +219,7 @@ export function EmotionPlayer({
         );
         const result = await buildAnimationExport(format, pack, emotionKey, frames, mode);
         downloadBlob(result.fileName, result.blob);
-        recordExport(pack.id);
+        recordExport(pack.id, format);
       } finally {
         setExporting(null);
       }
@@ -232,7 +232,7 @@ export function EmotionPlayer({
     setExporting('zip');
     try {
       await downloadEditedPackZip(loadedPack, edits);
-      recordExport(pack.id);
+      recordExport(pack.id, 'pack');
     } finally {
       setExporting(null);
     }
