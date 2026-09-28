@@ -13,8 +13,10 @@ import type { CharacterEmotion, CharacterPack } from '../pack/types';
 import type { CharacterEngine, LoadedEmotion } from '../engines/types';
 import type { EditsController } from '../edit/editsStore';
 import {
+  applyVariantFrame,
   duplicateFrame,
   moveFrame,
+  nextUploadOrigin,
   removeFrame,
   setEmotionLiked,
   setEmotionNote,
@@ -22,6 +24,7 @@ import {
   setFrameMs,
   setFrameNote,
 } from '../edit/emotionEdit';
+import { REPLACE_IMAGE_ACCEPT, replaceFileToPng } from '../edit/replaceImage';
 import { JobPanel } from './JobPanel';
 import styles from './characters.module.css';
 
@@ -57,8 +60,10 @@ export function EmotionEditor({
 }: Props) {
   const { t } = useI18n();
   const stripRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const dragIndexRef = useRef<number | null>(null);
   const [dropTarget, setDropTarget] = useState<number | null>(null);
+  const [replaceFailed, setReplaceFailed] = useState(false);
   const [, forceRender] = useState(0);
 
   // Local subscription — the parent re-renders too (it passes `emotion`), but
@@ -105,6 +110,29 @@ export function EmotionEditor({
   const onDragEnd = () => {
     dragIndexRef.current = null;
     setDropTarget(null);
+  };
+
+  // Manual frame edit ("editarlo"): the picked image replaces the selected
+  // frame under its canonical pack src, so save-to-disk and the .zip export
+  // carry the real file — same path an accepted regen proposal takes. The
+  // file is rasterized to PNG first so the stored bytes match the `.png`
+  // src; unsupported types and undecodable files surface the inline error.
+  const replaceWithFile = async (file: File) => {
+    const png = await replaceFileToPng(file);
+    if (!png) {
+      setReplaceFailed(true);
+      return;
+    }
+    setReplaceFailed(false);
+    const src = `${emotionKey}/${String(selected).padStart(3, '0')}.png`;
+    edits.putExtraFile(src, png);
+    edits.mutate(emotionKey, (e) =>
+      applyVariantFrame(e, selected, {
+        src,
+        ms: e.frames[selected]?.ms ?? null,
+        origin: nextUploadOrigin(e.frames[selected]?.origin),
+      }),
+    );
   };
 
   return (
@@ -245,6 +273,27 @@ export function EmotionEditor({
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label={t('characters.editor.replace')}
+            data-testid="editor-replace"
+          >
+            <Icon name="upload" size={13} />
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={REPLACE_IMAGE_ACCEPT}
+            hidden
+            data-testid="editor-replace-input"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) void replaceWithFile(file);
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() =>
               edits.mutate(emotionKey, (e) => setFrameLiked(e, selected, !selectedFrame.liked))
             }
@@ -281,6 +330,12 @@ export function EmotionEditor({
             data-testid="editor-note"
           />
         </div>
+      ) : null}
+
+      {replaceFailed ? (
+        <p className={styles.jobError} data-testid="editor-replace-error" role="alert">
+          {t('characters.editor.replaceError')}
+        </p>
       ) : null}
 
       <div className={styles.emotionControls}>

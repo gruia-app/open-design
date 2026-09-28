@@ -1,13 +1,14 @@
 // Emotion-editor unit tests: pure frame ops, undo/redo history, the edit
 // controller's baseline/dirty/manifest contract, and pack v1.1 parsing.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CharacterEmotion, CharacterPack } from '../src/features/characters/pack/types';
 import {
   applyVariantFrame,
   duplicateFrame,
   moveFrame,
+  nextUploadOrigin,
   removeFrame,
   setEmotionLiked,
   setEmotionNote,
@@ -19,6 +20,7 @@ import {
 } from '../src/features/characters/edit/emotionEdit';
 import { canRedo, canUndo, initHistory, record, redo, undo } from '../src/features/characters/edit/history';
 import { EditsController } from '../src/features/characters/edit/editsStore';
+import { REPLACE_IMAGE_ACCEPT, replaceFileToPng } from '../src/features/characters/edit/replaceImage';
 import type { LoadedPack } from '../src/features/characters/import/importPack';
 import { parseCharacterPack } from '../src/features/characters/pack/parse';
 
@@ -95,6 +97,83 @@ describe('emotion edit ops', () => {
     expect(applyVariantFrame(emotion, 1, variant).frames[1]!.src).toBe('jobs/x/out/000.png');
     expect(applyVariantFrame(emotion, -1, variant).frames.map((f) => f.src))
       .toEqual(['a.png', 'b.png', 'jobs/x/out/000.png']);
+  });
+
+  it('tags manual replacements with a unique upload origin', () => {
+    // The emotion cache keys on src+ms+origin — repeated uploads of the same
+    // slot must produce distinct identities or the previous image stays drawn.
+    let emotion = makeEmotion(['a.png', 'b.png']);
+    emotion = applyVariantFrame(emotion, 0, {
+      src: 'idle/000.png',
+      ms: null,
+      origin: nextUploadOrigin(emotion.frames[0]!.origin),
+    });
+    expect(emotion.frames[0]!.origin).toBe('upload');
+    emotion = applyVariantFrame(emotion, 0, {
+      src: 'idle/000.png',
+      ms: null,
+      origin: nextUploadOrigin(emotion.frames[0]!.origin),
+    });
+    expect(emotion.frames[0]!.origin).toBe('upload#2');
+    expect(nextUploadOrigin('regen:job-1')).toBe('upload');
+    expect(nextUploadOrigin(undefined)).toBe('upload');
+  });
+});
+
+describe('replace image rasterization', () => {
+  const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  function stubRasterPipeline() {
+    const drawn = vi.fn();
+    const closed = vi.fn();
+    const fakeBitmap = { width: 4, height: 4, close: closed };
+    const decode = vi.fn(async () => fakeBitmap);
+    vi.stubGlobal('createImageBitmap', decode);
+    vi.stubGlobal('document', {
+      createElement: () => ({
+        width: 0,
+        height: 0,
+        getContext: () => ({ drawImage: drawn }),
+        toBlob: (cb: (blob: Blob | null) => void, type: string) =>
+          cb(new Blob([PNG_BYTES], { type })),
+      }),
+    });
+    return { drawn, closed, fakeBitmap, decode };
+  }
+
+  it('converts an accepted JPEG to real PNG bytes', async () => {
+    const { drawn, closed, fakeBitmap, decode } = stubRasterPipeline();
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'frame.jpg', {
+      type: 'image/jpeg',
+    });
+    const png = await replaceFileToPng(file);
+    expect(decode).toHaveBeenCalledWith(file);
+    expect(drawn).toHaveBeenCalledWith(fakeBitmap, 0, 0);
+    expect(closed).toHaveBeenCalled();
+    expect(png).not.toBeNull();
+    // The stored blob carries PNG bytes + MIME — matching the `.png` src.
+    expect(png!.type).toBe('image/png');
+    expect(new Uint8Array(await png!.arrayBuffer())).toEqual(PNG_BYTES);
+  });
+
+  it('rejects non-accepted types before attempting decode', async () => {
+    const { decode } = stubRasterPipeline();
+    for (const type of ['image/gif', 'image/svg+xml', 'text/plain', '']) {
+      const file = new File([new Uint8Array([1, 2, 3])], 'x', { type });
+      expect(await replaceFileToPng(file)).toBeNull();
+    }
+    expect(decode).not.toHaveBeenCalled();
+    // The picker advertises exactly the accepted raster types.
+    expect(REPLACE_IMAGE_ACCEPT).toBe('image/png,image/jpeg,image/webp');
+  });
+
+  it('returns null when the accepted type fails to decode', async () => {
+    vi.stubGlobal('createImageBitmap', vi.fn(async () => Promise.reject(new Error('truncated'))));
+    vi.stubGlobal('document', { createElement: () => ({ getContext: () => ({}) }) });
+    const file = new File([new Uint8Array([0x89])], 'frame.png', { type: 'image/png' });
+    expect(await replaceFileToPng(file)).toBeNull();
   });
 });
 

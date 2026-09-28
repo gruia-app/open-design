@@ -124,6 +124,17 @@ export function setEmotionLiked(emotion: CharacterEmotion, liked: boolean): Char
   return next;
 }
 
+/** Provenance tag for a frame replaced with a local file. Repeated uploads
+ *  to the same slot bump a suffix (`upload`, `upload#2`, …) so every accepted
+ *  file produces a distinct frame identity — the emotion cache keys on
+ *  src+ms+origin and would otherwise keep drawing the previous upload. */
+export function nextUploadOrigin(current: string | undefined): string {
+  const match = /^upload(?:#(\d+))?$/.exec(current ?? '');
+  if (!match) return 'upload';
+  const n = match[1] ? Number(match[1]) + 1 : 2;
+  return `upload#${n}`;
+}
+
 /** Accept a generated variant: replace the frame at `index` with `frame`,
  *  or insert it at `index` when `index < 0`. */
 export function applyVariantFrame(

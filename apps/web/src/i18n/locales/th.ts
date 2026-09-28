@@ -5302,6 +5302,8 @@ export const th: Dict = {
   'characters.editor.like': 'Like frame',
   'characters.editor.duplicate': 'Duplicate frame',
   'characters.editor.remove': 'Remove frame',
+  'characters.editor.replace': 'Replace frame with an image…',
+  'characters.editor.replaceError': 'That file could not be read as an image.',
   'characters.editor.moveLeft': 'Move frame left',
   'characters.editor.moveRight': 'Move frame right',
   'characters.editor.undo': 'Undo',
