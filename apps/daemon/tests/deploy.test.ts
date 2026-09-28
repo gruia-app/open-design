@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile, mkdir } from 'node:fs/promises';
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import os from 'node:os';
@@ -29,6 +29,7 @@ import {
   normalizeDeployHookScriptUrl,
   prepareDeployPreflight,
   publicDeployConfig,
+  readCloudflarePagesConfig,
   readVercelConfig,
   resolveReferencedPath,
   rewriteCssReferences,
@@ -93,6 +94,87 @@ describe('deploy config', () => {
         token: 'vercel-token-secret',
         teamId: 'team_123',
         teamSlug: 'renamed-team',
+      });
+    } finally {
+      if (priorStateRoot === undefined) delete process.env.OD_USER_STATE_DIR;
+      else process.env.OD_USER_STATE_DIR = priorStateRoot;
+      await rm(stateRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('treats an empty or corrupt vercel.json as unconfigured instead of throwing', async () => {
+    const stateRoot = await mkdtemp(path.join(os.tmpdir(), 'od-deploy-config-test-'));
+    const priorStateRoot = process.env.OD_USER_STATE_DIR;
+    process.env.OD_USER_STATE_DIR = stateRoot;
+    try {
+      const configFile = deployConfigPath(VERCEL_PROVIDER_ID);
+
+      await writeFile(configFile, '');
+      expect(await readVercelConfig()).toEqual({ token: '', teamId: '', teamSlug: '' });
+
+      await writeFile(configFile, '   \n');
+      expect(await readVercelConfig()).toEqual({ token: '', teamId: '', teamSlug: '' });
+
+      await writeFile(configFile, '{"token":"truncated"');
+      expect(await readVercelConfig()).toEqual({ token: '', teamId: '', teamSlug: '' });
+
+      await writeFile(configFile, 'null');
+      expect(await readVercelConfig()).toEqual({ token: '', teamId: '', teamSlug: '' });
+
+      // A corrupt file must not block the next save: PUT merges over it.
+      const healed = await writeVercelConfig({
+        token: 'vercel-token-secret',
+        teamId: 'team_123',
+        teamSlug: 'design-team',
+      });
+      expect(healed.configured).toBe(true);
+      expect(await readVercelConfig()).toEqual({
+        token: 'vercel-token-secret',
+        teamId: 'team_123',
+        teamSlug: 'design-team',
+      });
+      // Atomic writes must not leave temp files behind.
+      expect((await readdir(stateRoot)).filter((name) => name.endsWith('.tmp'))).toEqual([]);
+    } finally {
+      if (priorStateRoot === undefined) delete process.env.OD_USER_STATE_DIR;
+      else process.env.OD_USER_STATE_DIR = priorStateRoot;
+      await rm(stateRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('treats an empty or corrupt cloudflare-pages.json as unconfigured instead of throwing', async () => {
+    const stateRoot = await mkdtemp(path.join(os.tmpdir(), 'od-deploy-config-test-'));
+    const priorStateRoot = process.env.OD_USER_STATE_DIR;
+    process.env.OD_USER_STATE_DIR = stateRoot;
+    try {
+      const configFile = deployConfigPath(CLOUDFLARE_PAGES_PROVIDER_ID);
+
+      await writeFile(configFile, '');
+      expect(await readCloudflarePagesConfig()).toEqual({
+        token: '',
+        accountId: '',
+        projectName: '',
+        cloudflarePages: {},
+      });
+
+      await writeFile(configFile, '{"accountId":');
+      expect(await readCloudflarePagesConfig()).toEqual({
+        token: '',
+        accountId: '',
+        projectName: '',
+        cloudflarePages: {},
+      });
+
+      await writeFile(configFile, JSON.stringify({
+        token: 'cloudflare-token-secret',
+        accountId: 'account_123',
+        projectName: '',
+      }));
+      expect(await readCloudflarePagesConfig()).toEqual({
+        token: 'cloudflare-token-secret',
+        accountId: 'account_123',
+        projectName: '',
+        cloudflarePages: {},
       });
     } finally {
       if (priorStateRoot === undefined) delete process.env.OD_USER_STATE_DIR;

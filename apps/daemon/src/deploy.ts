@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -79,35 +79,43 @@ export function deployConfigPath(providerId: DeployProviderId = VERCEL_PROVIDER_
   return path.join(base, providerId === CLOUDFLARE_PAGES_PROVIDER_ID ? 'cloudflare-pages.json' : 'vercel.json');
 }
 
-export async function readVercelConfig(): Promise<DeployConfig> {
+// A missing, empty, or unparseable config file is indistinguishable from
+// "never configured" for callers: both must surface as configured=false so
+// GET /api/deploy/config answers 200 instead of 500. Only ENOENT and
+// JSON.parse SyntaxError collapse here; other IO failures still throw.
+async function readDeployConfigFile(providerId: DeployProviderId): Promise<JsonObject> {
   try {
-    const raw = await readFile(deployConfigPath(VERCEL_PROVIDER_ID), 'utf8');
-    const parsed = JSON.parse(raw);
-    return {
-      token: typeof parsed.token === 'string' ? parsed.token : '',
-      teamId: typeof parsed.teamId === 'string' ? parsed.teamId : '',
-      teamSlug: typeof parsed.teamSlug === 'string' ? parsed.teamSlug : '',
-    };
+    const raw = await readFile(deployConfigPath(providerId), 'utf8');
+    if (!raw.trim()) return {};
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as JsonObject) : {};
   } catch (err) {
-    if (isErrnoException(err) && err.code === 'ENOENT') return { token: '', teamId: '', teamSlug: '' };
+    if (isErrnoException(err) && err.code === 'ENOENT') return {};
+    if (err instanceof SyntaxError) {
+      console.warn(`[deploy] ignoring unreadable config file ${deployConfigPath(providerId)}: ${errorMessage(err, 'invalid JSON')}`);
+      return {};
+    }
     throw err;
   }
 }
 
+export async function readVercelConfig(): Promise<DeployConfig> {
+  const parsed = await readDeployConfigFile(VERCEL_PROVIDER_ID);
+  return {
+    token: typeof parsed.token === 'string' ? parsed.token : '',
+    teamId: typeof parsed.teamId === 'string' ? parsed.teamId : '',
+    teamSlug: typeof parsed.teamSlug === 'string' ? parsed.teamSlug : '',
+  };
+}
+
 export async function readCloudflarePagesConfig(): Promise<DeployConfig> {
-  try {
-    const raw = await readFile(deployConfigPath(CLOUDFLARE_PAGES_PROVIDER_ID), 'utf8');
-    const parsed = JSON.parse(raw);
-    return {
-      token: typeof parsed.token === 'string' ? parsed.token : '',
-      accountId: typeof parsed.accountId === 'string' ? parsed.accountId : '',
-      projectName: typeof parsed.projectName === 'string' ? parsed.projectName : '',
-      cloudflarePages: normalizeCloudflarePagesConfigHints(parsed.cloudflarePages),
-    };
-  } catch (err) {
-    if (isErrnoException(err) && err.code === 'ENOENT') return { token: '', accountId: '', projectName: '', cloudflarePages: {} };
-    throw err;
-  }
+  const parsed = await readDeployConfigFile(CLOUDFLARE_PAGES_PROVIDER_ID);
+  return {
+    token: typeof parsed.token === 'string' ? parsed.token : '',
+    accountId: typeof parsed.accountId === 'string' ? parsed.accountId : '',
+    projectName: typeof parsed.projectName === 'string' ? parsed.projectName : '',
+    cloudflarePages: normalizeCloudflarePagesConfigHints(parsed.cloudflarePages),
+  };
 }
 
 export async function writeVercelConfig(input: Partial<DeployConfig>) {
@@ -149,13 +157,22 @@ export async function writeCloudflarePagesConfig(input: Partial<DeployConfig>) {
   return publicCloudflarePagesConfig(next);
 }
 
+// Write through a temp file + rename so a crash mid-write can never leave the
+// config file empty or truncated; readers would otherwise see invalid JSON
+// until the next successful save.
 async function writeDeployConfigFile(file: string, config: DeployConfig) {
   await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
+  const tmp = `${file}.${process.pid}.${randomUUID()}.tmp`;
   try {
-    fs.chmodSync(file, 0o600);
-  } catch {
-    // Best effort on filesystems that do not support chmod.
+    await writeFile(tmp, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
+    try {
+      fs.chmodSync(tmp, 0o600);
+    } catch {
+      // Best effort on filesystems that do not support chmod.
+    }
+    await rename(tmp, file);
+  } finally {
+    await rm(tmp, { force: true }).catch(() => {});
   }
 }
 
