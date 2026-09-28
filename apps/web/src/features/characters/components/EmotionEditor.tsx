@@ -24,6 +24,7 @@ import {
   setFrameMs,
   setFrameNote,
 } from '../edit/emotionEdit';
+import { REPLACE_IMAGE_ACCEPT, replaceFileToPng } from '../edit/replaceImage';
 import { JobPanel } from './JobPanel';
 import styles from './characters.module.css';
 
@@ -43,27 +44,6 @@ interface Props {
 }
 
 const THUMB_SIZE = 56;
-
-/** Decode-check a picked file before it enters the edit history — a
- *  non-image or truncated upload must fail here, not inside the engine. */
-async function assertDecodableImage(blob: Blob): Promise<void> {
-  if (typeof createImageBitmap === 'function') {
-    const bitmap = await createImageBitmap(blob);
-    bitmap.close();
-    return;
-  }
-  const url = URL.createObjectURL(blob);
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error('not an image'));
-      image.src = url;
-    });
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
 
 export function EmotionEditor({
   pack,
@@ -134,17 +114,18 @@ export function EmotionEditor({
 
   // Manual frame edit ("editarlo"): the picked image replaces the selected
   // frame under its canonical pack src, so save-to-disk and the .zip export
-  // carry the real file — same path an accepted regen proposal takes.
+  // carry the real file — same path an accepted regen proposal takes. The
+  // file is rasterized to PNG first so the stored bytes match the `.png`
+  // src; unsupported types and undecodable files surface the inline error.
   const replaceWithFile = async (file: File) => {
-    try {
-      await assertDecodableImage(file);
-    } catch {
+    const png = await replaceFileToPng(file);
+    if (!png) {
       setReplaceFailed(true);
       return;
     }
     setReplaceFailed(false);
     const src = `${emotionKey}/${String(selected).padStart(3, '0')}.png`;
-    edits.putExtraFile(src, file);
+    edits.putExtraFile(src, png);
     edits.mutate(emotionKey, (e) =>
       applyVariantFrame(e, selected, {
         src,
@@ -301,7 +282,7 @@ export function EmotionEditor({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept={REPLACE_IMAGE_ACCEPT}
             hidden
             data-testid="editor-replace-input"
             onChange={(event) => {
