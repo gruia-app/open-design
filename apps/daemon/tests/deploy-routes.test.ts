@@ -98,6 +98,53 @@ describe('deploy provider routes', () => {
     }
   });
 
+  it('returns configured=false with 200 when the stored provider config is empty or corrupt', async () => {
+    const stateRoot = await mkdtemp(path.join(os.tmpdir(), 'od-deploy-route-config-'));
+    const priorStateRoot = process.env.OD_USER_STATE_DIR;
+    process.env.OD_USER_STATE_DIR = stateRoot;
+    try {
+      await writeFile(deployConfigPath(VERCEL_PROVIDER_ID), '');
+      const emptyResp = await fetch(
+        `${baseUrl}/api/deploy/config?providerId=${VERCEL_PROVIDER_ID}`,
+      );
+      expect(emptyResp.status).toBe(200);
+      expect(await emptyResp.json()).toMatchObject({
+        providerId: VERCEL_PROVIDER_ID,
+        configured: false,
+      });
+
+      await writeFile(deployConfigPath(VERCEL_PROVIDER_ID), '{"token":"truncated"');
+      const corruptResp = await fetch(
+        `${baseUrl}/api/deploy/config?providerId=${VERCEL_PROVIDER_ID}`,
+      );
+      expect(corruptResp.status).toBe(200);
+      expect(await corruptResp.json()).toMatchObject({
+        providerId: VERCEL_PROVIDER_ID,
+        configured: false,
+      });
+
+      await writeFile(deployConfigPath(VERCEL_PROVIDER_ID), JSON.stringify({
+        token: 'vercel-token-secret',
+        teamId: 'team_123',
+        teamSlug: 'design-team',
+      }));
+      const validResp = await fetch(
+        `${baseUrl}/api/deploy/config?providerId=${VERCEL_PROVIDER_ID}`,
+      );
+      expect(validResp.status).toBe(200);
+      expect(await validResp.json()).toMatchObject({
+        providerId: VERCEL_PROVIDER_ID,
+        configured: true,
+        teamId: 'team_123',
+        teamSlug: 'design-team',
+      });
+    } finally {
+      if (priorStateRoot === undefined) delete process.env.OD_USER_STATE_DIR;
+      else process.env.OD_USER_STATE_DIR = priorStateRoot;
+      await rm(stateRoot, { recursive: true, force: true });
+    }
+  });
+
   it('lists Cloudflare Pages zones for saved account credentials', async () => {
     const stateRoot = await mkdtemp(path.join(os.tmpdir(), 'od-deploy-route-zones-'));
     const priorStateRoot = process.env.OD_USER_STATE_DIR;
