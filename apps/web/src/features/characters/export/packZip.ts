@@ -29,7 +29,9 @@ export async function buildEditedPackZip(
   if (manifest.reference) srcs.add(manifest.reference);
 
   for (const src of srcs) {
-    let blob = await pack.readFile?.(src);
+    // Session edits (uploads, accepted regen proposals) register a blob under
+    // the same canonical src — the override wins over the authored bytes.
+    let blob = edits.extraFile(src) ?? (await pack.readFile?.(src) ?? null);
     if (!blob) {
       // Accepted variants live in the edits controller, not the pack source —
       // resolve them and re-read the blob from its object URL.

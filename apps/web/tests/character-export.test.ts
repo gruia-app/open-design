@@ -5,11 +5,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildZip } from '../src/features/characters/export/zipWriter';
+import { buildEditedPackZip } from '../src/features/characters/export/packZip';
 import { openZip } from '../src/features/characters/import/zip';
+import { EditsController } from '../src/features/characters/edit/editsStore';
+import { applyVariantFrame } from '../src/features/characters/edit/emotionEdit';
 import { encodeApng, encodeGif, effectiveFrameOrder, setApngLoopCount } from '../src/features/characters/export/animated';
 import { extractFrameData, muxAnimatedWebp } from '../src/features/characters/export/webpAnim';
 import { crc32 } from '../src/features/characters/export/zipWriter';
 import type { RgbaFrame } from '../src/features/characters/export/animated';
+import type { CharacterPack } from '../src/features/characters/pack/types';
+import type { LoadedPack } from '../src/features/characters/import/importPack';
 
 function rgba(width: number, height: number, fill: number[]): Uint8ClampedArray<ArrayBuffer> {
   const data = new Uint8ClampedArray(width * height * 4);
@@ -40,6 +45,75 @@ describe('zip writer', () => {
     expect(await archive.read(manifestEntry)).toEqual(manifest);
     const pngEntry = archive.entries.find((e) => e.name === 'joy/000.png')!;
     expect(await archive.read(pngEntry)).toEqual(new Uint8Array([0x89, 0x50, 0x4e, 0x47]));
+  });
+});
+
+describe('edited pack zip', () => {
+  const AUTHORED = new Uint8Array([1, 1, 1]);
+  const OVERRIDE = new Uint8Array([2, 2, 2]);
+
+  function authoredPack(): LoadedPack {
+    const manifest: CharacterPack = {
+      schema: 'gruia.character-pack/1',
+      id: 'test-pack',
+      name: 'Test',
+      canvas: { w: 96, h: 96 },
+      anchor: { x: 48, y: 88 },
+      palette: [],
+      defaults: { engine: 'raster-frames', fps: 10, playback: 'loop' },
+      emotions: {
+        joy: {
+          label: 'Joy',
+          engine: 'raster-frames',
+          frames: [
+            { src: 'joy/000.png', ms: null },
+            { src: 'joy/001.png', ms: null },
+          ],
+        },
+      },
+    };
+    return {
+      manifest,
+      origin: 'zip',
+      sourceLabel: 'test',
+      version: 'v1',
+      warnings: [],
+      resolve: async (src) => `/${src}`,
+      readFile: async (src) => (src.startsWith('joy/') ? new Blob([AUTHORED]) : null),
+      dispose: () => {},
+    };
+  }
+
+  async function entryBytes(zipBlob: Blob, name: string): Promise<Uint8Array> {
+    const archive = openZip(new Uint8Array(await zipBlob.arrayBuffer()));
+    const entry = archive.entries.find((e) => e.name === name);
+    expect(entry).toBeTruthy();
+    return archive.read(entry!);
+  }
+
+  it('writes the override blob under a replaced frame\'s canonical src', async () => {
+    const pack = authoredPack();
+    const edits = new EditsController(pack);
+    edits.putExtraFile('joy/000.png', new Blob([OVERRIDE]));
+    edits.mutate('joy', (e) =>
+      applyVariantFrame(e, 0, { src: 'joy/000.png', ms: null, origin: 'upload' }),
+    );
+    const { blob } = await buildEditedPackZip(pack, edits);
+    expect(await entryBytes(blob, 'joy/000.png')).toEqual(OVERRIDE);
+    expect(await entryBytes(blob, 'joy/001.png')).toEqual(AUTHORED);
+  });
+
+  it('ships authored bytes for a src whose edit was reverted', async () => {
+    const pack = authoredPack();
+    const edits = new EditsController(pack);
+    edits.putExtraFile('joy/000.png', new Blob([OVERRIDE]));
+    edits.mutate('joy', (e) =>
+      applyVariantFrame(e, 0, { src: 'joy/000.png', ms: null, origin: 'upload' }),
+    );
+    edits.undoEmotion('joy');
+    const { blob } = await buildEditedPackZip(pack, edits);
+    expect(await entryBytes(blob, 'joy/000.png')).toEqual(AUTHORED);
+    expect(edits.extraFiles()).toHaveLength(0);
   });
 });
 
