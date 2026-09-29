@@ -258,10 +258,21 @@ export class EditsController {
     return this.pack.resolve(src);
   };
 
+  /** Claimed blob for a pack-relative src, or null. The .zip exporter reads
+   *  through here so an override wins over the authored pack bytes under the
+   *  same canonical path. */
+  extraFile(src: string): Blob | null {
+    if (!this.claimedExtraSrcs().has(src)) return null;
+    return this.extras.get(src) ?? null;
+  }
+
   /** Accepted-variant blobs keyed by their pack-relative src — enumerated by
-   *  the daemon "save to disk" flow so they land inside the pack dir. */
+   *  the daemon "save to disk" flow so they land inside the pack dir. Only
+   *  claimed entries ship: a reverted edit's leftover blob must not overwrite
+   *  the authored file on disk. */
   extraFiles(): Array<[string, Blob]> {
-    return [...this.extras.entries()];
+    const claimed = this.claimedExtraSrcs();
+    return [...this.extras.entries()].filter(([src]) => claimed.has(src));
   }
 
   /** Effective manifest with every edit applied — exported as pack v1.1. */
