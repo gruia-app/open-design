@@ -25,10 +25,11 @@ export interface StoredPackEdits {
 }
 
 const DB_NAME = 'od-personajes';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_EDITS = 'edits';
 const STORE_JOBS = 'jobs';
 const STORE_RESULTS = 'results';
+const STORE_EXTRAS = 'extras';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -47,6 +48,10 @@ function openDb(): Promise<IDBDatabase> {
         }
         if (!db.objectStoreNames.contains(STORE_RESULTS)) {
           db.createObjectStore(STORE_RESULTS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORE_EXTRAS)) {
+          const extras = db.createObjectStore(STORE_EXTRAS, { keyPath: 'key' });
+          extras.createIndex('pack', 'packKey', { unique: false });
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -96,6 +101,45 @@ export async function loadPackEdits(
 
 export async function savePackEdits(edits: StoredPackEdits): Promise<void> {
   await withStore(STORE_EDITS, 'readwrite', (store) => store.put(edits, edits.key));
+}
+
+// Extra files — blob overrides registered by the editor (manual frame
+// uploads, accepted regen proposals). They are keyed by pack+version like
+// the structural edits so a regenerated pack never picks up stale bytes;
+// the controller prunes rows no present frame claims on hydrate.
+
+export interface StoredExtraFile {
+  /** `${packKey}\0${src}` — NUL cannot appear in a pack-relative path. */
+  key: string;
+  packKey: string;
+  src: string;
+  blob: Blob;
+}
+
+export function extraFileKey(packKey: string, src: string): string {
+  return `${packKey}\0${src}`;
+}
+
+export async function saveExtraFile(
+  packKey: string,
+  src: string,
+  blob: Blob,
+): Promise<void> {
+  const record: StoredExtraFile = { key: extraFileKey(packKey, src), packKey, src, blob };
+  await withStore(STORE_EXTRAS, 'readwrite', (store) => store.put(record));
+}
+
+export async function loadExtraFiles(packKey: string): Promise<StoredExtraFile[]> {
+  const rows = await withStore(STORE_EXTRAS, 'readonly', (store) =>
+    store.index('pack').getAll(packKey) as IDBRequest<StoredExtraFile[]>,
+  );
+  return rows;
+}
+
+export async function removeExtraFile(packKey: string, src: string): Promise<void> {
+  await withStore(STORE_EXTRAS, 'readwrite', (store) =>
+    store.delete(extraFileKey(packKey, src)),
+  );
 }
 
 export async function saveJob(job: RegenJob): Promise<void> {

@@ -5,7 +5,16 @@
 
 import type { CharacterEmotion, CharacterFrame, CharacterPack } from '../pack/types';
 import { CHARACTER_PACK_SCHEMA_V11 } from '../pack/types';
-import { loadPackEdits, savePackEdits, editsKey, type StoredEmotionEdit } from './editsDb';
+import {
+  loadExtraFiles,
+  loadPackEdits,
+  removeExtraFile,
+  saveExtraFile,
+  savePackEdits,
+  editsKey,
+  type StoredEmotionEdit,
+} from './editsDb';
+import { isSessionEditOrigin } from './emotionEdit';
 import {
   canRedo,
   canUndo,
@@ -79,23 +88,36 @@ export class EditsController {
     this.version = version;
   }
 
-  /** Pull saved edits for this pack+version and drop them on the histories. */
+  /** Pull saved edits for this pack+version and drop them on the histories.
+   *  Extra-file blobs are restored too, but only for srcs a present frame
+   *  still claims — rows left behind by reverted edits are pruned instead of
+   *  resurrecting over the authored image. */
   async hydrate(): Promise<void> {
     if (this.hydrated) return;
     this.hydrated = true;
     try {
-      const stored = await loadPackEdits(this.pack.manifest.id, this.version);
-      if (!stored) {
-        this.notify();
-        return;
+      const packKey = editsKey(this.pack.manifest.id, this.version);
+      const [stored, extras] = await Promise.all([
+        loadPackEdits(this.pack.manifest.id, this.version),
+        loadExtraFiles(packKey),
+      ]);
+      if (stored) {
+        for (const [key, edit] of Object.entries(stored.emotions)) {
+          const baseline = this.baseline.get(key);
+          if (!baseline) continue;
+          // Stored edits only apply when the frame set still matches the pack
+          // version they were saved against — edits are keyed by version, but
+          // belt-and-braces for hand-edited manifests.
+          this.histories.set(key, initHistory(emotionFromStored(edit, baseline)));
+        }
       }
-      for (const [key, edit] of Object.entries(stored.emotions)) {
-        const baseline = this.baseline.get(key);
-        if (!baseline) continue;
-        // Stored edits only apply when the frame set still matches the pack
-        // version they were saved against — edits are keyed by version, but
-        // belt-and-braces for hand-edited manifests.
-        this.histories.set(key, initHistory(emotionFromStored(edit, baseline)));
+      const claimed = this.claimedExtraSrcs();
+      for (const row of extras) {
+        if (claimed.has(row.src)) {
+          this.extras.set(row.src, row.blob);
+        } else {
+          void removeExtraFile(packKey, row.src).catch(() => {});
+        }
       }
     } catch {
       // IndexedDB unavailable (private mode, quota) — editing still works,
@@ -192,17 +214,41 @@ export class EditsController {
     this.mutate(key, () => cloneEmotion(baseline));
   }
 
+  /** Srcs whose pixels live in the extras store — every present frame that
+   *  carries a session-edit origin claims its canonical src. Frames that
+   *  lost that marker (undo, reset, a restored baseline) stop claiming, so a
+   *  stored blob can never shadow the authored bytes again. */
+  private claimedExtraSrcs(): Set<string> {
+    const claimed = new Set<string>();
+    for (const key of this.baseline.keys()) {
+      const emotion = this.emotionFor(key);
+      if (!emotion) continue;
+      for (const frame of emotion.frames) {
+        if (isSessionEditOrigin(frame.origin)) claimed.add(frame.src);
+      }
+    }
+    return claimed;
+  }
+
   /** Register a blob for a pack-relative src (accepted variants land here so
-   *  `resolve` can draw them without a server round-trip). */
+   *  `resolve` can draw them without a server round-trip). Written through
+   *  to IndexedDB so the pixels survive a reload like the structural edits. */
   putExtraFile(src: string, blob: Blob): void {
     this.extras.set(src, blob);
     this.extraUrls.delete(src); // force a fresh object URL on next resolve
+    void saveExtraFile(
+      editsKey(this.pack.manifest.id, this.version),
+      src,
+      blob,
+    ).catch(() => {});
   }
 
-  /** Resolve like the pack does, but serving accepted-variant blobs first. */
+  /** Resolve like the pack does, but serving accepted-variant blobs first —
+   *  and only while a present frame claims the src, so undo/reset restore
+   *  the authored image instead of the stored blob. */
   resolve = async (src: string): Promise<string> => {
     const blob = this.extras.get(src);
-    if (blob) {
+    if (blob && this.claimedExtraSrcs().has(src)) {
       const cached = this.extraUrls.get(src);
       if (cached) return cached;
       const url = URL.createObjectURL(blob);

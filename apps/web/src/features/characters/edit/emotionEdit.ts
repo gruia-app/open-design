@@ -124,6 +124,15 @@ export function setEmotionLiked(emotion: CharacterEmotion, liked: boolean): Char
   return next;
 }
 
+/** True when the frame's pixels came from an in-session edit (manual upload
+ *  or accepted regen proposal) rather than the pack bytes — i.e. the src is
+ *  backed by an entry in the extras store. Baseline frames never carry these
+ *  origins, so this is also the guard that keeps a reverted edit from
+ *  resurrecting a stored blob over the authored image. */
+export function isSessionEditOrigin(origin: string | undefined): boolean {
+  return /^upload(?:#\d+)?$/.test(origin ?? '') || /^regen:.+/.test(origin ?? '');
+}
+
 /** Provenance tag for a frame replaced with a local file. Repeated uploads
  *  to the same slot bump a suffix (`upload`, `upload#2`, …) so every accepted
  *  file produces a distinct frame identity — the emotion cache keys on

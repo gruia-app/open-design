@@ -3,6 +3,21 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// IndexedDB does not exist under the node environment — the edits store is
+// swapped for in-memory spies so hydrate/write-through can be tested.
+vi.mock('../src/features/characters/edit/editsDb', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../src/features/characters/edit/editsDb')>();
+  return {
+    ...actual,
+    loadPackEdits: vi.fn(async () => null),
+    savePackEdits: vi.fn(async () => undefined),
+    loadExtraFiles: vi.fn(async () => []),
+    saveExtraFile: vi.fn(async () => undefined),
+    removeExtraFile: vi.fn(async () => undefined),
+  };
+});
+
 import type { CharacterEmotion, CharacterPack } from '../src/features/characters/pack/types';
 import {
   applyVariantFrame,
@@ -20,6 +35,7 @@ import {
 } from '../src/features/characters/edit/emotionEdit';
 import { canRedo, canUndo, initHistory, record, redo, undo } from '../src/features/characters/edit/history';
 import { EditsController } from '../src/features/characters/edit/editsStore';
+import * as editsDb from '../src/features/characters/edit/editsDb';
 import { REPLACE_IMAGE_ACCEPT, replaceFileToPng } from '../src/features/characters/edit/replaceImage';
 import type { LoadedPack } from '../src/features/characters/import/importPack';
 import { parseCharacterPack } from '../src/features/characters/pack/parse';
@@ -284,12 +300,79 @@ describe('EditsController', () => {
     expect(controller.pack.manifest.emotions['joy']!.frames[0]!.liked).toBeUndefined();
   });
 
-  it('serves extra-file blobs before the pack resolver', async () => {
+  it('serves extra-file blobs only while a frame claims the src', async () => {
     const controller = new EditsController(fakeLoadedPack(fakeManifest()));
     controller.putExtraFile('jobs/x/out/000.png', new Blob([new Uint8Array([1, 2, 3])]));
+    // No present frame claims the src yet — the authored bytes win.
+    expect(await controller.resolve('jobs/x/out/000.png')).toBe('/jobs/x/out/000.png');
+    controller.mutate('joy', (e) =>
+      applyVariantFrame(e, 0, { src: 'jobs/x/out/000.png', ms: null, origin: 'upload' }),
+    );
     const url = await controller.resolve('jobs/x/out/000.png');
     expect(url.startsWith('blob:')).toBe(true);
+    // Undo drops the claim — the blob stops shadowing the pack file.
+    controller.undoEmotion('joy');
+    expect(await controller.resolve('jobs/x/out/000.png')).toBe('/jobs/x/out/000.png');
     expect(await controller.resolve('joy/000.png')).toBe('/joy/000.png');
+  });
+
+  it('writes extra-file blobs through to IndexedDB', () => {
+    const controller = new EditsController(fakeLoadedPack(fakeManifest()));
+    controller.setVersion('v1');
+    const blob = new Blob([new Uint8Array([1, 2, 3])]);
+    controller.putExtraFile('joy/000.png', blob);
+    expect(vi.mocked(editsDb.saveExtraFile)).toHaveBeenCalledWith(
+      'test-pack@v1',
+      'joy/000.png',
+      blob,
+    );
+  });
+
+  it('hydrate restores extra blobs a stored edit still claims', async () => {
+    vi.mocked(editsDb.loadPackEdits).mockResolvedValueOnce({
+      key: 'test-pack@v1',
+      packId: 'test-pack',
+      packVersion: 'v1',
+      savedAt: 1,
+      emotions: {
+        joy: {
+          frames: [
+            { src: 'joy/000.png', ms: null, origin: 'upload' },
+            { src: 'joy/001.png', ms: null },
+          ],
+        },
+      },
+    });
+    const blob = new Blob([new Uint8Array([9, 9])]);
+    vi.mocked(editsDb.loadExtraFiles).mockResolvedValueOnce([
+      { key: 'test-pack@v1 joy/000.png', packKey: 'test-pack@v1', src: 'joy/000.png', blob },
+    ]);
+    const controller = new EditsController(fakeLoadedPack(fakeManifest()));
+    controller.setVersion('v1');
+    await controller.hydrate();
+    expect((await controller.resolve('joy/000.png')).startsWith('blob:')).toBe(true);
+    expect(vi.mocked(editsDb.removeExtraFile)).not.toHaveBeenCalled();
+  });
+
+  it('hydrate prunes extra blobs no present frame claims', async () => {
+    vi.mocked(editsDb.loadExtraFiles).mockResolvedValueOnce([
+      {
+        key: 'test-pack@v1 joy/000.png',
+        packKey: 'test-pack@v1',
+        src: 'joy/000.png',
+        blob: new Blob([new Uint8Array([9, 9])]),
+      },
+    ]);
+    const controller = new EditsController(fakeLoadedPack(fakeManifest()));
+    controller.setVersion('v1');
+    await controller.hydrate();
+    // The stored edit was reverted before unload — the leftover blob must
+    // not resurrect over the authored frame.
+    expect(await controller.resolve('joy/000.png')).toBe('/joy/000.png');
+    expect(vi.mocked(editsDb.removeExtraFile)).toHaveBeenCalledWith(
+      'test-pack@v1',
+      'joy/000.png',
+    );
   });
 });
 
