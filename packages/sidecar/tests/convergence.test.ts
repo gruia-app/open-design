@@ -442,13 +442,17 @@ describe("server-side atomic operations", () => {
     await writeFile(ownerAttemptPath, "1");
     await writeFile(launcherAttemptPath, "0");
     try {
-      await launchSidecar({
+      const owner = await launchSidecar({
         args: ["--import", "tsx", fixture],
         command: process.execPath,
         env: { ...process.env, OD_TEST_LAUNCH_ATTEMPT: ownerAttemptPath },
         resources: { dataRoot: join(root, "data"), ownerPid: null, port: 0, runtimeRoot: join(root, "runtime") },
         stamp: ownerStamp,
       });
+      // Spawning the supervisor does not mean its runtime is ready to own IPC.
+      await vi.waitFor(async () => {
+        expect(await getSidecarStatus(ownerStamp, { generationPid: owner.pid })).toEqual({ ready: true });
+      }, { interval: 50, timeout: FIXTURE_READY_TIMEOUT_MS });
       const result = await convergeSidecarLaunch({
         args: ["--import", "tsx", fixture],
         command: process.execPath,
@@ -458,7 +462,9 @@ describe("server-side atomic operations", () => {
       }, { ownerStamps: [requestedStamp, ownerStamp], stabilityMs: 100, timeoutMs: 10_000 });
 
       expect(result.attempts).toBe(1);
-      expect(result.description).toMatchObject({ ready: true, stamp: ownerStamp });
+      expect(result.description).toMatchObject({ ready: true, resources: { pid: owner.pid }, stamp: ownerStamp });
+      await expect(findSidecarProcesses(requestedStamp)).resolves.toEqual([]);
+      expect((await findSidecarProcesses(ownerStamp)).map(({ pid }) => pid)).toEqual([owner.pid]);
     } finally {
       await stopSidecars([{ stamp: requestedStamp }, { stamp: ownerStamp }]).catch(() => undefined);
       await rm(root, { force: true, recursive: true });
