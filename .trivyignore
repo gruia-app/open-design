@@ -1,0 +1,10 @@
+# Hallazgos HIGH sin version corregida publicada al 2026-10-09. Caducan a los 30 dias
+# (exp:); revisar antes de esa fecha y retirar si ya existe fix.
+
+# braces 3.0.3 (ultima publicada; sin fix). Via chokidar@3.6.0 (apps/daemon) y
+# @excalidraw/excalidraw (apps/web). Solo procesa globs de rutas locales del propio proyecto.
+CVE-2026-93687 exp:2026-11-08
+
+# http-cache-semantics 4.2.0 (sin fix en la base de Trivy). Via electron-builder ->
+# cacheable-request (tools/pack, herramienta de empaquetado, no se despliega en runtime).
+CVE-2026-93748 exp:2026-11-08
