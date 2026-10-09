@@ -45,6 +45,7 @@ export interface CollabPublishWatcher {
   /** Reconcile once immediately (exposed for tests / eager first pass). */
   reconcile: () => Promise<void>;
   start: () => void;
+  /** Permanently stop reconciliation and file-change publishing. */
   dispose: () => void;
 }
 
@@ -61,9 +62,10 @@ export function createCollabPublishWatcher(deps: CollabPublishWatcherDeps): Coll
   >();
   let timer: ReturnType<typeof setInterval> | null = null;
   let reconciling = false;
+  let disposed = false;
 
   async function reconcile(): Promise<void> {
-    if (reconciling) return;
+    if (disposed || reconciling) return;
     reconciling = true;
     try {
       const ids = new Set(deps.listProjectIds());
@@ -76,6 +78,7 @@ export function createCollabPublishWatcher(deps: CollabPublishWatcherDeps): Coll
       }
       // Add watchers for owned + team-shared projects not yet watched.
       for (const projectId of ids) {
+        if (disposed) return;
         if (subs.has(projectId)) continue;
         let publishScope: boolean | ResourceHubPrincipal = false;
         try {
@@ -84,10 +87,13 @@ export function createCollabPublishWatcher(deps: CollabPublishWatcherDeps): Coll
           deps.onError?.(error);
           continue;
         }
+        // Ownership lookup may finish after the server has torn down its DB.
+        if (disposed) return;
         if (!publishScope) continue;
         const principal =
           typeof publishScope === 'object' ? publishScope : undefined;
         const sub = deps.subscribeFiles(projectId, () => {
+          if (disposed) return;
           // Every edit → a debounced publish; the scheduler collapses bursts so a
           // half-written intermediate state never reaches members.
           if (principal) deps.notifyChanged(projectId, principal);
@@ -117,12 +123,14 @@ export function createCollabPublishWatcher(deps: CollabPublishWatcherDeps): Coll
   return {
     reconcile,
     start() {
-      if (timer) return;
+      if (disposed || timer) return;
       void reconcile().catch((error) => deps.onError?.(error));
       timer = setInterval(() => void reconcile().catch((error) => deps.onError?.(error)), reconcileMs);
       timer.unref?.();
     },
     dispose() {
+      if (disposed) return;
+      disposed = true;
       if (timer) {
         clearInterval(timer);
         timer = null;

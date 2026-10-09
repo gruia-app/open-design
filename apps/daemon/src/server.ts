@@ -16939,6 +16939,7 @@ export async function startServer({
     // work below.
     let messageEventPayloadHeal: MessageEventPayloadHealHandle | null = null;
     const cleanupDaemonBackgroundWork = () => {
+      collabPublishWatcher.dispose();
       void messageEventPayloadHeal?.stop();
       clearTerminalTelemetryFallbackTimers();
       amrTerminalReportDelivery.stop();
@@ -16958,6 +16959,8 @@ export async function startServer({
       if (daemonShutdownStarted) return;
       daemonShutdownStarted = true;
       daemonShuttingDown = true;
+      // Stop DB-backed reconciliation before asynchronous run teardown.
+      collabPublishWatcher.dispose();
       amrTerminalReportDelivery.stop();
       clearTerminalTelemetryFallbackTimers();
       await design.runs.shutdownActive({ graceMs: resolveChatRunShutdownGraceMs() });
