@@ -1,5 +1,5 @@
 # Design — Simplia shared Jenkins CI manifest.
-# Pair with: Jenkinsfile -> @Library('simplia-ci@6417a12e…') _ ; simpliaPipeline(manifest: 'ci/app.yml')
+# Pair with: Jenkinsfile -> @Library('simplia-ci@36e0f5b8…') _ ; simpliaPipeline(manifest: 'ci/app.yml')
 # CI-only lane: no deploy targets (the Gruia studio deploy is systemd/Caddy on
 # its own host, outside the simplia-ci deploy adapters for now).
 
@@ -52,7 +52,20 @@ commands:
     - pnpm --filter @open-design/contracts test
     - pnpm --filter @open-design/sidecar test
     - pnpm --filter @open-design/gruia-gateway test
-    - node --test 'deploy/gruia/campaign/tests/*.ts'
+    - id: campaign-tests
+      run: >-
+        mkdir -p .simplia-ci/test-results &&
+        node --test --test-reporter=spec --test-reporter=junit
+        --test-reporter-destination=stdout
+        --test-reporter-destination=.simplia-ci/test-results/campaign.xml
+        'deploy/gruia/campaign/tests/*.ts'
+      # Preserve the legacy command's heavy profile and actual Node test suite.
+      # Its native JUnit output supplies the required premerge publication.
+      profile: heavy
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/campaign.xml
+          required: true
   build:
     # Package + daemon builds (esbuild + tsc). apps/web `next build` is left
     # out: it needs deploy env and is covered by typecheck here.
@@ -77,5 +90,7 @@ health:
 
 security:
   trivy: false
+  # Drops the in-workspace pnpm store before Trivy (see the script).
+  prune_script: scripts/ci-security-prune.sh
 
 secrets: {}
