@@ -5,6 +5,6 @@
 // Supply chain: the shared library is pinned to an exact commit of
 // simplificando-roberto/jenkins-platform (same pin as autonomous-coding-v2),
 // so CI never runs pipeline code that landed on main unreviewed.
-@Library('simplia-ci@f18f8042723700a0c7ec2efaa89368c0a0bf7fad') _
+@Library('simplia-ci@f4ce0017760ae58a882e2fac42ca06571f0282f9') _
 
 simpliaPipeline(manifest: 'ci/app.yml')
