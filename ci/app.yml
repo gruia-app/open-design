@@ -90,5 +90,7 @@ health:
 
 security:
   trivy: false
+  # Drops the in-workspace pnpm store before Trivy (see the script).
+  prune_script: scripts/ci-security-prune.sh
 
 secrets: {}
