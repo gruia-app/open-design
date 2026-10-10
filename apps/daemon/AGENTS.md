@@ -136,6 +136,13 @@ Focused tests from `apps/daemon`:
 pnpm exec vitest run -c vitest.config.ts tests/<file>.test.ts
 ```
 
+Scoped runs of pure unit files that never spawn the `od` CLI or start the
+daemon server can skip the implicit `dist/cli.js` build in `tests/setup.ts`:
+
+```bash
+OD_VITEST_SKIP_CLI_BUILD=1 pnpm exec vitest run -c vitest.config.ts tests/<file>.test.ts
+```
+
 For local runtime validation, start through the repo control plane, not daemon package lifecycle aliases:
 
 ```bash

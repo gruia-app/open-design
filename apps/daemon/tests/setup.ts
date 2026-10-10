@@ -50,6 +50,11 @@ process.env.OPEN_DESIGN_VELA_TELEMETRY ??= 'off';
 
 // Publish/share endpoints shell out through OD_NODE_BIN + OD_BIN (dist/cli.js).
 // Build the CLI artifact once per vitest process so package tests do not depend
-// on a prior manual `pnpm --filter @open-design/daemon build`.
-ensureDaemonCliBuilt();
+// on a prior manual `pnpm --filter @open-design/daemon build`. Scoped runs of
+// pure unit files that never spawn the CLI or start the daemon server can skip
+// this implicit build with OD_VITEST_SKIP_CLI_BUILD=1; the full suite and CI
+// keep the default ensure-built behavior.
+if (process.env.OD_VITEST_SKIP_CLI_BUILD !== '1') {
+  ensureDaemonCliBuilt();
+}
 process.env.OD_DAEMON_CLI_PATH = daemonCliDist;
