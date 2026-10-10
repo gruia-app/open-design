@@ -16,11 +16,12 @@ stack:
 ci:
   resources:
     enabled: true
-    # Request the 4 GiB pool for build stages; a verified cgroup OOM promotes
-    # the persisted profile one tier at a time up to large, and an unavailable
-    # resource-profile API fails safe to large instead of stranding the build.
-    build_class: small
-    adaptive_build_class: true
+    # Use the same large profile selected by the fallback in PR-111 build 1.
+    # The adaptive profile lookup failed with NotSerializableException and
+    # marked CI UNSTABLE. Restore small + adaptive_build_class: true after the
+    # upstream fix tracked in WST-ead5b46e (deadline 2026-10-11T02:30Z).
+    build_class: large
+    adaptive_build_class: false
     max_build_class: large
   # guard/typecheck/test are independent read-mostly stages; test writes only
   # vitest artifacts. Same playbook as contenido/b2bweb.
