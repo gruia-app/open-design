@@ -1,0 +1,45 @@
+# Solo seguridad agrupada. SEC-PROACTIVA-LOTE2-1210-B-C1.
+# El limite 0 desactiva las PR de versiones; seguridad sigue agrupada por ecosistema.
+version: 2
+updates:
+- package-ecosystem: npm
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 0
+  labels:
+  - dependencies
+  - security
+  groups:
+    security:
+      applies-to: security-updates
+      patterns:
+      - '*'
+  directories:
+  - /
+  - /apps/closure
+  - /apps/daemon
+  - /apps/desktop
+  - /apps/packaged
+  - /apps/web
+  - /e2e
+  - /packages/agui-adapter
+  - /packages/components
+  - /packages/contracts
+  - /packages/diagnostics
+  - /packages/download
+  - /packages/dsh-runtime
+  - /packages/host
+  - /packages/launcher-proto
+  - /packages/metatool
+  - /packages/platform
+  - /packages/plugin-runtime
+  - /packages/registry-protocol
+  - /packages/release
+  - /packages/sidecar
+  - /packages/sidecar-proto
+  - /packages/standalone
+  - /shells/terminal
+  - /tools/dev
+  - /tools/pack
+  - /tools/release
+  - /tools/serve
