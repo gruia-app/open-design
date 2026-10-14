@@ -12,6 +12,10 @@ paths:
   backend: apps/daemon
   frontend: apps/web
 ci:
+  resources:
+    enabled: true
+    build_class: large
+    build_pool_label: capacity-host-id-contabo2
   heavy_tests:
     enabled: true
   test_selection:
@@ -23,10 +27,12 @@ health:
   production: []
 security:
   trivy: true
+  cve_grace: false
   severity: HIGH,CRITICAL
   fail_on_vulnerability: true
 commands:
   install:
+  - node -e "if (process.versions.node.split('.')[0] !== '24') throw new Error('Node 24 is required')"
   - corepack enable
   - corepack prepare pnpm@10.33.2 --activate
   - pnpm install --frozen-lockfile
