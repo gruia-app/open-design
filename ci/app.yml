@@ -1,0 +1,57 @@
+app_key: open-design
+repo: https://github.com/gruia-app/open-design.git
+repo_owner: gruia-app
+default_branch: main
+
+stack:
+  type: [node, next, monorepo]
+
+paths:
+  root: .
+  frontend: apps/web
+  backend: apps/daemon
+
+# This Linux tool lane supplements the existing GitHub CI matrix.
+# It does not replace daemon/e2e, Windows, macOS or packaged release gates.
+commands:
+  install:
+    - node -e 'if (process.versions.node.split(".")[0] !== "24") throw new Error("Node 24 is required")'
+    - test "$(corepack pnpm --version)" = 10.33.2
+    - OPEN_DESIGN_POSTINSTALL_CONCURRENCY=2 corepack pnpm install --frozen-lockfile
+  lint:
+    - corepack pnpm guard
+    - corepack pnpm i18n:check
+  typecheck:
+    # Fresh checkouts need these declarations for the packaged app imports.
+    - corepack pnpm --filter @open-design/daemon build
+    - corepack pnpm --filter @open-design/desktop build
+    - corepack pnpm --filter @open-design/web build:sidecar
+    - corepack pnpm typecheck
+  test:
+    - corepack pnpm --filter @open-design/tools-dev exec sh -c 'node --import tsx --test --test-concurrency=2 tests/*.test.ts'
+    - corepack pnpm --filter @open-design/tools-serve test --maxWorkers=2
+    - corepack pnpm --filter @open-design/tools-release test --maxWorkers=2
+    - corepack pnpm --filter @open-design/tools-pack test --maxWorkers=2
+  build:
+    - corepack pnpm --filter @open-design/tools-dev build
+    - corepack pnpm --filter @open-design/tools-serve build
+    - corepack pnpm --filter @open-design/tools-release build
+    - corepack pnpm --filter @open-design/tools-pack build
+
+ci:
+  # Plain test commands are classified as heavy by the shared library.
+  # Enable the complete declared lane, with no path/profile omissions.
+  heavy_tests:
+    enabled: true
+  test_selection:
+    mode: 'off'
+
+security:
+  trivy: true
+  severity: HIGH,CRITICAL
+  fail_on_vulnerability: true
+
+deploy:
+  type: none
+
+health: {}
