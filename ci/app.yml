@@ -1,0 +1,88 @@
+app_key: open-design
+repo: https://github.com/gruia-app/open-design.git
+repo_owner: gruia-app
+default_branch: main
+
+stack:
+  type: [node, next, monorepo]
+
+paths:
+  root: .
+  frontend: apps/web
+  backend: apps/daemon
+
+# Linux baseline from .github/workflows/ci.yml, with every applicable lane on.
+# Node 24 is an agent prerequisite; reject a different major before installing.
+commands:
+  install:
+    - |
+      set -eu
+      test "$(uname -s)" = Linux
+      node -e 'if (process.versions.node.split(".")[0] !== "24") process.exit(1)'
+      mkdir -p "$PNPM_HOME"
+      corepack enable --install-directory "$PNPM_HOME"
+      corepack prepare pnpm@10.33.2 --activate
+      test "$(pnpm --version)" = 10.33.2
+      OPEN_DESIGN_POSTINSTALL_CONCURRENCY=1 pnpm install --frozen-lockfile
+      pnpm -C e2e exec playwright install --with-deps chromium
+  lint:
+    - pnpm guard
+    - pnpm i18n:check
+  typecheck:
+    # These declarations must exist before workspace typechecks and tests.
+    - pnpm --filter @open-design/daemon build
+    - pnpm --filter @open-design/desktop build
+    - pnpm --filter @open-design/web build:sidecar
+    - pnpm -r --filter '!open-design' --workspace-concurrency=1 --if-present run typecheck
+    - pnpm exec tsc -p scripts/tsconfig.json --noEmit
+  test:
+    - pnpm --filter @open-design/contracts test
+    - pnpm --filter @open-design/host test
+    - pnpm --filter @open-design/platform test
+    - pnpm --filter @open-design/sidecar test
+    - pnpm --filter @open-design/sidecar-proto test
+    - pnpm --filter @open-design/tools-dev test
+    - pnpm --filter @open-design/desktop test
+    - pnpm --filter @open-design/packaged test
+    - pnpm --filter @open-design/tools-pack test
+    - pnpm --filter @open-design/tools-release test
+    - pnpm --filter @open-design/tools-serve test
+    # Unsharded commands cover all shards of the existing Linux lanes.
+    - OD_WATCHER_TEST_DEBUG=1 OD_CI_DAEMON_MAX_WORKERS=2 pnpm --filter @open-design/daemon test
+    - pnpm --filter @open-design/web test
+    - OD_E2E_VITEST_MAX_WORKERS=2 pnpm --filter @open-design/e2e test
+  build:
+    - pnpm --filter @open-design/web build
+  e2e:
+    - |
+      set -eu
+      export OD_PLAYWRIGHT_WORKERS=2
+      pnpm -C e2e exec tsx scripts/playwright.ts clean
+      pnpm --filter @open-design/e2e test:ui:critical
+      for group in entry-settings project-workspace project-workspace-editor project-collab project-runtime workspace-restoration critical-extras; do
+        pnpm -C e2e exec tsx scripts/playwright.ts clean
+        pnpm -C e2e exec tsx scripts/playwright.ts run-ui-group "$group"
+      done
+      pnpm -C e2e exec tsx scripts/playwright.ts clean
+      OD_VISUAL_OUTPUT_DIR=ui/reports/visual-screenshots OD_PLAYWRIGHT_FULLY_PARALLEL=1 pnpm -C e2e exec playwright test -c playwright.visual.config.ts ui/visual-entry.test.ts ui/visual-navigation.test.ts ui/visual-settings.test.ts ui/visual-workspace.test.ts
+
+deploy:
+  type: none
+health: {}
+
+security:
+  trivy: true
+  severity: HIGH,CRITICAL
+  fail_on_vulnerability: true
+  cve_grace: false
+
+ci:
+  fast_pr:
+    enabled: false
+  path_filters: false
+  parallel_checks: false
+  test_selection:
+    mode: 'off'
+  cache:
+    install_policy: disabled
+    build_policy: disabled
