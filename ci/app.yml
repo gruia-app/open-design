@@ -1,0 +1,357 @@
+# CI only. Native macOS/Windows packaging and signing remain separate release lanes.
+app_key: open-design
+repo: https://github.com/gruia-app/open-design.git
+default_branch: main
+stack:
+  type: [node, next, monorepo]
+paths:
+  root: .
+  frontend: apps/web
+  backend: apps/daemon
+commands:
+  install:
+    - id: node24-pnpm-toolchain
+      # The shared image currently has Node 22 / pnpm 9. Install only in the
+      # build-owned temp directory. Each command restores its PATH priority after
+      # the shared library prepends system binaries at the shell boundary.
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        set -eu
+        case "$(uname -m)" in
+          x86_64) node_arch=x64 ;;
+          aarch64|arm64) node_arch=arm64 ;;
+          *) echo "Unsupported Node.js architecture" >&2; exit 1 ;;
+        esac
+        node_release=node-v24.19.0-linux-$node_arch
+        toolchain_dir="$WORKSPACE@tmp/open-design-toolchain"
+        mkdir -p "$toolchain_dir" "$PNPM_HOME"
+        cd "$toolchain_dir"
+        curl --fail --silent --show-error --location --retry 3 "https://nodejs.org/dist/v24.19.0/$node_release.tar.xz" -o "$node_release.tar.xz"
+        curl --fail --silent --show-error --location --retry 3 https://nodejs.org/dist/v24.19.0/SHASUMS256.txt -o SHASUMS256.txt
+        awk -v archive="$node_release.tar.xz" '$2 == archive { print }' SHASUMS256.txt > selected.sha256
+        test "$(wc -l < selected.sha256)" -eq 1
+        sha256sum --check selected.sha256
+        tar -xJf "$node_release.tar.xz"
+        ln -sfn "$toolchain_dir/$node_release/bin/node" "$PNPM_HOME/node"
+        "$toolchain_dir/$node_release/bin/corepack" enable --install-directory "$PNPM_HOME"
+        node --version
+        test "$(node --version)" = v24.19.0
+        cd "$WORKSPACE"
+        test "$(pnpm --version)" = 10.33.2
+    - id: frozen-workspace-install
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm install --frozen-lockfile
+    - id: bootstrap-workspace-builds
+      # Tests/typechecks need built workspace exports before the Build stage.
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm -r --workspace-concurrency=2 --filter '!@open-design/web' --if-present run build
+    - id: bootstrap-web-sidecar
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm --filter @open-design/web build:sidecar
+    - id: install-chromium
+      # Worker must provide Playwright's OS libraries; no privileged apt install.
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm -C e2e exec playwright install chromium
+  lint:
+    - id: repository-guard
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm guard
+    - id: i18n-consistency
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm i18n:check
+    - id: craft-references
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm lint:craft
+    - id: workflow-lint
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        actionlint -color
+    - id: handoff-contract
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        python3 .github/scripts/handoff.py self-check
+  typecheck:
+    - id: workspace-typecheck
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm -r --workspace-concurrency=2 --if-present run typecheck
+    - id: scripts-typecheck
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm exec tsc -p scripts/tsconfig.json --noEmit
+  test:
+    - id: test-closure
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/closure test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/closure.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/closure.xml
+          required: true
+    - id: test-daemon
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/daemon test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/daemon.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/daemon.xml
+          required: true
+    - id: test-desktop
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/desktop test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/desktop.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/desktop.xml
+          required: true
+    - id: test-packaged
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/packaged test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/packaged.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/packaged.xml
+          required: true
+    - id: test-web
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/web test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/web.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/web.xml
+          required: true
+    - id: test-agui-adapter
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/agui-adapter test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/agui-adapter.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/agui-adapter.xml
+          required: true
+    - id: test-components
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/components test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/components.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/components.xml
+          required: true
+    - id: test-contracts
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/contracts test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/contracts.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/contracts.xml
+          required: true
+    - id: test-diagnostics
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/diagnostics test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/diagnostics.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/diagnostics.xml
+          required: true
+    - id: test-download
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/download test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/download.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/download.xml
+          required: true
+    - id: test-dsh-runtime
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/dsh-runtime test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/dsh-runtime.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/dsh-runtime.xml
+          required: true
+    - id: test-host
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/host test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/host.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/host.xml
+          required: true
+    - id: test-launcher-proto
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/launcher-proto test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/launcher-proto.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/launcher-proto.xml
+          required: true
+    - id: test-metatool
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/metatool test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/metatool.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/metatool.xml
+          required: true
+    - id: test-platform
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/platform test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/platform.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/platform.xml
+          required: true
+    - id: test-plugin-runtime
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/plugin-runtime test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/plugin-runtime.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/plugin-runtime.xml
+          required: true
+    - id: test-registry-protocol
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/registry-protocol test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/registry-protocol.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/registry-protocol.xml
+          required: true
+    - id: test-release
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/release test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/release.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/release.xml
+          required: true
+    - id: test-sidecar
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/sidecar test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/sidecar.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/sidecar.xml
+          required: true
+    - id: test-sidecar-proto
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/sidecar-proto test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/sidecar-proto.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/sidecar-proto.xml
+          required: true
+    - id: test-standalone
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/standalone test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/standalone.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/standalone.xml
+          required: true
+    - id: test-tools-dev
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        mkdir -p .simplia-ci/test-results && (cd tools/dev && pnpm exec node --import tsx --test --test-concurrency=2 --test-reporter=junit --test-reporter-destination=../../.simplia-ci/test-results/tools-dev.xml tests/*.test.ts)
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/tools-dev.xml
+          required: true
+    - id: test-tools-pack
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/tools-pack test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/tools-pack.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/tools-pack.xml
+          required: true
+    - id: test-tools-release
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/tools-release test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/tools-release.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/tools-release.xml
+          required: true
+    - id: test-tools-serve
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/tools-serve test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/tools-serve.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/tools-serve.xml
+          required: true
+    - id: test-terminal
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/terminal test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/terminal.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/terminal.xml
+          required: true
+    - id: test-e2e
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        pnpm --filter @open-design/e2e test --maxWorkers=2 --reporter=default --reporter=junit --outputFile.junit="$WORKSPACE/.simplia-ci/test-results/e2e.xml"
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/e2e.xml
+          required: true
+  build:
+    - id: web-production-build
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        pnpm --filter @open-design/web build
+  e2e:
+    - id: functional-browser-suite
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        CI=1 OD_PLAYWRIGHT_WORKERS=2 OD_PLAYWRIGHT_FULLY_PARALLEL=1
+        PLAYWRIGHT_JUNIT_OUTPUT_FILE="$WORKSPACE/.simplia-ci/test-results/browser-functional.xml"
+        pnpm -C e2e exec playwright test -c playwright.config.ts --reporter=list,junit
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/browser-functional.xml
+          required: true
+    - id: visual-browser-suite
+      run: >-
+        export PATH="$PNPM_HOME:$PATH";
+        CI=1 OD_PLAYWRIGHT_WORKERS=2 OD_VISUAL_OUTPUT_DIR=ui/reports/visual-screenshots
+        PLAYWRIGHT_JUNIT_OUTPUT_FILE="$WORKSPACE/.simplia-ci/test-results/browser-visual.xml"
+        pnpm -C e2e exec playwright test -c playwright.visual.config.ts --reporter=list,junit
+      reports:
+        - type: junit
+          path: .simplia-ci/test-results/browser-visual.xml
+          required: true
+deploy:
+  type: none
+health: {}
+security:
+  trivy: true
+  severity: HIGH,CRITICAL
+  fail_on_vulnerability: true
+  cve_grace: false
+ci:
+  fast_pr:
+    enabled: false
+  path_filters: false
+  parallel_checks: false
+  parallel_test_lanes:
+    enabled: false
+  observability:
+    enabled: true
+  test_selection:
+    mode: "off"
+  cache:
+    # Never restore install outputs produced under the image's Node 22 runtime.
+    install_policy: disabled
+    build_policy: disabled
+  resources:
+    enabled: true
+    build_class: large
