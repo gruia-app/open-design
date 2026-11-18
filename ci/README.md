@@ -3,6 +3,19 @@
 `Jenkinsfile` pins the shared `simplia-ci` library. `ci/app.yml` defines
 verification for this workspace. It has no deployment target.
 
+## Workflow lint tools
+
+The install stage provides actionlint 1.7.12 and ShellCheck 0.11.0 in
+`PNPM_HOME`. These versions match `.github/workflows/ci.yml`.
+Each lint command restores `PNPM_HOME` at the front of `PATH`.
+
+The manifest supports Linux x64 and arm64 archives. It checks each archive
+against its pinned SHA-256 before extraction. Downloads and installation use
+build-owned directories and require no administrator permissions.
+
+The worker must still provide Playwright's OS libraries. This tool installation
+does not replace the workflow lint, test, build, browser, or security gates.
+
 ## Activate the job
 
 The platform custodian must onboard `gruia-app/open-design` in

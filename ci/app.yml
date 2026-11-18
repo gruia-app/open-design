@@ -38,6 +38,40 @@ commands:
         test "$(node --version)" = v24.19.0
         cd "$WORKSPACE"
         test "$(pnpm --version)" = 10.33.2
+    - id: workflow-lint-toolchain
+      # Match .github/workflows/ci.yml without sudo or worker image changes.
+      run: |
+        export PATH="$PNPM_HOME:$PATH"
+        set -eu
+        case "$(uname -m)" in
+          x86_64)
+            actionlint_arch=amd64
+            actionlint_sha=8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+            shellcheck_arch=x86_64
+            shellcheck_sha=b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
+            ;;
+          aarch64|arm64)
+            actionlint_arch=arm64
+            actionlint_sha=325e971b6ba9bfa504672e29be93c24981eeb1c07576d730e9f7c8805afff0c6
+            shellcheck_arch=aarch64
+            shellcheck_sha=68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc
+            ;;
+          *) echo "Unsupported workflow lint architecture" >&2; exit 1 ;;
+        esac
+        toolchain_dir="$WORKSPACE@tmp/open-design-workflow-tools"
+        mkdir -p "$toolchain_dir" "$PNPM_HOME"
+        cd "$toolchain_dir"
+        curl --fail --silent --show-error --location --retry 3 --connect-timeout 15 --max-time 120 \
+          "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_$actionlint_arch.tar.gz" -o actionlint.tar.gz
+        printf '%s  actionlint.tar.gz\n' "$actionlint_sha" | sha256sum --check -
+        tar -xzf actionlint.tar.gz actionlint
+        curl --fail --silent --show-error --location --retry 3 --connect-timeout 15 --max-time 120 \
+          "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.$shellcheck_arch.tar.gz" -o shellcheck.tar.gz
+        printf '%s  shellcheck.tar.gz\n' "$shellcheck_sha" | sha256sum --check -
+        tar -xzf shellcheck.tar.gz --strip-components=1 shellcheck-v0.11.0/shellcheck
+        install -m 0755 actionlint shellcheck "$PNPM_HOME/"
+        actionlint --version
+        shellcheck --version
     - id: frozen-workspace-install
       run: |
         export PATH="$PNPM_HOME:$PATH"
