@@ -3,6 +3,15 @@
 `Jenkinsfile` pins the shared `simplia-ci` library. `ci/app.yml` defines
 verification for this workspace. It has no deployment target.
 
+## ONNX Runtime installation
+
+The frozen install sets `ONNXRUNTIME_NODE_INSTALL_CUDA=skip` for that command.
+The Linux workers use the CPU binaries bundled with `onnxruntime-node`.
+The setting prevents its optional CUDA download, which returned HTTP 404 in
+[PR-8/2](https://jenkins.b2btestingmarketing.business/job/simplia/job/open-design-auto/job/PR-8/2/).
+Other dependency install scripts still run. The lockfile stays frozen.
+This setting applies only to Jenkins installation, without changing release installs.
+
 ## Workflow lint tools
 
 The install stage provides actionlint 1.7.12 and ShellCheck 0.11.0 in

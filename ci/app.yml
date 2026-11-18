@@ -73,9 +73,10 @@ commands:
         actionlint --version
         shellcheck --version
     - id: frozen-workspace-install
+      # CPU binaries ship in npm. Avoid the optional CUDA download on CI workers.
       run: |
         export PATH="$PNPM_HOME:$PATH"
-        pnpm install --frozen-lockfile
+        ONNXRUNTIME_NODE_INSTALL_CUDA=skip pnpm install --frozen-lockfile
     - id: bootstrap-workspace-builds
       # Tests/typechecks need built workspace exports before the Build stage.
       run: |
