@@ -1,0 +1,103 @@
+app_key: open_design
+repo: https://github.com/gruia-app/open-design.git
+repo_owner: gruia-app
+default_branch: main
+stack:
+  type:
+  - node
+  - next
+  - monorepo
+paths:
+  root: .
+  backend: apps/daemon
+  frontend: apps/web
+ci:
+  resources:
+    enabled: true
+    build_class: large
+    build_pool_label: capacity-host-id-contabo2
+  heavy_tests:
+    enabled: true
+  test_selection:
+    mode: 'off'
+deploy:
+  type: none
+health:
+  staging: []
+  production: []
+security:
+  trivy: true
+  cve_grace: false
+  severity: HIGH,CRITICAL
+  fail_on_vulnerability: true
+commands:
+  install:
+  - node -e "if (process.versions.node.split('.')[0] !== '24') throw new Error('Node 24 is required')"
+  - corepack enable
+  - corepack prepare pnpm@10.33.2 --activate
+  - pnpm install --frozen-lockfile
+  - pnpm --filter @open-design/daemon build
+  - pnpm --filter @open-design/desktop build
+  - pnpm --filter @open-design/web build:sidecar
+  lint:
+  - pnpm guard
+  - pnpm i18n:check
+  typecheck:
+  - pnpm typecheck
+  test:
+  - pnpm --filter @open-design/closure test
+  - pnpm --filter @open-design/daemon test
+  - pnpm --filter @open-design/desktop test
+  - pnpm --filter @open-design/packaged test
+  - pnpm --filter @open-design/web test
+  - pnpm --filter @open-design/agui-adapter test
+  - pnpm --filter @open-design/components test
+  - pnpm --filter @open-design/contracts test
+  - pnpm --filter @open-design/diagnostics test
+  - pnpm --filter @open-design/download test
+  - pnpm --filter @open-design/dsh-runtime test
+  - pnpm --filter @open-design/host test
+  - pnpm --filter @open-design/launcher-proto test
+  - pnpm --filter @open-design/metatool test
+  - pnpm --filter @open-design/platform test
+  - pnpm --filter @open-design/plugin-runtime test
+  - pnpm --filter @open-design/registry-protocol test
+  - pnpm --filter @open-design/release test
+  - pnpm --filter @open-design/sidecar test
+  - pnpm --filter @open-design/sidecar-proto test
+  - pnpm --filter @open-design/standalone test
+  - pnpm --filter @open-design/terminal test
+  - pnpm --filter @open-design/tools-dev test
+  - pnpm --filter @open-design/tools-pack test
+  - pnpm --filter @open-design/tools-release test
+  - pnpm --filter @open-design/tools-serve test
+  - pnpm --filter @open-design/e2e test
+  build:
+  - pnpm --filter @open-design/closure build
+  - pnpm --filter @open-design/daemon build
+  - pnpm --filter @open-design/desktop build
+  - pnpm --filter @open-design/packaged build
+  - pnpm --filter @open-design/web build
+  - pnpm --filter @open-design/agui-adapter build
+  - pnpm --filter @open-design/components build
+  - pnpm --filter @open-design/contracts build
+  - pnpm --filter @open-design/diagnostics build
+  - pnpm --filter @open-design/download build
+  - pnpm --filter @open-design/dsh-runtime build
+  - pnpm --filter @open-design/host build
+  - pnpm --filter @open-design/launcher-proto build
+  - pnpm --filter @open-design/metatool build
+  - pnpm --filter @open-design/platform build
+  - pnpm --filter @open-design/plugin-runtime build
+  - pnpm --filter @open-design/registry-protocol build
+  - pnpm --filter @open-design/release build
+  - pnpm --filter @open-design/sidecar build
+  - pnpm --filter @open-design/sidecar-proto build
+  - pnpm --filter @open-design/standalone build
+  - pnpm --filter @open-design/tools-dev build
+  - pnpm --filter @open-design/tools-pack build
+  - pnpm --filter @open-design/tools-release build
+  - pnpm --filter @open-design/tools-serve build
+  e2e:
+  - pnpm --filter @open-design/e2e exec playwright install --with-deps chromium
+  - pnpm --filter @open-design/e2e run test:ui
