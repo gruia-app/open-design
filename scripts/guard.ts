@@ -56,6 +56,9 @@ const residualSkippedDirectories = new Set([
   ".od",
   ".od-e2e",
   ".opencode",
+  // simplia-ci library workspace scratch (Jenkins-generated helpers and
+  // command-failure markers; not product source).
+  ".simplia-ci",
   // Local agent deepwork/worktree scratch (git-ignored; not product source).
   ".slim",
   ".task",
